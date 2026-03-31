@@ -59,15 +59,28 @@ function App() {
 
   useEffect(() => {
     if (selectedMachine) {
-      setActiveVideoUrl(`${SRS_BASE_URL}/live/${selectedMachine.id}.m3u8`);
-      setCurrentView('live');
-
+      // In archives tab, we might want to start with the first recording if available
+      // but for now let's just initialize the view
+      if (mainTab === 'live') {
+        setActiveVideoUrl(`${SRS_BASE_URL}/live/${selectedMachine.id}.m3u8`);
+        setCurrentView('live');
+      } else {
+        setActiveVideoUrl(null); // Wait for recording selection
+        setCurrentView('recording');
+      }
+      
       fetch(`${API_BASE}/api/recordings/${selectedMachine.id}`)
         .then(res => res.json())
-        .then(data => setRecordings(data))
+        .then(data => {
+          setRecordings(data);
+          // If we are in archives mode and have recordings, pick the latest one
+          if (mainTab === 'archives' && data.length > 0 && data[0].items.length > 0) {
+            handleRecordingClick(data[0].items[0]);
+          }
+        })
         .catch(err => console.error('Error fetching recordings:', err));
     }
-  }, [selectedMachine]);
+  }, [selectedMachine, mainTab]);
 
   const handleRecordingClick = (video) => {
     setCurrentView('recording');
@@ -153,13 +166,16 @@ function App() {
 
       <div className="player-view" style={{ gridTemplateColumns: '1fr 350px' }}>
         <div className="video-section">
-          <div className="video-container" style={{ position: 'relative', aspectRatio: '16/9' }}>
+          <div className="video-container" style={{ position: 'relative', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
             {activeVideoUrl ? (
-              <VideoPlayer src={activeVideoUrl} />
+              <VideoPlayer key={activeVideoUrl} src={activeVideoUrl} />
             ) : (
-              <div style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>Chưa có nguồn video</div>
+              <div style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>
+                <Monitor size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
+                <p>{mainTab === 'archives' ? 'Hãy chọn một bản ghi từ danh sách bên phải' : 'Chưa có nguồn video'}</p>
+              </div>
             )}
-            {currentView === 'live' && (
+            {activeVideoUrl && currentView === 'live' && (
               <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', display: 'flex', gap: '0.5rem', zIndex: 10 }}>
                 <span style={{ background: onlineStreams.includes(selectedMachine.id) ? '#ef4444' : '#64748b', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
                   {onlineStreams.includes(selectedMachine.id) ? 'LIVE' : 'STANDBY'}
