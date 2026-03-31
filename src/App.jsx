@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Tv, 
-  Monitor, 
-  History, 
-  LayoutDashboard, 
-  Play, 
-  Settings, 
-  Calendar, 
-  Clock, 
+import {
+  Tv,
+  Monitor,
+  History,
+  LayoutDashboard,
+  Play,
+  Settings,
+  Calendar,
+  Clock,
   ArrowLeft,
   Users,
   Trophy,
@@ -61,7 +61,7 @@ function App() {
     if (selectedMachine) {
       setActiveVideoUrl(`${SRS_BASE_URL}/live/${selectedMachine.id}.m3u8`);
       setCurrentView('live');
-      
+
       fetch(`${API_BASE}/api/recordings/${selectedMachine.id}`)
         .then(res => res.json())
         .then(data => setRecordings(data))
@@ -93,8 +93,8 @@ function App() {
         {INITIAL_MACHINES.map((machine) => {
           const isOnline = onlineStreams.includes(machine.id);
           return (
-            <div 
-              key={machine.id} 
+            <div
+              key={machine.id}
               className="machine-card"
               onClick={() => setSelectedMachine(machine)}
             >
@@ -109,16 +109,16 @@ function App() {
               </div>
               <div className="card-preview">
                 {isOnline ? (
-                  <img 
-                    src={`${SRS_BASE_URL}/live/${machine.id}.png?t=${Date.now()}`} 
-                    alt="Thumbnail" 
+                  <img
+                    src={`${SRS_BASE_URL}/live/${machine.id}.png?t=${Date.now()}`}
+                    alt="Thumbnail"
                     onError={(e) => { e.target.style.display = 'none'; }}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 ) : (
                   <Tv size={48} opacity={0.1} strokeWidth={1} />
                 )}
-                
+
                 <div className="overlay-status">
                   <span className="stat-dot" style={{ backgroundColor: isOnline ? '#ef4444' : '#94a3b8' }}></span>
                   <span className={isOnline ? 'live-tag' : ''}>
@@ -144,8 +144,8 @@ function App() {
 
   const PlayerView = () => (
     <div className="fade-in">
-      <button 
-        onClick={() => setSelectedMachine(null)} 
+      <button
+        onClick={() => setSelectedMachine(null)}
         style={{ background: 'none', border: 'none', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', cursor: 'pointer' }}
       >
         <ArrowLeft size={18} /> Quay lại Dashboard
@@ -168,7 +168,7 @@ function App() {
               </div>
             )}
           </div>
-          
+
           <div style={{ marginTop: '1.5rem', background: 'var(--panel-bg)', padding: '1.5rem', borderRadius: '20px', border: '1px solid var(--panel-border)' }}>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
               {currentView === 'live' ? `Đang xem: ${selectedMachine.id}` : 'Đang xem lại video'}
@@ -195,10 +195,10 @@ function App() {
             <div className="video-item" onClick={() => {
               setCurrentView('live');
               setActiveVideoUrl(`${SRS_BASE_URL}/live/${selectedMachine.id}.m3u8`);
-            }} 
-            style={{ fontWeight: currentView === 'live' ? 'bold' : 'normal', borderLeft: currentView === 'live' ? '3px solid #ef4444' : 'none' }}>
+            }}
+              style={{ fontWeight: currentView === 'live' ? 'bold' : 'normal', borderLeft: currentView === 'live' ? '3px solid #ef4444' : 'none' }}>
               <div className="video-thumb" style={{ background: '#450a0a' }}>
-                 <div className="stat-dot" style={{ backgroundColor: '#ef4444' }}></div>
+                <div className="stat-dot" style={{ backgroundColor: '#ef4444' }}></div>
               </div>
               <div className="video-info">
                 <h4>XEM TRỰC TIẾP</h4>
@@ -212,8 +212,8 @@ function App() {
                   <Calendar size={14} /> {group.date}
                 </div>
                 {group.items.map((video) => (
-                  <div 
-                    key={video.id} 
+                  <div
+                    key={video.id}
                     className="video-item"
                     onClick={() => handleRecordingClick(video)}
                     style={{ borderLeft: activeVideoUrl === video.url ? '3px solid var(--accent-color)' : 'none' }}
@@ -243,7 +243,7 @@ function App() {
         <div className="brand-section">
           <div className="brand-logo">
             <Trophy />
-            <span>AOE AOE</span>
+            <span>BP AOE</span>
           </div>
           <div className="brand-subtitle" style={{ fontSize: '0.8rem' }}>BPGROUP AOE Tournament</div>
         </div>
