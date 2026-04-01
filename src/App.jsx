@@ -156,7 +156,7 @@ function App() {
                           key={`live-${machine.id}`}
                           src={`${SRS_BASE_URL}/live/${machine.id}.m3u8`}
                           muted={true}
-                          controls={false}
+                          controls={true}
                           autoplay={true}
                         />
                       ) : (
