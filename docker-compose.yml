@@ -12,6 +12,7 @@ services:
     volumes:
       - ./srs.conf:/usr/local/srs/conf/srs.conf
       - /home/playback/record:/usr/local/srs/objs/nginx/html/record
+      - /home/playback/live:/usr/local/srs/objs/nginx/html/live
     command: ["./objs/srs", "-c", "conf/srs.conf"]
   web:
     build: .
@@ -21,7 +22,9 @@ services:
       - "3000:3000"
     volumes:
       - /home/playback/record:/usr/local/srs/objs/nginx/html/record
+      - /home/playback/live:/usr/local/srs/objs/nginx/html/live
     environment:
       - RECORD_DIR=/usr/local/srs/objs/nginx/html/record
+      - LIVE_DIR=/usr/local/srs/objs/nginx/html/live
     depends_on:
       - srs

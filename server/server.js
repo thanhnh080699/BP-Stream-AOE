@@ -10,11 +10,24 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 const RECORD_DIR = process.env.RECORD_DIR || '/usr/local/srs/objs/nginx/html/record';
+const LIVE_DIR = process.env.LIVE_DIR || '/usr/local/srs/objs/nginx/html/live';
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../dist')));
+app.use('/record', express.static(RECORD_DIR));
+app.use('/live', express.static(LIVE_DIR));
 
+// Proxy for SRS Status to avoid mixed content
+app.get('/api/srs-streams', async (req, res) => {
+    try {
+        const response = await fetch('http://192.168.9.214:1985/api/v1/streams');
+        const data = await response.json();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: 'SRS API not reachable' });
+    }
+});
 const NAMES_FILE = path.join(RECORD_DIR, 'machine_names.json');
 
 // Get custom machine names
@@ -61,7 +74,7 @@ app.get('/api/recordings/:machineId', (req, res) => {
                     title: `Video recording ${f}`,
                     time: f.replace('.mp4', ''),
                     duration: '5:00', // DVR segment duration
-                    url: `http://192.168.9.214:8080/record/live/${machineId}/${date}/${f}`
+                    url: `/record/live/${machineId}/${date}/${f}`
                 }));
             
             return {

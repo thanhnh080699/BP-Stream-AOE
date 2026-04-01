@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import { VideoPlayer } from './components/VideoPlayer';
 
-const SRS_BASE_URL = 'http://192.168.9.214:8080';
-const SRS_API_URL = 'http://192.168.9.214:1985/api/v1/streams';
+const SRS_BASE_URL = window.location.origin;
+const SRS_API_URL = '/api/srs-streams';
 
 const INITIAL_MACHINES = [
   ...Array.from({ length: 4 }).map((_, i) => ({ id: `team1-${i + 1}`, team: 'team1', name: `Máy ${i + 1}` })),
