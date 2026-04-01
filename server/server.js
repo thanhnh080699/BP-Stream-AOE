@@ -31,18 +31,49 @@ const rewriteM3u8 = (content, basePath) => {
 app.get('/api/live-m3u8/:app/:stream', (req, res) => {
     const { app: appName, stream } = req.params;
     const today = new Date().toISOString().split('T')[0];
-    // Path structure on disk: RECORD_DIR/live/live/machine/date/index.m3u8
-    const m3u8RelPath = path.join('live', appName, stream, today, 'index.m3u8');
-    const m3u8Path = path.join(RECORD_DIR, m3u8RelPath);
 
-    if (!fs.existsSync(m3u8Path)) {
+    const candidateSources = [
+        {
+            rootDir: LIVE_DIR,
+            relPath: path.join(appName, stream, today, 'index.m3u8'),
+            urlBase: `/live/${appName}/${stream}/${today}`
+        },
+        {
+            rootDir: LIVE_DIR,
+            relPath: path.join('live', 'live', appName, stream, today, 'index.m3u8'),
+            urlBase: `/live/live/${appName}/${stream}/${today}`
+        },
+        {
+            rootDir: LIVE_DIR,
+            relPath: path.join('live', appName, stream, today, 'index.m3u8'),
+            urlBase: `/live/live/${appName}/${stream}/${today}`
+        },
+        {
+            rootDir: RECORD_DIR,
+            relPath: path.join('live', appName, stream, today, 'index.m3u8'),
+            urlBase: `/record/live/${appName}/${stream}/${today}`
+        },
+        {
+            rootDir: RECORD_DIR,
+            relPath: path.join('live', 'live', appName, stream, today, 'index.m3u8'),
+            urlBase: `/record/live/live/${appName}/${stream}/${today}`
+        }
+    ];
+
+    const candidate = candidateSources
+        .map(({ rootDir, relPath, urlBase }) => ({
+            fullPath: path.join(rootDir, relPath),
+            urlBase
+        }))
+        .find(({ fullPath }) => fs.existsSync(fullPath));
+
+    if (!candidate) {
         return res.status(404).send('Stream not found');
     }
 
-    const content = fs.readFileSync(m3u8Path, 'utf8');
+    const content = fs.readFileSync(candidate.fullPath, 'utf8');
     const lines = content.split('\n');
 
-    // Extract header lines and segment pairs (EXTINF + .ts)
     const headerLines = [];
     const segments = [];
     let i = 0;
@@ -77,11 +108,17 @@ app.get('/api/live-m3u8/:app/:stream', (req, res) => {
     const recentSegments = segments.slice(-LIVE_SEGMENTS);
     const mediaSequence = Math.max(0, segments.length - LIVE_SEGMENTS);
 
-    const basePath = `/record/live/${appName}/${stream}/${today}`;
+    const urlBase = candidate.urlBase.replace(/\/$/, '');
+    const rewriteLine = (line) => {
+        if (!line) return line;
+        if (line.startsWith('#') || line.startsWith('http') || line.startsWith('/')) return line;
+        return `${urlBase}/${line}`;
+    };
+
     const output = [
         ...headerLines,
         `#EXT-X-MEDIA-SEQUENCE:${mediaSequence}`,
-        ...recentSegments.flat().map(line => (line && !line.startsWith('#')) ? path.join(basePath, line) : line),
+        ...recentSegments.flat().map(line => rewriteLine(line)),
         ''
     ].join('\n');
 
