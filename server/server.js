@@ -31,7 +31,8 @@ const rewriteM3u8 = (content, basePath) => {
 app.get('/api/live-m3u8/:app/:stream', (req, res) => {
     const { app: appName, stream } = req.params;
     const today = new Date().toISOString().split('T')[0];
-    const m3u8RelPath = `live/${appName}/${stream}/${today}/index.m3u8`;
+    // Path structure on disk: RECORD_DIR/live/live/machine/date/index.m3u8
+    const m3u8RelPath = path.join('live', appName, stream, today, 'index.m3u8');
     const m3u8Path = path.join(RECORD_DIR, m3u8RelPath);
 
     if (!fs.existsSync(m3u8Path)) {
@@ -145,10 +146,11 @@ app.post('/api/machine-names', (req, res) => {
 // Proxy for SRS Status to avoid mixed content
 app.get('/api/srs-streams', async (req, res) => {
     try {
-        const response = await fetch('http://192.168.9.214:1985/api/v1/streams');
+        const response = await fetch('http://srs_aoe:1985/api/v1/streams');
         const data = await response.json();
         res.json(data);
     } catch (err) {
+        console.error('SRS Proxy Error:', err.message);
         res.status(500).json({ error: 'SRS API not reachable' });
     }
 });
@@ -160,7 +162,8 @@ app.get('/api/recordings/:machineId', (req, res) => {
     // Check possible root paths for this machine
     const possiblePaths = [
         path.join(RECORD_DIR, 'live', 'live', machineId),
-        path.join(RECORD_DIR, 'live', machineId)
+        path.join(RECORD_DIR, 'live', machineId),
+        path.join(RECORD_DIR, machineId)
     ];
 
     let rootPath = null;
