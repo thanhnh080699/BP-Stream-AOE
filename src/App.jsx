@@ -112,12 +112,16 @@ function App() {
         .then(res => res.json())
         .then(data => {
           if (data && data.streams) {
-            setOnlineStreams(data.streams.map(s => s.name));
+            const newOnline = data.streams.map(s => s.name);
+            // Only update state if the online status actually changed to prevent re-renders
+            setOnlineStreams(prev => {
+              if (JSON.stringify(prev) === JSON.stringify(newOnline)) return prev;
+              return newOnline;
+            });
           }
         })
         .catch(err => {
-          console.warn('SRS API not reachable, using mock online status for demo');
-          setOnlineStreams(['team1-1', 'team2-3']);
+          console.warn('SRS API not reachable');
         });
     };
 
