@@ -25,19 +25,31 @@ app.get('/api/flv/:streamId', (req, res) => {
     const { streamId } = req.params;
     const srsUrl = `http://${SRS_HOST}:${SRS_HTTP_PORT}/live/${streamId}.flv`;
 
-    res.setHeader('Content-Type', 'video/x-flv');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Transfer-Encoding', 'chunked');
-
     const proxyReq = http.get(srsUrl, (proxyRes) => {
+        if (proxyRes.statusCode !== 200) {
+            console.error(`SRS returned ${proxyRes.statusCode} for ${streamId}`);
+            if (!res.headersSent) {
+                res.status(proxyRes.statusCode).end();
+            }
+            return;
+        }
+
+        // Copy headers from SRS
+        res.setHeader('Content-Type', 'video/x-flv');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        
+        if (proxyRes.headers['transfer-encoding']) {
+            res.setHeader('Transfer-Encoding', proxyRes.headers['transfer-encoding']);
+        }
+
         proxyRes.pipe(res);
     });
 
     proxyReq.on('error', (err) => {
         console.error(`FLV proxy error for ${streamId}:`, err.message);
         if (!res.headersSent) {
-            res.status(502).json({ error: 'Stream not available' });
+            res.status(502).send('Bad Gateway');
         }
     });
 
