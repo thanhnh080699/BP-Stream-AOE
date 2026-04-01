@@ -16,11 +16,23 @@ const LIVE_DIR = process.env.LIVE_DIR || '/usr/local/srs/objs/nginx/html/live';
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../dist')));
+// Helper to rewrite m3u8 content with absolute segment paths
+const rewriteM3u8 = (content, basePath) => {
+    return content.split('\n').map(line => {
+        if (line && !line.startsWith('#')) {
+            if (line.startsWith('/record')) return line;
+            return path.join(basePath, line);
+        }
+        return line;
+    }).join('\n');
+};
+
 // Serve a trimmed live m3u8 (last N segments only) so hls.js plays near real-time
 app.get('/api/live-m3u8/:app/:stream', (req, res) => {
     const { app: appName, stream } = req.params;
     const today = new Date().toISOString().split('T')[0];
-    const m3u8Path = path.join(RECORD_DIR, 'live', appName, stream, today, 'index.m3u8');
+    const m3u8RelPath = `live/${appName}/${stream}/${today}/index.m3u8`;
+    const m3u8Path = path.join(RECORD_DIR, m3u8RelPath);
 
     if (!fs.existsSync(m3u8Path)) {
         return res.status(404).send('Stream not found');
@@ -34,24 +46,18 @@ app.get('/api/live-m3u8/:app/:stream', (req, res) => {
     const segments = [];
     let i = 0;
 
-    // Collect header lines (everything before first EXTINF)
     while (i < lines.length && !lines[i].startsWith('#EXTINF')) {
         const line = lines[i].trim();
-        // Skip ENDLIST if present, and skip MEDIA-SEQUENCE (we'll recalculate)
         if (line && !line.startsWith('#EXT-X-ENDLIST') && !line.startsWith('#EXT-X-MEDIA-SEQUENCE')) {
             headerLines.push(line);
         }
         i++;
     }
 
-    // Collect segment groups (may include DISCONTINUITY markers)
     let currentGroup = [];
     while (i < lines.length) {
         const line = lines[i].trim();
-        if (line.startsWith('#EXT-X-ENDLIST')) {
-            i++;
-            continue;
-        }
+        if (line.startsWith('#EXT-X-ENDLIST')) { i++; continue; }
         if (line.startsWith('#EXTINF')) {
             currentGroup = [line];
         } else if (line && !line.startsWith('#') && currentGroup.length > 0) {
@@ -59,7 +65,6 @@ app.get('/api/live-m3u8/:app/:stream', (req, res) => {
             segments.push(currentGroup);
             currentGroup = [];
         } else if (line.startsWith('#EXT-X-DISCONTINUITY')) {
-            // Attach discontinuity to next segment
             currentGroup = [line];
         } else if (line && currentGroup.length > 0) {
             currentGroup.push(line);
@@ -67,25 +72,16 @@ app.get('/api/live-m3u8/:app/:stream', (req, res) => {
         i++;
     }
 
-    // Take only the last 6 segments for live edge
     const LIVE_SEGMENTS = 6;
     const recentSegments = segments.slice(-LIVE_SEGMENTS);
     const mediaSequence = Math.max(0, segments.length - LIVE_SEGMENTS);
 
-    // Build trimmed playlist
-    // IMPORTANT: rewrite .ts paths to be absolute /record/... paths so browser can find them
-    const segmentsOutput = recentSegments.flat().map(line => {
-        if (line && !line.startsWith('#')) {
-            return `/record/live/${appName}/${stream}/${today}/${line}`;
-        }
-        return line;
-    });
-
+    const basePath = `/record/live/${appName}/${stream}/${today}`;
     const output = [
         ...headerLines,
         `#EXT-X-MEDIA-SEQUENCE:${mediaSequence}`,
-        ...segmentsOutput,
-        '' // trailing newline
+        ...recentSegments.flat().map(line => (line && !line.startsWith('#')) ? path.join(basePath, line) : line),
+        ''
     ].join('\n');
 
     res.type('application/vnd.apple.mpegurl');
@@ -106,20 +102,9 @@ app.use('/record', (req, res, next) => {
                 content += '\n#EXT-X-ENDLIST\n';
             }
 
-            // Rewrite segment paths for VOD to be absolute
-            const parts = req.path.split('/');
-            const appName = parts[1]; // /live/live/machine/date/index.m3u8 -> parts[0] is empty, parts[1] is 'live'
-            const stream = parts[2];
-            const dateDir = parts[3];
-
-            const rewrittenContent = content.split('\n').map(line => {
-                if (line && !line.startsWith('#')) {
-                    // Check if the path already starts with /record
-                    if (line.startsWith('/record')) return line;
-                    return `/record/live/${appName}/${stream}/${dateDir}/${line}`;
-                }
-                return line;
-            }).join('\n');
+            // Rewrite segment paths to be absolute
+            const basePath = path.join('/record', path.dirname(req.path));
+            const rewrittenContent = rewriteM3u8(content, basePath);
 
             res.type('application/vnd.apple.mpegurl');
             return res.send(rewrittenContent);
