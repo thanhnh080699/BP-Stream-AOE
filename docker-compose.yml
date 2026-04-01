@@ -12,7 +12,7 @@ services:
     volumes:
       - ./srs.conf:/usr/local/srs/conf/srs.conf
       - /home/playback/record:/usr/local/srs/objs/nginx/html/record
-    command: -c /usr/local/srs/conf/srs.conf
+    command: ["./objs/srs", "-c", "conf/srs.conf"]
   web:
     build: .
     container_name: web_aoe
