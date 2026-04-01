@@ -12,8 +12,34 @@ const port = process.env.PORT || 3000;
 const RECORD_DIR = process.env.RECORD_DIR || '/usr/local/srs/objs/nginx/html/record';
 
 app.use(cors());
+app.use(express.json());
 app.use(express.static(path.join(__dirname, '../dist')));
 
+const NAMES_FILE = path.join(RECORD_DIR, 'machine_names.json');
+
+// Get custom machine names
+app.get('/api/machine-names', (req, res) => {
+    if (!fs.existsSync(NAMES_FILE)) {
+        return res.json({});
+    }
+    try {
+        const data = fs.readFileSync(NAMES_FILE, 'utf8');
+        res.json(JSON.parse(data));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to read names' });
+    }
+});
+
+// Save custom machine names
+app.post('/api/machine-names', (req, res) => {
+    try {
+        const names = req.body;
+        fs.writeFileSync(NAMES_FILE, JSON.stringify(names, null, 2));
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to save names' });
+    }
+});
 // Helper to scan directory for recordings
 // Pattern: /record/live/[machine-id]/[date]/[time].mp4
 app.get('/api/recordings/:machineId', (req, res) => {

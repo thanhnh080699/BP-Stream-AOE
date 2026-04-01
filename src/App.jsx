@@ -35,18 +35,32 @@ function App() {
   const [recordings, setRecordings] = useState([]);
   const [onlineStreams, setOnlineStreams] = useState([]);
 
-  const [machineNames, setMachineNames] = useState(() => {
-    const saved = localStorage.getItem('machine_names');
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [machineNames, setMachineNames] = useState({});
   const [editingMachineId, setEditingMachineId] = useState(null);
 
+  // Load names from server on mount
   useEffect(() => {
-    localStorage.setItem('machine_names', JSON.stringify(machineNames));
-  }, [machineNames]);
+    fetch(`${API_BASE}/api/machine-names`)
+      .then(res => res.json())
+      .then(data => setMachineNames(data))
+      .catch(err => {
+        console.warn('Could not load names from server, using local storage');
+        const saved = localStorage.getItem('machine_names');
+        if (saved) setMachineNames(JSON.parse(saved));
+      });
+  }, []);
 
   const handleMachineNameChange = (id, newName) => {
-    setMachineNames(prev => ({ ...prev, [id]: newName }));
+    const updated = { ...machineNames, [id]: newName };
+    setMachineNames(updated);
+    localStorage.setItem('machine_names', JSON.stringify(updated));
+    
+    // Sync to server
+    fetch(`${API_BASE}/api/machine-names`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated)
+    }).catch(err => console.error('Failed to sync names to server:', err));
   };
 
   const renderMachineName = (machineId, size = 14) => {
