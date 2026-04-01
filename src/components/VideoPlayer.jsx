@@ -27,8 +27,16 @@ export const VideoPlayer = ({ src, playlist = [], controls = true, autoplay = tr
         autoplay,
         controls,
         muted,
+        liveui: true,
         responsive: true,
         fluid: true,
+        html5: {
+          vhs: {
+            enableLowInitialPlaylist: true,
+            fastDecodedItemCount: 1, // Fixes display glitches
+            handleManifestRedirects: true
+          }
+        },
         sources: [{ src, type: detectedType }]
       });
 

@@ -15,6 +15,26 @@ const LIVE_DIR = process.env.LIVE_DIR || '/usr/local/srs/objs/nginx/html/live';
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../dist')));
+
+// Intercept M3U8 for playback to ensure it acts like a VOD (allows scrubbing, shows duration)
+app.use('/record', (req, res, next) => {
+    if (req.path.endsWith('.m3u8') && req.query.vod === 'true') {
+        const fullPath = path.join(RECORD_DIR, req.path);
+        if (fs.existsSync(fullPath)) {
+            let content = fs.readFileSync(fullPath, 'utf8');
+            if (!content.includes('#EXT-X-PLAYLIST-TYPE')) {
+                content = content.replace('#EXTM3U', '#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD');
+            }
+            if (!content.includes('#EXT-X-ENDLIST')) {
+                content += '\n#EXT-X-ENDLIST\n';
+            }
+            res.type('application/vnd.apple.mpegurl');
+            return res.send(content);
+        }
+    }
+    next();
+});
+
 app.use('/record', express.static(RECORD_DIR));
 app.use('/live', express.static(LIVE_DIR));
 
@@ -94,7 +114,7 @@ app.get('/api/recordings/:machineId', (req, res) => {
                         id: date,
                         date: date,
                         title: `Video toàn ngày ${date} (HLS)`,
-                        url: `/record/${relPath}`,
+                        url: `/record/${relPath}?vod=true`,
                         playlist: [] 
                     };
                 } else {
