@@ -11,7 +11,7 @@ services:
       - "1985:1985"
     volumes:
       - ./srs.conf:/usr/local/srs/conf/srs.conf
-      - aoe_record_vol:/usr/local/srs/objs/nginx/html/record
+      - /home/playback/record:/usr/local/srs/objs/nginx/html/record
 
   web:
     build: .
@@ -20,16 +20,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - aoe_record_vol:/usr/local/srs/objs/nginx/html/record
+      - /home/playback/record:/usr/local/srs/objs/nginx/html/record
     environment:
       - RECORD_DIR=/usr/local/srs/objs/nginx/html/record
     depends_on:
       - srs
-
-volumes:
-  aoe_record_vol:
-    driver: local
-    driver_opts:
-      type: 'none'
-      o: 'bind'
-      device: '/home/playback/record' # Khớp với volume host của bạn
