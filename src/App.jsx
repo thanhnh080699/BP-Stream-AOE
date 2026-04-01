@@ -35,6 +35,49 @@ function App() {
   const [recordings, setRecordings] = useState([]);
   const [onlineStreams, setOnlineStreams] = useState([]);
 
+  const [team1Name, setTeam1Name] = useState(localStorage.getItem('team1_name') || 'Team 1');
+  const [team2Name, setTeam2Name] = useState(localStorage.getItem('team2_name') || 'Team 2');
+  const [isEditingTeam, setIsEditingTeam] = useState(null); // 'team1' or 'team2'
+
+  useEffect(() => {
+    localStorage.setItem('team1_name', team1Name);
+    localStorage.setItem('team2_name', team2Name);
+  }, [team1Name, team2Name]);
+
+  const handleTeamNameChange = (e, team) => {
+    if (team === 'team1') setTeam1Name(e.target.value);
+    else setTeam2Name(e.target.value);
+  };
+
+  const renderTeamBadge = (team) => {
+    const isEditing = isEditingTeam === team;
+    const name = team === 'team1' ? team1Name : team2Name;
+
+    if (isEditing) {
+      return (
+        <input
+          autoFocus
+          className={`team-badge-input ${team}`}
+          value={name}
+          onChange={(e) => handleTeamNameChange(e, team)}
+          onBlur={() => setIsEditingTeam(null)}
+          onKeyDown={(e) => e.key === 'Enter' && setIsEditingTeam(null)}
+          style={{ width: '80px', padding: '0.1rem 0.3rem', border: 'none', borderRadius: '4px', fontSize: '0.7rem', outline: 'none' }}
+        />
+      );
+    }
+    return (
+      <span 
+        className={`team-badge ${team}`} 
+        onClick={(e) => { e.stopPropagation(); setIsEditingTeam(team); }}
+        title="Click để sửa tên team"
+        style={{ cursor: 'pointer' }}
+      >
+        {name}
+      </span>
+    );
+  };
+
   // Poll SRS API for online/offline status
   useEffect(() => {
     const checkStatus = () => {
@@ -110,9 +153,11 @@ function App() {
         </nav>
 
         <div style={{ marginTop: 'auto', padding: '1rem', background: 'rgba(205, 162, 78, 0.05)', borderRadius: '12px', border: '1px solid rgba(205, 162, 78, 0.1)' }}>
-          <p style={{ fontSize: '0.75rem', color: 'var(--accent-color)', fontWeight: 600, marginBottom: '0.5rem' }}>SPONSORED BY</p>
-          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'white' }}>IT TEAM</div>
-          <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.2rem' }}>Bestprice.vn</div>
+          <p style={{ fontSize: '0.75rem', color: 'var(--accent-color)', fontWeight: 600, marginBottom: '0.5rem' }}>TEAM NAMES</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {renderTeamBadge('team1')}
+            {renderTeamBadge('team2')}
+          </div>
         </div>
       </aside>
 
@@ -127,7 +172,7 @@ function App() {
               </div>
               <div className="stats-bar">
                 <div className="stat-chip">
-                  <span className="stat-dot"></span>
+                  <span className="stat-dot" style={{ backgroundColor: onlineStreams.length > 0 ? '#10b981' : '#94a3b8' }}></span>
                   <span>{onlineStreams.length} / 8 Đang Trực Tiếp</span>
                 </div>
               </div>
@@ -144,10 +189,8 @@ function App() {
                         <span>{machine.id.toUpperCase()}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span className={`team-badge ${machine.team}`}>
-                          {machine.team === 'team1' ? 'Team 1' : 'Team 2'}
-                        </span>
-                        <span className="stat-dot" style={{ backgroundColor: isOnline ? '#ef4444' : '#94a3b8', width: 6, height: 6 }}></span>
+                        {renderTeamBadge(machine.team)}
+                        <span className="stat-dot" style={{ backgroundColor: isOnline ? '#10b981' : '#94a3b8', width: 6, height: 6 }}></span>
                       </div>
                     </div>
                     <div className="live-cell-video">
@@ -195,9 +238,10 @@ function App() {
                         <Monitor size={18} />
                         <span>{machine.id.toUpperCase()}</span>
                       </div>
-                      <span className={`team-badge ${machine.team}`}>
-                        {machine.team === 'team1' ? 'Team 1' : 'Team 2'}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        {renderTeamBadge(machine.team)}
+                        <span className="stat-dot" style={{ backgroundColor: isOnline ? '#10b981' : '#94a3b8', width: 8, height: 8 }}></span>
+                      </div>
                     </div>
                     <div className="card-preview">
                       <div style={{ textAlign: 'center', color: isOnline ? 'var(--accent-color)' : '#475569' }}>
@@ -240,9 +284,12 @@ function App() {
                 </div>
 
                 <div style={{ marginTop: '1.5rem', background: 'var(--panel-bg)', padding: '1.5rem', borderRadius: '20px', border: '1px solid var(--panel-border)' }}>
-                  <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
-                    {activeVideoUrl ? `Đang xem lại: ${selectedMachine.id}` : `Bản ghi: ${selectedMachine.id}`}
-                  </h2>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
+                      {activeVideoUrl ? `Đang xem lại: ${selectedMachine.id}` : `Bản ghi: ${selectedMachine.id}`}
+                    </h2>
+                    {renderTeamBadge(selectedMachine.team)}
+                  </div>
                   <div style={{ display: 'flex', gap: '1.5rem', color: '#94a3b8', fontSize: '0.9rem' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                       <User size={16} /> Bestprice IT Tournament

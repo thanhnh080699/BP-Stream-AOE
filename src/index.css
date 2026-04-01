@@ -266,6 +266,16 @@ h1, h2, h3, .brand {
 .team1 { background: rgba(239, 68, 68, 0.1); color: var(--team1-color); border: 1px solid rgba(239, 68, 68, 0.2); }
 .team2 { background: rgba(59, 130, 246, 0.1); color: var(--team2-color); border: 1px solid rgba(59, 130, 246, 0.2); }
 
+.team-badge-input {
+  font-family: inherit;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.team-badge-input.team1 { background: rgba(239, 68, 68, 0.2); color: var(--team1-color); }
+.team-badge-input.team2 { background: rgba(59, 130, 246, 0.2); color: var(--team2-color); }
+
 .card-preview {
   position: relative;
   aspect-ratio: 16/9;
