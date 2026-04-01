@@ -87,7 +87,7 @@ app.get('/api/recordings/:machineId', (req, res) => {
             if (stats.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry)) {
                 const date = entry;
                 const files = fs.readdirSync(entryPath)
-                    .filter(f => f.endsWith('.mp4') || f.endsWith('.mp4.tmp'))
+                    .filter(f => f.endsWith('.mp4'))
                     .sort()
                     .map(f => {
                         // Resolve the relative URL for the web server

@@ -212,7 +212,7 @@ function App() {
                       {isOnline ? (
                         <VideoPlayer
                           key={`live-${machine.id}`}
-                          src={`${SRS_BASE_URL}/live/${machine.id}.m3u8`}
+                          src={`${SRS_BASE_URL}/record/live/live/${machine.id}/${new Date().toISOString().split('T')[0]}.m3u8`}
                           muted={true}
                           controls={true}
                           autoplay={true}
