@@ -142,24 +142,41 @@ const PlaybackView = () => {
                                     </button>
 
                                     {selectedDate === date && (
-                                        <button
-                                            onClick={() => {
-                                                fetch(`/api/v1/merge/${date}`, { method: 'POST' });
-                                                alert('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...');
-                                                setReplays(prev => ({
-                                                    ...prev,
-                                                    [date]: { ...prev[date], status: 'processing' }
-                                                }));
-                                            }}
-                                            disabled={meta.status === 'processing'}
-                                            className={`mx-2 mb-2 py-2.5 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn ${meta.status === 'processing'
-                                                    ? 'bg-slate-500/10 text-slate-500 border-slate-500/20 cursor-not-allowed'
-                                                    : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20'
-                                                }`}
-                                        >
-                                            <HardDrive size={12} className={`${meta.status === 'processing' ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
-                                            {meta.status === 'completed' ? 'Tổng Hợp Lại Dữ Liệu' : 'Tổng Hợp File Ghi Hình'}
-                                        </button>
+                                        <div className="mx-2 mb-4 space-y-3">
+                                            <button
+                                                onClick={() => {
+                                                    fetch(`/api/v1/merge/${date}`, { method: 'POST' });
+                                                    alert('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...');
+                                                    setReplays(prev => ({
+                                                        ...prev,
+                                                        [date]: { ...prev[date], status: 'processing', progress_percent: 10, progress_text: 'Đang khởi tạo...' }
+                                                    }));
+                                                }}
+                                                disabled={meta.status === 'processing'}
+                                                className={`w-full py-3 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn ${meta.status === 'processing'
+                                                        ? 'bg-slate-500/10 text-slate-500 border-slate-500/20 cursor-not-allowed'
+                                                        : 'bg-[#C9A050]/10 hover:bg-[#C9A050]/20 text-[#C9A050] border-[#C9A050]/20'
+                                                    }`}
+                                            >
+                                                <HardDrive size={12} className={`${meta.status === 'processing' ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
+                                                {meta.status === 'completed' ? 'Tổng Hợp Lại Dữ Liệu' : 'Tổng Hợp File Ghi Hình'}
+                                            </button>
+
+                                            {meta.status === 'processing' && (
+                                                <div className="space-y-2 animate-in fade-in duration-500">
+                                                    <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-tighter text-[#C9A050]">
+                                                        <span>{meta.progress_text || 'Đang xử lý...'}</span>
+                                                        <span>{meta.progress_percent || 0}%</span>
+                                                    </div>
+                                                    <div className="h-1.5 w-full bg-[var(--bg-main)] rounded-full overflow-hidden border border-[var(--border-color)]">
+                                                        <div 
+                                                            className="h-full bg-[#C9A050] transition-all duration-500 shadow-[0_0_10px_rgba(201,160,80,0.5)]"
+                                                            style={{ width: `${meta.progress_percent || 0}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             ))}

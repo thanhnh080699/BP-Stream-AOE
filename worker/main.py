@@ -154,27 +154,33 @@ def do_merge(date_str):
                 f.write(f"file '{file}'\n")
 
         mp4_output = os.path.join(replay_dir, 'summary.mp4')
-        hls_output = os.path.join(replay_dir, 'index.m3u8') # Rename to index for standard
-        
-        # 1. Generate FastStart MP4 as backup
-        mp4_cmd = [
-            'ffmpeg', '-f', 'concat', '-safe', '0', 
-            '-i', list_file, '-c', 'copy', '-movflags', '+faststart', '-y', mp4_output
-        ]
-        
-        # 2. Generate HLS for smooth seeking (5 second segments for precision)
-        hls_cmd = [
-            'ffmpeg', '-f', 'concat', '-safe', '0', 
-            '-i', list_file, '-c', 'copy', 
-            '-hls_time', '5', '-hls_list_size', '0', 
-            '-hls_segment_filename', os.path.join(replay_dir, 'segment_%d.ts'),
-            '-y', hls_output
-        ]
+        hls_output = os.path.join(replay_dir, 'index.m3u8')
         
         try:
-            print(f"Bắt đầu băm nhỏ dữ liệu cho máy {s_id} (Netflix Style)...")
-            subprocess.run(mp4_cmd, check=True)
-            subprocess.run(hls_cmd, check=True)
+            # Update progress: Step 1/2
+            meta[date_str]["progress_text"] = f"Đang xử lý máy {s_id} (1/2: Nối file MP4)..."
+            meta[date_str]["progress_percent"] = 20
+            with open(meta_file, 'w') as f: json.dump(meta, f, indent=4)
+
+            # 1. Generate FastStart MP4
+            subprocess.run([
+                'ffmpeg', '-f', 'concat', '-safe', '0', 
+                '-i', list_file, '-c', 'copy', '-movflags', '+faststart', '-y', mp4_output
+            ], check=True)
+            
+            # Update progress: Step 2/2
+            meta[date_str]["progress_text"] = f"Đang băm nhỏ dữ liệu máy {s_id} (2/2: HLS Netflix)..."
+            meta[date_str]["progress_percent"] = 60
+            with open(meta_file, 'w') as f: json.dump(meta, f, indent=4)
+
+            # 2. Generate HLS
+            subprocess.run([
+                'ffmpeg', '-f', 'concat', '-safe', '0', 
+                '-i', list_file, '-c', 'copy', 
+                '-hls_time', '5', '-hls_list_size', '0', 
+                '-hls_segment_filename', os.path.join(replay_dir, 'segment_%d.ts'),
+                '-y', hls_output
+            ], check=True)
 
             duration_cmd = [
                 'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
@@ -187,15 +193,18 @@ def do_merge(date_str):
                 "hls": f"replays/{date_str}/{s_id}/index.m3u8",
                 "duration_minutes": round(duration / 60, 2)
             }
-            # Also keep "file" for backward compatibility, mapped to HLS for smoothness
+            # Force "file" to be HLS
             meta[date_str]["streams"][s_id]["file"] = meta[date_str]["streams"][s_id]["hls"]
             
             if os.path.exists(list_file):
                 os.remove(list_file)
         except Exception as e:
-            print(f"Lỗi khi xử lý băm nhỏ cho {s_id}: {e}")
+            print(f"Lỗi khi xử lý {s_id}: {e}")
+            meta[date_str]["progress_text"] = f"Lỗi tại máy {s_id}: {str(e)}"
 
     meta[date_str]["status"] = "completed"
+    meta[date_str]["progress_percent"] = 100
+    meta[date_str]["progress_text"] = "Đã hoàn thành tổng hợp toàn bộ."
     with open(meta_file, 'w') as f:
         json.dump(meta, f, indent=4)
 
