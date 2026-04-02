@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import VideoPlayer from './VideoPlayer';
 import { Calendar, Play, Clock, Monitor, Archive, Filter, ChevronRight, HardDrive, AlertCircle } from 'lucide-react';
 
-const PlaybackView = ({ darkMode }) => {
+const PlaybackView = () => {
     const [replays, setReplays] = useState({});
     const [playerNames, setPlayerNames] = useState({});
     const [selectedDate, setSelectedDate] = useState(null);
@@ -40,92 +40,66 @@ const PlaybackView = ({ darkMode }) => {
         }
     };
 
-    const currentVideo = (selectedDate && selectedStream && replays[selectedDate]?.streams?.[selectedStream]) 
-        ? replays[selectedDate].streams[selectedStream] 
+    const currentVideo = (selectedDate && selectedStream && replays[selectedDate]?.streams?.[selectedStream])
+        ? replays[selectedDate].streams[selectedStream]
         : null;
 
     return (
-        <div className="p-6 md:p-10 max-w-[1600px] mx-auto">
-            <div className="flex flex-col xl:flex-row gap-10">
+        <div className="max-w-[1600px] mx-auto space-y-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 overflow-hidden">
+                <div className="space-y-2">
+                    <h1 className="text-4xl font-black font-outfit text-[var(--accent-secondary)]">
+                        <span className="text-[#C9A050]">Lưu trữ</span> Trận đấu
+                    </h1>
+                    <p className="text-[var(--text-secondary)] font-medium">Xem lại lịch sử thi đấu của các đội</p>
+                </div>
+            </div>
+
+            <div className="flex flex-col xl:flex-row gap-8">
                 {/* Main Player Area */}
                 <div className="flex-1 space-y-6">
-                    <div className="relative group">
-                        <div className={`absolute -inset-1 rounded-3xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 ${
-                            darkMode ? 'bg-gradient-to-r from-blue-600/20 to-indigo-600/20' : 'bg-gradient-to-r from-blue-400/20 to-indigo-400/20'
-                        }`}></div>
-                        <div className={`relative aspect-video rounded-2xl overflow-hidden shadow-2xl border transition-all duration-500 ${
-                            darkMode ? 'bg-black border-white/5 ring-1 ring-white/10' : 'bg-slate-200 border-slate-300 ring-1 ring-slate-100'
-                        }`}>
-                            {currentVideo ? (
-                                <VideoPlayer url={currentVideo.hls ? `/replays/${currentVideo.hls}` : `/replays/${currentVideo.file}`} />
-                            ) : (
-                                <div className={`w-full h-full flex flex-col items-center justify-center gap-6 transition-colors duration-500 ${
-                                    darkMode ? 'text-slate-700 bg-slate-950/50' : 'text-slate-400 bg-slate-50'
-                                }`}>
-                                    <div className={`p-6 rounded-full border transition-all duration-500 ${
-                                        darkMode ? 'bg-slate-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'
-                                    }`}>
-                                        <Monitor size={64} strokeWidth={1} className={darkMode ? 'opacity-40' : 'opacity-20'} />
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-sm font-bold uppercase tracking-[0.3em] opacity-40">Đang đợi lựa chọn</p>
-                                        <p className="text-[10px] font-medium mt-2">Chọn ngày và máy để bắt đầu phát lại</p>
-                                    </div>
+                    <div className="relative aspect-video rounded-3xl overflow-hidden bg-black border border-[var(--border-color)] shadow-2xl">
+                        {currentVideo ? (
+                            <VideoPlayer url={currentVideo.hls ? `/replays/${currentVideo.hls}` : `/replays/${currentVideo.file}`} />
+                        ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center gap-6 text-[var(--text-secondary)] bg-[var(--bg-card)]">
+                                <div className="p-8 rounded-full border border-[var(--border-color)] bg-[var(--bg-card-hover)]/40">
+                                    <Monitor size={64} strokeWidth={1} className="opacity-20" />
                                 </div>
-                            )}
-                        </div>
+                                <div className="text-center">
+                                    <p className="text-xs font-bold uppercase tracking-[0.3em] opacity-40">Đang đợi lựa chọn</p>
+                                    <p className="text-[10px] font-medium mt-2">Chọn ngày và máy để bắt đầu phát lại</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    
-                    {currentVideo ? (
-                        <div className={`p-8 backdrop-blur-md rounded-3xl border shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500 transition-all duration-500 ${
-                            darkMode ? 'bg-slate-900/40 border-white/5' : 'bg-white border-slate-200'
-                        }`}>
+
+                    {currentVideo && (
+                        <div className="p-8 bg-[var(--bg-card)] rounded-3xl border border-[var(--border-color)] shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                                 <div className="flex items-center gap-5">
-                                    <div className={`p-4 rounded-2xl border transition-colors ${
-                                        darkMode ? 'bg-blue-600/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'
-                                    }`}>
-                                        <Monitor size={32} className="text-blue-500" />
+                                    <div className="p-4 rounded-2xl bg-[#C9A050]/10 border border-[#C9A050]/20">
+                                        <Monitor size={32} className="text-[#C9A050]" />
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-3">
-                                            <h3 className={`text-2xl font-black font-outfit uppercase tracking-tight transition-colors ${
-                                                darkMode ? 'text-white' : 'text-slate-900'
-                                            }`}>
+                                            <h3 className="text-2xl font-black font-outfit text-[var(--accent-secondary)] uppercase tracking-tight">
                                                 {playerNames[selectedStream] || selectedStream}
                                             </h3>
-                                            <span className={`px-2 py-0.5 text-[9px] font-black rounded uppercase tracking-tighter border transition-colors ${
-                                                darkMode ? 'bg-white/5 text-slate-500 border-white/5' : 'bg-slate-100 text-slate-400 border-slate-200'
-                                            }`}>{selectedStream}</span>
+                                            <span className="px-2 py-0.5 text-[9px] font-black rounded uppercase tracking-tighter bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]">{selectedStream}</span>
                                         </div>
                                         <div className="flex items-center gap-4 mt-2">
-                                            <p className={`text-xs font-bold flex items-center gap-2 uppercase tracking-widest ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                <Calendar size={14} className="text-blue-500/60" /> {selectedDate}
+                                            <p className="text-xs font-bold flex items-center gap-2 text-[var(--text-secondary)] uppercase tracking-widest">
+                                                <Calendar size={14} className="text-[#C9A050]/60" /> {selectedDate}
                                             </p>
-                                            <div className={`w-1 h-1 rounded-full ${darkMode ? 'bg-slate-700' : 'bg-slate-300'}`} />
-                                            <p className={`text-xs font-bold flex items-center gap-2 uppercase tracking-widest ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                <Clock size={14} className="text-blue-500/60" /> {currentVideo.duration_minutes} PHÚT
+                                            <div className="w-1 h-1 rounded-full bg-[var(--border-color)]" />
+                                            <p className="text-xs font-bold flex items-center gap-2 text-[var(--text-secondary)] uppercase tracking-widest">
+                                                <Clock size={14} className="text-[#C9A050]/60" /> {currentVideo.duration_minutes} PHÚT
                                             </p>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <button className={`px-6 py-3 text-xs font-black uppercase tracking-widest rounded-xl border transition-all ${
-                                        darkMode ? 'bg-white/5 hover:bg-white/10 text-white border-white/10' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-                                    }`}>
-                                        Tải Log
-                                    </button>
-                                </div>
                             </div>
-                        </div>
-                    ) : (
-                        <div className={`p-8 rounded-3xl border flex items-center gap-4 transition-all duration-500 ${
-                            darkMode ? 'bg-blue-600/5 border-blue-500/10' : 'bg-blue-50 border-blue-100'
-                        }`}>
-                            <AlertCircle className="text-blue-500" size={20} />
-                            <p className={`text-sm font-medium italic ${darkMode ? 'text-blue-400/80' : 'text-blue-600/80'}`}>
-                                Chọn một bản ghi từ danh sách lưu trữ để xem dữ liệu trận đấu và hiệu suất người chơi.
-                            </p>
                         </div>
                     )}
                 </div>
@@ -135,26 +109,23 @@ const PlaybackView = ({ darkMode }) => {
                     {/* Date Selection */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between px-1">
-                            <h2 className={`text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                <Archive size={16} className="text-blue-500/50" /> BẢN GHI LƯU TRỮ
+                            <h2 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 text-[var(--text-secondary)]">
+                                <Archive size={16} className="text-[#C9A050]/50" /> BẢN GHI LƯU TRỮ
                             </h2>
-                            <span className={`text-[10px] font-bold ${darkMode ? 'text-slate-600' : 'text-slate-500'}`}>{Object.keys(replays).length} NGÀY</span>
+                            <span className="text-[10px] font-bold text-[var(--text-secondary)]">{Object.keys(replays).length} NGÀY</span>
                         </div>
                         <div className="flex flex-col gap-2.5 max-h-[35vh] overflow-y-auto pr-3 scrollbar-thin">
                             {Object.entries(replays).sort((a, b) => b[0].localeCompare(a[0])).map(([date, meta]) => (
                                 <div key={date} className="flex flex-col gap-2">
                                     <button
                                         onClick={() => handleDateChange(date)}
-                                        className={`group relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 border ${
-                                            selectedDate === date 
-                                            ? 'bg-blue-600 text-white border-blue-400 shadow-xl shadow-blue-900/40 scale-[1.02]' 
-                                            : darkMode 
-                                                ? 'bg-slate-900/40 border-white/5 hover:border-white/10 text-slate-400' 
-                                                : 'bg-white border-slate-200 hover:border-blue-300 text-slate-500 shadow-sm'
-                                        }`}
+                                        className={`group relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 border ${selectedDate === date
+                                                ? 'bg-[#C9A050] text-[#0B0E14] border-transparent shadow-xl scale-[1.02]'
+                                                : 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[#C9A050]/30 text-[var(--text-secondary)]'
+                                            }`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg transition-colors ${selectedDate === date ? 'bg-white/20' : (darkMode ? 'bg-white/5' : 'bg-slate-100')}`}>
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedDate === date ? 'bg-[var(--bg-main)]/10' : 'bg-[var(--bg-main)]/5'}`}>
                                                 <Calendar size={14} />
                                             </div>
                                             <span className="font-bold text-sm tracking-tight">{date}</span>
@@ -169,24 +140,22 @@ const PlaybackView = ({ darkMode }) => {
                                             <ChevronRight size={16} className={`transition-transform duration-300 ${selectedDate === date ? 'rotate-90' : 'opacity-20 group-hover:opacity-100'}`} />
                                         </div>
                                     </button>
-                                    
+
                                     {selectedDate === date && (
-                                        <button 
+                                        <button
                                             onClick={() => {
                                                 fetch(`/api/v1/merge/${date}`, { method: 'POST' });
                                                 alert('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...');
-                                                // Optimistically update status to show spinner
                                                 setReplays(prev => ({
                                                     ...prev,
                                                     [date]: { ...prev[date], status: 'processing' }
                                                 }));
                                             }}
                                             disabled={meta.status === 'processing'}
-                                            className={`mx-2 mb-2 py-2.5 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn ${
-                                                meta.status === 'processing'
-                                                ? 'bg-slate-500/10 text-slate-500 border-slate-500/20 cursor-not-allowed'
-                                                : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20'
-                                            }`}
+                                            className={`mx-2 mb-2 py-2.5 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn ${meta.status === 'processing'
+                                                    ? 'bg-slate-500/10 text-slate-500 border-slate-500/20 cursor-not-allowed'
+                                                    : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20'
+                                                }`}
                                         >
                                             <HardDrive size={12} className={`${meta.status === 'processing' ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
                                             {meta.status === 'completed' ? 'Tổng Hợp Lại Dữ Liệu' : 'Tổng Hợp File Ghi Hình'}
@@ -201,55 +170,42 @@ const PlaybackView = ({ darkMode }) => {
                     {selectedDate && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-6 duration-500">
                             <div className="flex items-center justify-between px-1">
-                                <h2 className={`text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                    <Filter size={16} className="text-blue-500/50" /> CÁC MÁY THI ĐẤU
+                                <h2 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 text-[var(--text-secondary)]">
+                                    <Filter size={16} className="text-[#C9A050]/50" /> CÁC MÁY THI ĐẤU
                                 </h2>
-                                <span className={`text-[10px] font-bold ${darkMode ? 'text-slate-600' : 'text-slate-500'}`}>{Object.keys(replays[selectedDate].streams || {}).length} MÁY</span>
+                                <span className="text-[10px] font-bold text-[var(--text-secondary)]">{Object.keys(replays[selectedDate].streams || {}).length} MÁY</span>
                             </div>
                             <div className="grid grid-cols-1 gap-2.5 max-h-[45vh] overflow-y-auto pr-3 scrollbar-thin">
                                 {Object.entries(replays[selectedDate].streams || {}).map(([s_id, meta]) => (
                                     <button
                                         key={s_id}
                                         onClick={() => setSelectedStream(s_id)}
-                                        className={`group relative flex flex-col p-4 rounded-2xl transition-all duration-300 border ${
-                                            selectedStream === s_id 
-                                            ? 'bg-blue-600 text-white border-blue-400 shadow-2xl scale-[1.02]' 
-                                            : darkMode 
-                                                ? 'bg-slate-900/40 border-white/5 hover:border-white/10 text-slate-400' 
-                                                : 'bg-white border-slate-200 hover:border-blue-300 text-slate-500 shadow-sm'
-                                        }`}
+                                        className={`group relative flex flex-col p-4 rounded-2xl transition-all duration-300 border ${selectedStream === s_id
+                                                ? 'bg-[#C9A050] text-[#0B0E14] border-transparent shadow-2xl scale-[1.02]'
+                                                : 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[#C9A050]/30 text-[var(--text-secondary)]'
+                                            }`}
                                     >
                                         <div className="flex justify-between items-center w-full mb-2">
-                                            <span className={`font-black font-outfit uppercase tracking-tight text-sm ${selectedStream === s_id ? 'text-white' : (darkMode ? 'text-white' : 'text-slate-900')}`}>
+                                            <span className={`font-black font-outfit uppercase tracking-tight text-sm ${selectedStream === s_id ? 'text-[#0B0E14]' : 'text-[var(--text-primary)]'}`}>
                                                 {playerNames[s_id] || s_id}
                                             </span>
-                                            <span className={`text-[9px] font-black font-mono uppercase tracking-tighter ${selectedStream === s_id ? 'text-blue-200' : 'text-slate-600'}`}>{s_id}</span>
+                                            <span className={`text-[9px] font-black font-mono uppercase tracking-tighter ${selectedStream === s_id ? 'text-[#0B0E14]/40' : 'text-[var(--text-secondary)] opacity-50'}`}>{s_id}</span>
                                         </div>
                                         <div className="flex items-center gap-2.5">
-                                            <div className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest ${selectedStream === s_id ? 'text-blue-100' : 'text-slate-500'}`}>
-                                                <Clock size={12} className={selectedStream === s_id ? 'text-white' : 'text-blue-500/60'} />
+                                            <div className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest ${selectedStream === s_id ? 'text-[#0B0E14]/70' : 'text-[var(--text-secondary)] opacity-70'}`}>
+                                                <Clock size={12} className={selectedStream === s_id ? 'text-[#0B0E14]/70' : 'text-[#C9A050]/60'} />
                                                 {meta.duration_minutes} PHÚT
                                             </div>
-                                            <div className={`w-1 h-1 rounded-full ${selectedStream === s_id ? 'bg-blue-200' : (darkMode ? 'bg-slate-800' : 'bg-slate-300')}`} />
-                                            <span className={`text-[10px] font-bold uppercase tracking-widest ${selectedStream === s_id ? 'text-blue-100' : 'text-slate-600'}`}>Đã lưu</span>
+                                            <div className={`w-1 h-1 rounded-full ${selectedStream === s_id ? 'bg-[#0B0E14]/20' : 'bg-[var(--border-color)]'}`} />
+                                            <span className={`text-[10px] font-bold uppercase tracking-widest ${selectedStream === s_id ? 'text-[#0B0E14]/70' : 'text-[var(--text-secondary)] opacity-40'}`}>Đã lưu</span>
                                         </div>
                                         {selectedStream === s_id && (
-                                            <div className="absolute right-4 bottom-4 p-1 bg-white rounded-full text-blue-600 shadow-lg">
+                                            <div className="absolute right-4 bottom-4 p-1 bg-[#0B0E14] rounded-full text-[#C9A050] shadow-lg">
                                                 <Play size={10} fill="currentColor" />
                                             </div>
                                         )}
                                     </button>
                                 ))}
-                                {Object.keys(replays[selectedDate].streams || {}).length === 0 && (
-                                    <div className={`p-10 text-center rounded-3xl border border-dashed transition-colors ${
-                                        darkMode ? 'bg-slate-900/20 border-white/5' : 'bg-slate-50 border-slate-200'
-                                    }`}>
-                                        <div className="flex justify-center mb-4">
-                                            <Archive size={32} className={darkMode ? 'text-slate-800' : 'text-slate-300'} />
-                                        </div>
-                                        <p className={`text-xs font-bold uppercase tracking-widest italic ${darkMode ? 'text-slate-600' : 'text-slate-500'}`}>Không có bản ghi</p>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     )}
