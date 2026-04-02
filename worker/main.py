@@ -154,29 +154,26 @@ def do_merge(date_str):
                 f.write(f"file '{file}'\n")
 
         mp4_output = os.path.join(replay_dir, 'summary.mp4')
-        hls_output = os.path.join(replay_dir, 'playlist.m3u8')
+        hls_output = os.path.join(replay_dir, 'index.m3u8') # Rename to index for standard
         
-        # 1. Generate FastStart MP4
-        # Using -c copy -movflags +faststart for smooth seeking
+        # 1. Generate FastStart MP4 as backup
         mp4_cmd = [
             'ffmpeg', '-f', 'concat', '-safe', '0', 
             '-i', list_file, '-c', 'copy', '-movflags', '+faststart', '-y', mp4_output
         ]
         
-        # 2. Generate HLS for "Netflix-like" seeking
+        # 2. Generate HLS for smooth seeking (5 second segments for precision)
         hls_cmd = [
             'ffmpeg', '-f', 'concat', '-safe', '0', 
             '-i', list_file, '-c', 'copy', 
-            '-hls_time', '10', '-hls_list_size', '0', 
-            '-hls_segment_filename', os.path.join(replay_dir, 'seg_%d.ts'),
+            '-hls_time', '5', '-hls_list_size', '0', 
+            '-hls_segment_filename', os.path.join(replay_dir, 'segment_%d.ts'),
             '-y', hls_output
         ]
         
         try:
-            print(f"Merging MP4 for {s_id}...")
+            print(f"Bắt đầu băm nhỏ dữ liệu cho máy {s_id} (Netflix Style)...")
             subprocess.run(mp4_cmd, check=True)
-            
-            print(f"Generating HLS for {s_id}...")
             subprocess.run(hls_cmd, check=True)
 
             duration_cmd = [
@@ -185,20 +182,18 @@ def do_merge(date_str):
             ]
             duration = float(subprocess.check_output(duration_cmd).decode().strip())
             
-            # File paths relative to /data for the frontend to resolve
             meta[date_str]["streams"][s_id] = {
                 "mp4": f"replays/{date_str}/{s_id}/summary.mp4",
-                "hls": f"replays/{date_str}/{s_id}/playlist.m3u8",
+                "hls": f"replays/{date_str}/{s_id}/index.m3u8",
                 "duration_minutes": round(duration / 60, 2)
             }
-            # Also keep "file" for backward compatibility if needed, though we'll update frontend
-            meta[date_str]["streams"][s_id]["file"] = meta[date_str]["streams"][s_id]["mp4"]
+            # Also keep "file" for backward compatibility, mapped to HLS for smoothness
+            meta[date_str]["streams"][s_id]["file"] = meta[date_str]["streams"][s_id]["hls"]
             
-            # Clean up list file
             if os.path.exists(list_file):
                 os.remove(list_file)
         except Exception as e:
-            print(f"Error processing {date_str} for stream {s_id}: {e}")
+            print(f"Lỗi khi xử lý băm nhỏ cho {s_id}: {e}")
 
     meta[date_str]["status"] = "completed"
     with open(meta_file, 'w') as f:
