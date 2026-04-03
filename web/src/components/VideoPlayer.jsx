@@ -11,12 +11,14 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
   useEffect(() => {
     if (!videoRef.current) return;
 
-    // Create video element
+    // Initialize Video.js
     const videoElement = document.createElement("video");
     videoElement.className = "video-js vjs-big-play-centered vjs-theme-city";
+    videoElement.setAttribute('playsinline', 'true');
+    videoElement.setAttribute('webkit-playsinline', 'true');
+    videoElement.setAttribute('x5-playsinline', 'true');
     videoRef.current.appendChild(videoElement);
 
-    // Initialize Video.js
     const player = playerRef.current = videojs(videoElement, {
       autoplay: autoPlay,
       controls: true,
@@ -24,6 +26,7 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
       fluid: true,
       muted: muted,
       poster: poster,
+      preload: 'auto',
       playbackRates: [0.5, 1, 1.25, 1.5, 2],
       userActions: {
         hotkeys: true
@@ -43,28 +46,18 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
       },
     });
 
-    // Handle HLS with Hls.js if native support is not preferred/available
-    const loadSource = (sourceUrl) => {
-      if (sourceUrl.endsWith('.m3u8')) {
-        if (Hls.isSupported()) {
-          if (hlsRef.current) hlsRef.current.destroy();
-          const hls = new Hls({
-            enableWorker: true,
-            lowLatencyMode: true,
-            backBufferLength: 60
-          });
-          hls.loadSource(sourceUrl);
-          hls.attachMedia(videoElement);
-          hlsRef.current = hls;
-        } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-          videoElement.src = sourceUrl;
-        }
-      } else {
-        player.src({ src: sourceUrl, type: 'video/mp4' });
-      }
-    };
-
-    loadSource(url);
+    // Handle Source loading
+    if (url.endsWith('.m3u8')) {
+        player.src({
+            src: url,
+            type: 'application/x-mpegURL'
+        });
+    } else {
+        player.src({
+            src: url,
+            type: 'video/mp4'
+        });
+    }
 
     return () => {
       if (playerRef.current) {
