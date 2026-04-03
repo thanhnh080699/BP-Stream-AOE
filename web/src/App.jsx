@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import LiveView from './components/LiveView';
 import PlaybackView from './components/PlaybackView';
-import { Video, History, Trophy, Sun, Moon, Menu, X } from 'lucide-react';
+import { Video, History, Trophy, Sun, Moon, Menu, X, Monitor } from 'lucide-react';
 
 function App() {
   const [tab, setTab] = useState('live');
