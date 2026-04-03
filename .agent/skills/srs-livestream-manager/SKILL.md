@@ -27,17 +27,18 @@ The system is a multi-container Docker environment:
 - **Debug Hook**: Use `/api/v1/debug` to log raw SRS payloads during troubleshooting.
 
 ### 3. Worker Operations
-- **Rebuilding**: Changes to `worker/main.py` require a container rebuild: `docker-compose up -d --build worker`.
-- **FFmpeg Merging**: Uses `ffmpeg -f concat` on `.flv` segments to create a single `.mp4` daily summary per stream ID.
+- **Rebuilding**: Changes to `worker/main.py` require a container rebuild: `docker compose up -d --build worker`.
+- **FFmpeg Merging**: Uses `ffmpeg -f concat` on `.flv` segments to create a single `.mp4` daily summary, then creates HLS segments from that MP4 with audio transcoding (`-c:a aac`) to prevent frame size errors.
 
 ### 4. Frontend Playback
 - **Mixed Formats**: `VideoPlayer.jsx` must support HLS (`.m3u8`) for live feeds and direct MP4 playback for archives.
 - **Dynamic URLs**: Live streams use `/live/[stream_id].m3u8` or `/__defaultApp__/[stream_id].m3u8`. Archives use `/replays/[filename].mp4`.
 
 ## Operations
-- **Full Refresh**: `docker-compose down && docker-compose up -d --build`.
-- **View Recording Log**: `docker-compose exec worker cat /data/recordings.json`.
+- **Full Refresh**: `docker compose down && docker compose up -d --build`.
+- **View Recording Log**: `docker compose exec worker cat /data/recordings.json`.
 - **Manual Merge**: Trigger via `POST /api/v1/merge/[YYYY-MM-DD]`.
+- **Troubleshooting**: Check logs with `docker compose logs -f worker`.
 
 ## Directory Structure
 - `/srs.conf`: Server logic.
