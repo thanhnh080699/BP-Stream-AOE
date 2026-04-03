@@ -50,6 +50,11 @@ The system is a multi-container Docker environment:
 - `/web/src/components/`: Dashboard views (LiveView, PlaybackView, VideoPlayer).
 - `/data/`: (Volume) Persistent storage for metadata and video files.
 
+## Development Workflow
+- **Atomic Commits**: Every time you modify or add a new feature, component, or configuration, you **MUST** immediately commit and push the changes.
+- **Workflow**: `git add .` -> `git commit -m "Brief description"` -> `git push origin master`.
+- **Consistency**: Never leave the workspace with uncommitted changes after completing a task.
+
 ## Server Details (Production)
 - **IP**: 192.168.9.233
 - **User**: ubuntu
