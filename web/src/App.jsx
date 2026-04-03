@@ -5,7 +5,7 @@ import { Video, History, Trophy, Sun, Moon, Menu, X, Monitor } from 'lucide-reac
 
 function App() {
   const [tab, setTab] = useState('live');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(() => {
     const savedMode = localStorage.getItem('srs-theme');
     return savedMode ? savedMode === 'dark' : true;
@@ -46,23 +46,10 @@ function App() {
         </button>
       </div>
 
-      {/* Desktop Toggle Button (New) */}
-      <button 
-        onClick={toggleSidebar}
-        className="hidden md:flex fixed bottom-6 left-6 z-[60] p-3 rounded-2xl bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[#C9A050] hover:border-[#C9A050]/30 shadow-xl transition-all duration-300 cursor-pointer group"
-      >
-        <Menu size={20} className={`transition-transform duration-500 ${isSidebarOpen ? 'rotate-180' : ''}`} />
-        {!isSidebarOpen && (
-          <span className="absolute left-full ml-4 px-3 py-1 bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest text-[#C9A050] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Mở Menu
-          </span>
-        )}
-      </button>
-
       {/* Backdrop */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300"
+          className="fixed md:hidden inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -70,14 +57,23 @@ function App() {
       {/* Sidebar */}
       <aside className={`
         fixed md:relative inset-y-0 left-0 flex-shrink-0 bg-[var(--bg-sidebar)] border-r border-[var(--border-color)] flex flex-col z-50 shadow-2xl transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)
-        ${isSidebarOpen ? 'w-72 translate-x-0' : 'w-0 -translate-x-full md:translate-x-0 md:w-0 overflow-hidden border-none'}
+        ${isSidebarOpen ? 'w-80 translate-x-0' : 'w-0 -translate-x-full md:translate-x-0 md:w-0 overflow-hidden border-none'}
       `}>
         <div className={`p-8 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'} whitespace-nowrap overflow-hidden`}>
-          <div className="flex items-center gap-3 mb-1">
-            <Trophy className="text-[#C9A050]" size={28} />
-            <h1 className="text-2xl font-black font-outfit tracking-tight text-[var(--accent-secondary)] leading-none uppercase">
-              BP AOE
-            </h1>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-3">
+              <Trophy className="text-[#C9A050]" size={28} />
+              <h1 className="text-2xl font-black font-outfit tracking-tight text-[var(--accent-secondary)] leading-none uppercase">
+                BP AOE
+              </h1>
+            </div>
+            
+            <button 
+              onClick={toggleSidebar}
+              className="hidden md:flex p-2 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[#C9A050] hover:border-[#C9A050]/30 transition-all cursor-pointer group"
+            >
+              <Menu size={18} className="group-hover:scale-110 transition-transform" />
+            </button>
           </div>
           <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest pl-10 opacity-70">
             BPGROUP AOE Tournament
@@ -170,6 +166,14 @@ function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 h-screen overflow-y-auto relative bg-[var(--bg-main)] transition-colors duration-300 pt-16 md:pt-0">
+        {!isSidebarOpen && (
+          <button 
+            onClick={toggleSidebar}
+            className="hidden md:flex fixed top-6 left-6 z-[60] p-3 rounded-2xl bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[#C9A050] hover:border-[#C9A050]/30 shadow-xl transition-all duration-300 cursor-pointer group"
+          >
+            <Menu size={20} className="group-hover:scale-110 transition-transform" />
+          </button>
+        )}
         <div className="min-h-full p-6 md:p-12">
           {tab === 'live' ? <LiveView /> : <PlaybackView />}
         </div>
