@@ -48,7 +48,7 @@ function App() {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="flex min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] font-sans selection:bg-blue-500/30 overflow-hidden transition-colors duration-300">
+    <div className="flex min-h-screen md:h-screen bg-[var(--bg-main)] text-[var(--text-primary)] font-sans selection:bg-blue-500/30 md:overflow-hidden transition-colors duration-300">
       
       {/* Mobile Top Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[var(--bg-sidebar)] border-b border-[var(--border-color)] flex items-center justify-between px-6 z-30 shadow-sm transition-colors duration-300">
@@ -181,7 +181,7 @@ function App() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 h-screen overflow-y-auto relative bg-[var(--bg-main)] transition-colors duration-300 pt-16 md:pt-0">
+      <main className="flex-1 min-h-screen md:h-screen md:overflow-y-auto relative bg-[var(--bg-main)] transition-colors duration-300 pt-16 md:pt-0">
         {!isSidebarOpen && (
           <button 
             onClick={toggleSidebar}
@@ -190,7 +190,7 @@ function App() {
             <Menu size={20} className="group-hover:scale-110 transition-transform" />
           </button>
         )}
-        <div className="min-h-full p-6 md:p-12">
+        <div className="min-h-full p-6 md:p-12 pb-24 md:pb-12">
           {tab === 'live' ? <LiveView /> : <PlaybackView />}
         </div>
       </main>
