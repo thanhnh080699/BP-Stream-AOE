@@ -56,8 +56,8 @@ function App() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:relative inset-y-0 left-0 flex-shrink-0 bg-[var(--bg-sidebar)] border-r border-[var(--border-color)] flex flex-col z-50 shadow-2xl transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)
-        ${isSidebarOpen ? 'w-80 translate-x-0' : 'w-0 -translate-x-full md:translate-x-0 md:w-0 overflow-hidden border-none'}
+        fixed md:relative inset-y-0 left-0 flex-shrink-0 bg-[var(--bg-sidebar)]/95 md:bg-[var(--bg-sidebar)] backdrop-blur-xl md:backdrop-blur-none border-r border-[var(--border-color)] flex flex-col z-50 shadow-2xl transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)
+        ${isSidebarOpen ? 'w-[280px] md:w-80 translate-x-0' : 'w-0 -translate-x-full md:translate-x-0 md:w-0 overflow-hidden border-none'}
       `}>
         <div className={`p-8 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'} whitespace-nowrap overflow-hidden`}>
           <div className="flex items-center justify-between mb-1">

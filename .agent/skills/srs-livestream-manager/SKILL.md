@@ -36,6 +36,12 @@ The system is a multi-container Docker environment:
 - **Dynamic URLs**: Live streams use `/live/[stream_id].m3u8` or `/__defaultApp__/[stream_id].m3u8`. Archives use `/replays/[filename].mp4`.
 - **No Download**: Remove download buttons from the playback view.
 
+### 5. Responsive Design Standards
+- **Core Principle**: EVERY view must be fully responsive (mobile/desktop).
+- **Navigation**: Sidebar is persistent on large screens and collapsible on mobile. It MUST default to 'Open' (if requested), but should be easily dismissible.
+- **Grids**: Stream grids (e.g., in `LiveView`) must adapt (1 col on mobile, 2 col on tablet, 4 col on desktop). 
+- **Video Player**: Maintain `aspect-video` and handle touch interaction.
+
 ## Operations
 - **Remote Execution**: All docker commands MUST be executed on the production server via SSH. DO NOT run docker locally.
 - **Full Refresh**: `ssh 192.168.9.233 "cd /home/ubuntu/streaming && sudo docker compose down && sudo docker compose up -d --build"`.
