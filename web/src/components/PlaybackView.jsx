@@ -60,7 +60,7 @@ const PlaybackView = () => {
                 <div className="flex-1 space-y-6">
                     <div className="relative aspect-video rounded-3xl overflow-hidden bg-black border border-[var(--border-color)] shadow-2xl">
                         {currentVideo ? (
-                            <VideoPlayer url={currentVideo.hls ? `/replays/${currentVideo.hls}` : `/replays/${currentVideo.file}`} />
+                            <VideoPlayer url={currentVideo.hls ? `/replays/${currentVideo.hls}` : `/replays/${currentVideo.file}`} showProgress={true} />
                         ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center gap-6 text-[var(--text-secondary)] bg-[var(--bg-card)]">
                                 <div className="p-8 rounded-full border border-[var(--border-color)] bg-[var(--bg-card-hover)]/40">
