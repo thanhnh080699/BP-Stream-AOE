@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import Plyr from 'plyr-react';
-import 'plyr-react/dist/plyr.css';
+import 'plyr/dist/plyr.css';
 
 const VideoPlayer = ({ url, downloadUrl, muted = true, autoPlay = true, poster = '' }) => {
   const videoRef = useRef(null);
