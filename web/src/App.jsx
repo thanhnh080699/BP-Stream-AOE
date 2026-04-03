@@ -5,11 +5,29 @@ import { Video, History, Trophy, Sun, Moon, Menu, X, Monitor } from 'lucide-reac
 
 function App() {
   const [tab, setTab] = useState('live');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth > 1024;
+    }
+    return true;
+  });
   const [darkMode, setDarkMode] = useState(() => {
     const savedMode = localStorage.getItem('srs-theme');
     return savedMode ? savedMode === 'dark' : true;
   });
+
+  // Handle window resize to auto-close sidebar if needed
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 1024) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Sync theme with document class
   useEffect(() => {
@@ -47,17 +65,15 @@ function App() {
       </div>
 
       {/* Backdrop */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed md:hidden inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+      <div 
+        className={`fixed md:hidden inset-0 bg-black/60 backdrop-blur-sm z-40 transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setIsSidebarOpen(false)}
+      />
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:relative inset-y-0 left-0 flex-shrink-0 bg-[var(--bg-sidebar)]/95 md:bg-[var(--bg-sidebar)] backdrop-blur-xl md:backdrop-blur-none border-r border-[var(--border-color)] flex flex-col z-50 shadow-2xl transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)
-        ${isSidebarOpen ? 'w-[280px] md:w-80 translate-x-0' : 'w-0 -translate-x-full md:translate-x-0 md:w-0 overflow-hidden border-none'}
+        fixed md:relative inset-y-0 left-0 flex-shrink-0 bg-[var(--bg-sidebar)] border-r border-[var(--border-color)] flex flex-col z-50 shadow-2xl transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)
+        ${isSidebarOpen ? 'w-[280px] md:w-80 translate-x-0' : 'w-0 -translate-x-full md:translate-x-0 md:w-0 overflow-hidden border-none pointer-events-none'}
       `}>
         <div className={`p-8 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'} whitespace-nowrap overflow-hidden`}>
           <div className="flex items-center justify-between mb-1">
