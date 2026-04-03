@@ -119,7 +119,7 @@ const PlaybackView = () => {
                                 <div key={date} className="flex flex-col gap-2">
                                     <button
                                         onClick={() => handleDateChange(date)}
-                                        className={`group relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 border ${selectedDate === date
+                                        className={`group relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 border cursor-pointer ${selectedDate === date
                                                 ? 'bg-[#C9A050] text-[#0B0E14] border-transparent shadow-xl scale-[1.02]'
                                                 : 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[#C9A050]/30 text-[var(--text-secondary)]'
                                             }`}
@@ -153,7 +153,7 @@ const PlaybackView = () => {
                                                     }));
                                                 }}
                                                 disabled={meta.status === 'processing'}
-                                                className={`w-full py-3 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn ${meta.status === 'processing'
+                                                className={`w-full py-3 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn cursor-pointer ${meta.status === 'processing'
                                                         ? 'bg-slate-500/10 text-slate-500 border-slate-500/20 cursor-not-allowed'
                                                         : 'bg-[#C9A050]/10 hover:bg-[#C9A050]/20 text-[#C9A050] border-[#C9A050]/20'
                                                     }`}
@@ -197,7 +197,7 @@ const PlaybackView = () => {
                                     <button
                                         key={s_id}
                                         onClick={() => setSelectedStream(s_id)}
-                                        className={`group relative flex flex-col p-4 rounded-2xl transition-all duration-300 border ${selectedStream === s_id
+                                        className={`group relative flex flex-col p-4 rounded-2xl transition-all duration-300 border cursor-pointer ${selectedStream === s_id
                                                 ? 'bg-[#C9A050] text-[#0B0E14] border-transparent shadow-2xl scale-[1.02]'
                                                 : 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[#C9A050]/30 text-[var(--text-secondary)]'
                                             }`}
