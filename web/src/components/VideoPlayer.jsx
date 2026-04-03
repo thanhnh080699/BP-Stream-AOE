@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
-import Plyr from 'plyr-react';
+import { Plyr } from 'plyr-react';
 import 'plyr/dist/plyr.css';
 
 const VideoPlayer = ({ url, downloadUrl, muted = true, autoPlay = true, poster = '' }) => {
