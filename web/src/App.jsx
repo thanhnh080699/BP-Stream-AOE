@@ -14,7 +14,7 @@ function App() {
   });
   const [darkMode, setDarkMode] = useState(() => {
     const savedMode = localStorage.getItem('srs-theme');
-    return savedMode ? savedMode === 'dark' : true;
+    return savedMode ? savedMode === 'dark' : false;
   });
 
   // Handle window resize to auto-close sidebar if needed
