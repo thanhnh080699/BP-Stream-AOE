@@ -109,6 +109,28 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
     };
   }, []);
 
+  // 4. Handle iOS orientation change / resize issues in fullscreen
+  useEffect(() => {
+    const handleResize = () => {
+      if (playerRef.current) {
+        // Small delay to allow the browser to complete orientation change animation
+        setTimeout(() => {
+          if (playerRef.current) {
+            playerRef.current.trigger('resize');
+          }
+        }, 200);
+      }
+    };
+
+    window.addEventListener('orientationchange', handleResize);
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('orientationchange', handleResize);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   return (
     <div className="w-full h-full bg-black custom-videojs-theme">
       <div data-vjs-player className="w-full h-full">
@@ -156,6 +178,17 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
         .video-js.vjs-fluid {
             padding-top: 56.25% !important; /* 16:9 */
             height: 0 !important;
+        }
+        /* Fix iOS black screen on fullscreen rotation */
+        .video-js.vjs-fullscreen {
+            padding-top: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+        }
+        .vjs-fullscreen .vjs-tech {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain;
         }
         .vjs-poster {
             background-size: cover !important;
