@@ -16,21 +16,18 @@ LOG_FILE = os.path.join(DATA_DIR, 'recordings.json')
 #
 #  MAX_STREAM_WORKERS  : Số stream xử lý song song
 #                        HDD bottleneck → 3 stream cùng lúc là tối ưu
-#                        (nhiều hơn → HDD head nhảy loạn, chậm hơn)
 #
 #  MAX_SEG_WORKERS     : Số segment FLV→TS convert song song trong 1 stream
 #                        Dùng -c copy nên I/O bound, không CPU bound
 #                        4 là điểm cân bằng tốt nhất cho HDD
 #                        (10 sẽ gây random I/O thrash → chậm hơn tuần tự)
 #
-#  FFMPEG_THREADS      : Số CPU thread/process, chỉ ảnh hưởng bước concat/HLS
-#                        vì convert dùng -c copy không cần nhiều CPU
+#  FFMPEG_THREADS      : Số CPU thread/process
 # ──────────────────────────────────────────────────────────────────────────────
 MAX_STREAM_WORKERS = 3
 MAX_SEG_WORKERS    = 4
 FFMPEG_THREADS     = 2
 
-# Lock để ghi metadata.json an toàn khi nhiều thread cùng update
 meta_lock = threading.Lock()
 
 
@@ -52,7 +49,6 @@ def save_meta(meta_file, meta):
             json.dump(meta, f, indent=4)
 
 def update_meta_field(meta, meta_file, date_str, **kwargs):
-    """Cập nhật các field trong meta[date_str] một cách thread-safe"""
     with meta_lock:
         for k, v in kwargs.items():
             meta[date_str][k] = v
@@ -60,7 +56,6 @@ def update_meta_field(meta, meta_file, date_str, **kwargs):
             json.dump(meta, f, indent=4)
 
 def run_ffmpeg(cmd, timeout=3600):
-    """Chạy FFmpeg, trả về (success, stderr)"""
     try:
         result = subprocess.run(
             cmd, check=True, timeout=timeout,
@@ -73,7 +68,6 @@ def run_ffmpeg(cmd, timeout=3600):
         return False, "Timeout"
 
 def get_duration(file_path):
-    """Lấy duration (giây) của file media bằng ffprobe"""
     try:
         out = subprocess.check_output([
             'ffprobe', '-v', 'error',
@@ -95,24 +89,23 @@ def convert_flv_to_ts(flv_path, ts_path):
       thúc → chỉ lấy được ~1 phút đầu tiên
     - MPEG-TS dùng continuous PTS/DTS → concat hoàn toàn sạch
 
-    Tại sao dùng -c copy thay vì libx264:
-    - Nhanh hơn 10-20× (không transcode, chỉ remux container)
-    - Tiêu tốn cực ít RAM và CPU
-    - OBS đã output H.264 chuẩn → không cần encode lại
-
-    Lưu ý: OBS phải dùng Profile = baseline hoặc main (không dùng QSV extended)
-    để tránh FMO. Nếu vẫn gặp lỗi FMO, đổi lại -c:v libx264 -preset ultrafast.
+    Tại sao KHÔNG có -bsf:v h264_mp4toannexb ở đây:
+    - Filter này chỉ chấp nhận codec_id = H.264 software (x264)
+    - OBS QSV H.264 có codec_id khác → filter từ chối → lỗi "not supported"
+    - Khi output sang -f mpegts, FFmpeg tự chuyển Annex B mà không cần bsf
+    - bsf chỉ cần thiết ở bước MP4 → HLS (đã giữ ở đó)
     """
     return run_ffmpeg([
         'ffmpeg', '-y',
         '-fflags', '+genpts+igndts+discardcorrupt',
-        '-err_detect', 'ignore_err',    # Không crash khi gặp NAL unit lỗi
+        '-err_detect', 'ignore_err',
         '-analyzeduration', '100M',
         '-probesize', '100M',
         '-i', flv_path,
-        '-c:v', 'copy',                 # Stream copy — nhanh nhất có thể
+        '-c:v', 'copy',
         '-c:a', 'copy',
-        '-bsf:v', 'h264_mp4toannexb',   # Cần thiết khi đóng gói vào TS
+        # KHÔNG dùng -bsf:v h264_mp4toannexb ở đây
+        # FFmpeg tự xử lý Annex B khi mux vào mpegts container
         '-f', 'mpegts',
         ts_path
     ])
@@ -209,11 +202,9 @@ def delete_recordings():
         return jsonify({"error": "No data for this date"}), 404
 
     if stream_id:
-        # Xoá 1 stream cụ thể
         replay_dir = os.path.join(DATA_DIR, 'replays', date_str, stream_id)
         if os.path.exists(replay_dir):
             shutil.rmtree(replay_dir)
-
         if date_str in recordings:
             new_recs = []
             for r in recordings[date_str]:
@@ -227,7 +218,6 @@ def delete_recordings():
             else:
                 recordings[date_str] = new_recs
             save_recordings(recordings)
-
         if date_str in meta and 'streams' in meta[date_str]:
             if stream_id in meta[date_str]['streams']:
                 del meta[date_str]['streams'][stream_id]
@@ -235,38 +225,27 @@ def delete_recordings():
                 del meta[date_str]
         with open(meta_file, 'w') as f:
             json.dump(meta, f, indent=4)
-
         return jsonify({"status": f"Deleted stream {stream_id} for {date_str}"}), 200
-
     else:
-        # Xoá toàn bộ ngày
         date_replay_dir = os.path.join(DATA_DIR, 'replays', date_str)
         if os.path.exists(date_replay_dir):
             shutil.rmtree(date_replay_dir)
-
         if date_str in recordings:
             for r in recordings[date_str]:
                 if os.path.exists(r['file']):
                     os.remove(r['file'])
             del recordings[date_str]
             save_recordings(recordings)
-
         if date_str in meta:
             del meta[date_str]
             with open(meta_file, 'w') as f:
                 json.dump(meta, f, indent=4)
-
         return jsonify({"status": f"Deleted all data for {date_str}"}), 200
 
 
 # ── Core merge workers ────────────────────────────────────────────────────────
 
 def process_one_segment(args):
-    """
-    Worker function: convert 1 FLV → TS.
-    Chạy trong ThreadPoolExecutor.
-    Trả về (index, ts_path, duration) hoặc None khi lỗi.
-    """
     j, flv_path, ts_path = args
     success, stderr = convert_flv_to_ts(flv_path, ts_path)
     if not success:
@@ -284,12 +263,6 @@ def process_one_segment(args):
 
 def process_one_stream(s_id, files, date_str, meta, meta_file,
                        machine_progress_start, machine_progress_step):
-    """
-    Xử lý toàn bộ 1 stream theo pipeline:
-        FLV × N  →  (song song)  →  TS × N  →  concat  →  MP4  →  HLS
-
-    Chạy trong ThreadPoolExecutor của do_merge (song song với các stream khác).
-    """
     replay_dir = os.path.join(DATA_DIR, 'replays', date_str, s_id)
     ts_dir     = os.path.join(replay_dir, 'ts_tmp')
     os.makedirs(ts_dir, exist_ok=True)
@@ -315,8 +288,6 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
         )
 
         # ── Bước 2: Convert FLV → TS song song ────────────────────────────────
-        # Giới hạn MAX_SEG_WORKERS = 4 để tránh HDD random I/O thrash
-        # (10 concurrent trên HDD chậm hơn 4 do head seek liên tục)
         seg_args = [
             (j, flv_path, os.path.join(ts_dir, f"seg_{j:04d}.ts"))
             for j, flv_path in enumerate(valid_files)
@@ -342,15 +313,13 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
                     )
                 )
 
-        # Giữ đúng thứ tự gốc (sorted by index), bỏ segment lỗi
         ts_files = [r[1] for r in results if r is not None]
         if not ts_files:
             raise RuntimeError("Không convert được bất kỳ segment nào sang TS")
 
         print(f"[{s_id}] Convert xong: {len(ts_files)}/{len(valid_files)} segments hợp lệ")
 
-        # ── Bước 3: Concat tất cả TS → MP4 ────────────────────────────────────
-        # TS đã được normalize timestamp → stream copy cực nhanh
+        # ── Bước 3: Concat TS → MP4 ────────────────────────────────────────────
         update_meta_field(meta, meta_file, date_str,
             progress_text=f"[{s_id}] Nối {len(ts_files)} segments → MP4...",
             progress_percent=machine_progress_start + int(machine_progress_step * 0.70)
@@ -386,17 +355,17 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
             '-i', mp4_output,
             '-c:v', 'copy',
             '-c:a', 'copy',
-            '-bsf:v', 'h264_mp4toannexb',
+            '-bsf:v', 'h264_mp4toannexb',   # Giữ ở đây vì input là MP4 chuẩn
             '-hls_time', '5',
             '-hls_list_size', '0',
-            '-hls_flags', 'independent_segments',   # Mỗi .ts seek được độc lập
+            '-hls_flags', 'independent_segments',
             '-hls_segment_filename', os.path.join(replay_dir, 'segment_%d.ts'),
             hls_output
         ])
         if not success:
             raise RuntimeError(f"Tạo HLS thất bại:\n{stderr[-500:]}")
 
-        # ── Cleanup file TS trung gian ─────────────────────────────────────────
+        # ── Cleanup TS trung gian ──────────────────────────────────────────────
         for ts_path in ts_files:
             if os.path.exists(ts_path):
                 os.remove(ts_path)
@@ -406,7 +375,7 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
         try:
             os.rmdir(ts_dir)
         except Exception:
-            pass   # Không xoá được nếu còn file rác, không sao
+            pass
 
         with meta_lock:
             meta[date_str]["streams"][s_id] = {
@@ -435,7 +404,6 @@ def do_merge(date_str):
         print(f"No recordings found for date: {date_str}")
         return
 
-    # Group recordings theo stream
     stream_recordings = {}
     for r in recordings[date_str]:
         s_id = r['stream']
@@ -470,7 +438,6 @@ def do_merge(date_str):
           f"= tối đa {MAX_STREAM_WORKERS * MAX_SEG_WORKERS} FFmpeg processes")
     print(f"{'='*60}\n")
 
-    # Chạy song song các stream, tối đa MAX_STREAM_WORKERS cùng lúc
     with ThreadPoolExecutor(max_workers=MAX_STREAM_WORKERS) as stream_pool:
         future_map = {}
         for i, (s_id, files) in enumerate(stream_list):
