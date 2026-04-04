@@ -11,30 +11,30 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
   useEffect(() => {
     // 1. Initialize player only once
     if (!playerRef.current && videoRef.current) {
-        const player = playerRef.current = videojs(videoRef.current, {
-            autoplay: autoPlay,
-            controls: true,
-            responsive: true,
-            fluid: true,
-            muted: muted,
-            poster: poster,
-            preload: 'auto',
-            playbackRates: [0.5, 1, 1.25, 1.5, 2],
-            userActions: { hotkeys: true },
-            controlBar: {
-                children: [
-                    'playToggle',
-                    'volumePanel',
-                    'currentTimeDisplay',
-                    'timeDivider',
-                    'durationDisplay',
-                    'progressControl',
-                    'liveDisplay',
-                    'playbackRateMenuButton',
-                    'fullscreenToggle',
-                ],
-            },
-        });
+      const player = playerRef.current = videojs(videoRef.current, {
+        autoplay: autoPlay,
+        controls: true,
+        responsive: true,
+        fluid: true,
+        muted: muted,
+        poster: poster,
+        preload: 'auto',
+        playbackRates: [0.5, 1, 1.25, 1.5, 2],
+        userActions: { hotkeys: true },
+        controlBar: {
+          children: [
+            'playToggle',
+            'volumePanel',
+            'currentTimeDisplay',
+            'timeDivider',
+            'durationDisplay',
+            'progressControl',
+            'liveDisplay',
+            'playbackRateMenuButton',
+            'fullscreenToggle',
+          ],
+        },
+      });
     }
 
     const player = playerRef.current;
@@ -42,51 +42,51 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
 
     // 2. Clear previous HLS instance if any
     if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
+      hlsRef.current.destroy();
+      hlsRef.current = null;
     }
 
     // 3. Load NEW URL
     console.log("VideoPlayer: Loading source:", url);
-    
-    if (url.endsWith('.m3u8')) {
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-        
-        if (Hls.isSupported() && !isSafari) {
-            const hls = new Hls({
-                enableWorker: true,
-                lowLatencyMode: true,
-                backBufferLength: 30,
-                manifestLoadingMaxRetry: 10,
-                levelLoadingMaxRetry: 10,
-            });
-            
-            hls.loadSource(url);
-            hls.attachMedia(videoRef.current);
-            hlsRef.current = hls;
 
-            hls.on(Hls.Events.ERROR, (event, data) => {
-                if (data.fatal) {
-                    switch (data.type) {
-                        case Hls.ErrorTypes.NETWORK_ERROR: hls.startLoad(); break;
-                        case Hls.ErrorTypes.MEDIA_ERROR: hls.recoverMediaError(); break;
-                        default: hls.destroy(); break;
-                    }
-                }
-            });
-            
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                if (autoPlay) {
-                    player.play().catch(e => console.log("HLS Autoplay blocked", e));
-                }
-            });
-        } else {
-            player.src({ src: url, type: 'application/x-mpegURL' });
-            if (autoPlay) player.play().catch(e => console.log("Native HLS Autoplay blocked", e));
-        }
+    if (url.endsWith('.m3u8')) {
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+      if (Hls.isSupported() && !isSafari) {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+          backBufferLength: 30,
+          manifestLoadingMaxRetry: 10,
+          levelLoadingMaxRetry: 10,
+        });
+
+        hls.loadSource(url);
+        hls.attachMedia(videoRef.current);
+        hlsRef.current = hls;
+
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR: hls.startLoad(); break;
+              case Hls.ErrorTypes.MEDIA_ERROR: hls.recoverMediaError(); break;
+              default: hls.destroy(); break;
+            }
+          }
+        });
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (autoPlay) {
+            player.play().catch(e => console.log("HLS Autoplay blocked", e));
+          }
+        });
+      } else {
+        player.src({ src: url, type: 'application/x-mpegURL' });
+        if (autoPlay) player.play().catch(e => console.log("Native HLS Autoplay blocked", e));
+      }
     } else {
-        player.src({ src: url, type: 'video/mp4' });
-        if (autoPlay) player.play().catch(e => console.log("MP4 Autoplay blocked", e));
+      player.src({ src: url, type: 'video/mp4' });
+      if (autoPlay) player.play().catch(e => console.log("MP4 Autoplay blocked", e));
     }
 
     // Update settings if they changed
@@ -112,8 +112,8 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
   return (
     <div className="w-full h-full bg-black custom-videojs-theme">
       <div data-vjs-player className="w-full h-full">
-        <video 
-          ref={videoRef} 
+        <video
+          ref={videoRef}
           className="video-js vjs-big-play-centered vjs-theme-city"
           playsInline
           webkit-playsinline="true"
@@ -128,7 +128,7 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
         }
         .custom-videojs-theme .vjs-big-play-button {
           background-color: rgba(201, 160, 80, 0.8) !important;
-          border-color: #C9A050 !important;
+          border-color: #f1812e !important;
           border-radius: 50% !important;
           width: 2.2em !important;
           height: 2.2em !important;
@@ -140,13 +140,13 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
         }
         .custom-videojs-theme .vjs-big-play-button:hover {
             transform: scale(1.1);
-            background-color: #C9A050 !important;
+            background-color: #f1812e !important;
         }
         .custom-videojs-theme .vjs-play-progress {
-          background-color: #C9A050 !important;
+          background-color: #f1812e !important;
         }
         .custom-videojs-theme .vjs-volume-level {
-          background-color: #C9A050 !important;
+          background-color: #f1812e !important;
         }
         .custom-videojs-theme .vjs-control-bar {
           background-color: rgba(11, 14, 20, 0.9) !important;

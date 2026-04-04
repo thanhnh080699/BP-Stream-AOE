@@ -46,7 +46,7 @@ function App() {
     if (tab === 'live') title = 'Trực Tiếp - BP AOE Streaming';
     if (tab === 'playback') title = 'Xem Lại - BP AOE Streaming';
     if (tab === 'about') title = 'Về Chúng Tôi - BP AOE Streaming';
-    
+
     document.title = `${title} | BPGROUP Tournament Dashboard`;
   }, [darkMode, tab]);
 
@@ -62,23 +62,23 @@ function App() {
 
   return (
     <div className="flex min-h-screen md:h-screen bg-[var(--bg-main)] text-[var(--text-primary)] font-sans selection:bg-blue-500/30 md:overflow-hidden transition-colors duration-300">
-      
+
       {/* Mobile Top Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[var(--bg-sidebar)] border-b border-[var(--border-color)] flex items-center justify-between px-6 z-30 shadow-sm transition-colors duration-300">
         <div className="flex items-center gap-2">
-          <Trophy className="text-[#C9A050]" size={20} />
+          <Trophy className="text-[#f1812e]" size={20} />
           <span className="font-black font-outfit text-sm tracking-tight text-[var(--accent-secondary)] uppercase">BP AOE</span>
         </div>
-        <button 
+        <button
           onClick={toggleSidebar}
-          className="p-2 rounded-lg bg-[var(--bg-main)] border border-[var(--border-color)] text-[var(--text-secondary)] cursor-pointer hover:text-[#C9A050] transition-colors"
+          className="p-2 rounded-lg bg-[var(--bg-main)] border border-[var(--border-color)] text-[var(--text-secondary)] cursor-pointer hover:text-[#f1812e] transition-colors"
         >
           {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
       {/* Backdrop */}
-      <div 
+      <div
         className={`fixed md:hidden inset-0 bg-black/60 backdrop-blur-sm z-40 transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsSidebarOpen(false)}
       />
@@ -91,15 +91,15 @@ function App() {
         <div className={`p-8 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'} whitespace-nowrap overflow-hidden`}>
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-3">
-              <Trophy className="text-[#C9A050]" size={28} />
+              <Trophy className="text-[#f1812e]" size={28} />
               <h1 className="text-2xl font-black font-outfit tracking-tight text-[var(--accent-secondary)] leading-none uppercase">
                 BP AOE
               </h1>
             </div>
-            
-            <button 
+
+            <button
               onClick={toggleSidebar}
-              className="hidden md:flex p-2 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[#C9A050] hover:border-[#C9A050]/30 transition-all cursor-pointer group"
+              className="hidden md:flex p-2 rounded-xl bg-[var(--bg-main)]/50 border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[#f1812e] hover:border-[#f1812e]/30 transition-all cursor-pointer group"
             >
               <Menu size={18} className="group-hover:scale-110 transition-transform" />
             </button>
@@ -112,55 +112,52 @@ function App() {
         {/* Brand for Mobile Sidebar */}
         <div className={`p-6 md:hidden border-b border-[var(--border-color)] mb-4 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
           <div className="flex items-center gap-3">
-             <Trophy className="text-[#C9A050]" size={24} />
-             <span className="text-xl font-black font-outfit text-[var(--accent-secondary)] uppercase">BP AOE Dashboard</span>
+            <Trophy className="text-[#f1812e]" size={24} />
+            <span className="text-xl font-black font-outfit text-[var(--accent-secondary)] uppercase">BP AOE Dashboard</span>
           </div>
         </div>
 
         <nav className={`flex-1 px-4 space-y-2 mt-4 md:mt-0 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
           <button
             onClick={() => handleTabChange('live')}
-            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
-              tab === 'live'
-                ? 'bg-[var(--bg-main)] text-[#C9A050] shadow-md border border-[var(--border-color)]'
-                : 'text-[var(--text-secondary)] hover:text-[#C9A050] hover:bg-[var(--bg-main)]'
-            }`}
+            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'live'
+                ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
+                : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Video size={18} />
               <span>Xem trực tiếp</span>
             </div>
-            {tab === 'live' && <div className="w-1.5 h-1.5 rounded-full bg-[#C9A050] shadow-[0_0_8px_#C9A050]" />}
+            {tab === 'live' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
           </button>
-          
+
           <button
             onClick={() => handleTabChange('playback')}
-            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
-              tab === 'playback'
-                ? 'bg-[var(--bg-main)] text-[#C9A050] shadow-md border border-[var(--border-color)]'
-                : 'text-[var(--text-secondary)] hover:text-[#C9A050] hover:bg-[var(--bg-main)]'
-            }`}
+            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'playback'
+                ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
+                : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
+              }`}
           >
             <div className="flex items-center gap-3">
               <History size={18} />
               <span>Xem lại theo ngày</span>
             </div>
-             {tab === 'playback' && <div className="w-1.5 h-1.5 rounded-full bg-[#C9A050] shadow-[0_0_8px_#C9A050]" />}
+            {tab === 'playback' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
           </button>
 
           <button
             onClick={() => handleTabChange('about')}
-            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
-              tab === 'about'
-                ? 'bg-[var(--bg-main)] text-[#C9A050] shadow-md border border-[var(--border-color)]'
-                : 'text-[var(--text-secondary)] hover:text-[#C9A050] hover:bg-[var(--bg-main)]'
-            }`}
+            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'about'
+                ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
+                : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Info size={18} />
               <span>Về chúng tôi</span>
             </div>
-             {tab === 'about' && <div className="w-1.5 h-1.5 rounded-full bg-[#C9A050] shadow-[0_0_8px_#C9A050]" />}
+            {tab === 'about' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
           </button>
 
           <div className="pt-4 pb-2 px-4">
@@ -176,7 +173,7 @@ function App() {
               <Trophy size={18} />
               <span>Thống kê trận đấu</span>
             </div>
-            <span className="text-[8px] font-black bg-[var(--bg-main)] px-1.5 py-0.5 rounded border border-[var(--border-color)] group-hover:text-[#C9A050] transition-colors">SOON</span>
+            <span className="text-[8px] font-black bg-[var(--bg-main)] px-1.5 py-0.5 rounded border border-[var(--border-color)] group-hover:text-[#f1812e] transition-colors">SOON</span>
           </button>
 
           <button
@@ -187,14 +184,14 @@ function App() {
               <Monitor size={18} />
               <span>Thống kê tỷ số</span>
             </div>
-            <span className="text-[8px] font-black bg-[var(--bg-main)] px-1.5 py-0.5 rounded border border-[var(--border-color)] group-hover:text-[#C9A050] transition-colors">SOON</span>
+            <span className="text-[8px] font-black bg-[var(--bg-main)] px-1.5 py-0.5 rounded border border-[var(--border-color)] group-hover:text-[#f1812e] transition-colors">SOON</span>
           </button>
         </nav>
 
         <div className={`p-4 space-y-4 mb-4 md:mb-0 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] cursor-pointer hover:bg-[var(--bg-main)] hover:text-[#C9A050] transition-all"
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] cursor-pointer hover:bg-[var(--bg-main)] hover:text-[#f1812e] transition-all"
           >
             {darkMode ? <Sun size={18} /> : <Moon size={18} />}
             <span className="text-xs font-bold uppercase tracking-wider">{darkMode ? 'Giao diện sáng' : 'Giao diện tối'}</span>
@@ -211,9 +208,9 @@ function App() {
       {/* Main Content Area */}
       <main className="flex-1 min-h-screen md:h-screen md:overflow-y-auto relative bg-[var(--bg-main)] transition-colors duration-300 pt-16 md:pt-0">
         {!isSidebarOpen && (
-          <button 
+          <button
             onClick={toggleSidebar}
-            className="hidden md:flex fixed top-6 left-6 z-[60] p-3 rounded-2xl bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[#C9A050] hover:border-[#C9A050]/30 shadow-xl transition-all duration-300 cursor-pointer group"
+            className="hidden md:flex fixed top-6 left-6 z-[60] p-3 rounded-2xl bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[#f1812e] hover:border-[#f1812e]/30 shadow-xl transition-all duration-300 cursor-pointer group"
           >
             <Menu size={20} className="group-hover:scale-110 transition-transform" />
           </button>

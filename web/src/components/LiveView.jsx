@@ -71,9 +71,9 @@ const LiveView = () => {
 
     return (
       <div className="space-y-8 animate-in fade-in duration-500">
-        <button 
+        <button
           onClick={() => setSelectedStreamId(null)}
-          className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[#C9A050] transition-colors cursor-pointer group mb-4"
+          className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[#f1812e] transition-colors cursor-pointer group mb-4"
         >
           <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
           <span className="text-sm font-bold uppercase tracking-widest">Quay lại danh sách</span>
@@ -104,8 +104,8 @@ const LiveView = () => {
             <div className="p-8 bg-[var(--bg-card)] rounded-3xl border border-[var(--border-color)] shadow-xl">
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div className="flex items-center gap-5">
-                  <div className="p-4 rounded-2xl bg-[#C9A050]/10 border border-[#C9A050]/20">
-                    <Monitor size={32} className="text-[#C9A050]" />
+                  <div className="p-4 rounded-2xl bg-[#f1812e]/10 border border-[#f1812e]/20">
+                    <Monitor size={32} className="text-[#f1812e]" />
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
@@ -126,26 +126,26 @@ const LiveView = () => {
           </div>
 
           <div className="w-full xl:w-80 space-y-6">
-             <div className="p-6 bg-[var(--bg-card)] rounded-3xl border border-[var(--border-color)]">
-                <h4 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-secondary)] mb-6 opacity-50 flex items-center gap-2">
-                  <Monitor size={14} /> Danh sách máy khác
-                </h4>
-                <div className="grid grid-cols-1 gap-3">
-                  {streams.filter(s => s.id !== selectedStreamId).map(s => (
-                    <button 
-                      key={s.id}
-                      onClick={() => setSelectedStreamId(s.id)}
-                      className="flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-main)]/50 border border-[var(--border-color)] hover:border-[#C9A050]/30 hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer group"
-                    >
-                      <div className="flex flex-col items-start translate-y-[1px]">
-                        <span className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[#C9A050] transition-colors">{playerNames[s.id] || s.label}</span>
-                        <span className="text-[10px] font-medium text-[var(--text-secondary)] uppercase opacity-50">{s.machine}</span>
-                      </div>
-                      <div className={`w-1.5 h-1.5 rounded-full ${activeStreams[s.id] ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-[var(--text-secondary)] opacity-20'}`} />
-                    </button>
-                  ))}
-                </div>
-             </div>
+            <div className="p-6 bg-[var(--bg-card)] rounded-3xl border border-[var(--border-color)]">
+              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-secondary)] mb-6 opacity-50 flex items-center gap-2">
+                <Monitor size={14} /> Danh sách máy khác
+              </h4>
+              <div className="grid grid-cols-1 gap-3">
+                {streams.filter(s => s.id !== selectedStreamId).map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setSelectedStreamId(s.id)}
+                    className="flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-main)]/50 border border-[var(--border-color)] hover:border-[#f1812e]/30 hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer group"
+                  >
+                    <div className="flex flex-col items-start translate-y-[1px]">
+                      <span className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[#f1812e] transition-colors">{playerNames[s.id] || s.label}</span>
+                      <span className="text-[10px] font-medium text-[var(--text-secondary)] uppercase opacity-50">{s.machine}</span>
+                    </div>
+                    <div className={`w-1.5 h-1.5 rounded-full ${activeStreams[s.id] ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-[var(--text-secondary)] opacity-20'}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -158,7 +158,7 @@ const LiveView = () => {
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 overflow-hidden">
         <div className="lg:w-2/3 space-y-3">
           <h1 className="text-4xl md:text-5xl font-black font-outfit text-[var(--accent-secondary)] leading-tight">
-            <span className="text-[#C9A050]">BPGROUP</span> AOE Tournament
+            <span className="text-[#f1812e]">BPGROUP</span> AOE Tournament
           </h1>
 
           <p className="text-[var(--text-secondary)] font-medium leading-relaxed max-w-2xl">
@@ -184,13 +184,13 @@ const LiveView = () => {
           const appName = activeStreams[stream.id] || 'live';
 
           return (
-            <div key={stream.id} className="flex flex-col bg-[var(--bg-card)] rounded-3xl border border-[var(--border-color)] overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-[#C9A050]/20 group shadow-[var(--card-shadow)]">
-              
+            <div key={stream.id} className="flex flex-col bg-[var(--bg-card)] rounded-3xl border border-[var(--border-color)] overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-[#f1812e]/20 group shadow-[var(--card-shadow)]">
+
               {/* Card Header */}
               <div className="p-4 flex items-center justify-between bg-[var(--bg-card-hover)]/30">
                 <div className="flex items-center gap-3">
                   <Monitor size={18} className="text-[var(--text-secondary)] opacity-70" />
-                  
+
                   {editingId === stream.id ? (
                     <div className="flex items-center gap-1.5">
                       <input
@@ -200,14 +200,14 @@ const LiveView = () => {
                         onChange={(e) => setEditValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && saveName(stream.id)}
                       />
-                      <button 
-                        onClick={() => saveName(stream.id)} 
+                      <button
+                        onClick={() => saveName(stream.id)}
                         className="text-emerald-500 hover:text-emerald-400 cursor-pointer p-1 transition-colors"
                       >
                         <Check size={14} />
                       </button>
-                      <button 
-                        onClick={() => setEditingId(null)} 
+                      <button
+                        onClick={() => setEditingId(null)}
                         className="text-red-500 hover:text-red-400 cursor-pointer p-1 transition-colors"
                       >
                         <X size={14} />
@@ -220,14 +220,14 @@ const LiveView = () => {
                       </span>
                       <button
                         onClick={() => { setEditingId(stream.id); setEditValue(playerName); }}
-                        className="opacity-0 group-hover/player:opacity-100 p-1 text-[var(--text-secondary)] hover:text-[#C9A050] transition-opacity cursor-pointer"
+                        className="opacity-0 group-hover/player:opacity-100 p-1 text-[var(--text-secondary)] hover:text-[#f1812e] transition-opacity cursor-pointer"
                       >
                         <Edit2 size={12} />
                       </button>
                     </div>
                   )}
                 </div>
-                
+
                 <div className={`text-[9px] font-black px-2.5 py-1 rounded-md border ${stream.teamColor} uppercase tracking-widest`}>
                   {stream.team}
                 </div>
@@ -246,7 +246,7 @@ const LiveView = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {isOnline && (
                   <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 bg-red-600 rounded-md shadow-lg">
                     <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
@@ -256,9 +256,9 @@ const LiveView = () => {
               </div>
 
               {/* Card Footer */}
-              <div 
+              <div
                 onClick={() => setSelectedStreamId(stream.id)}
-                className="p-4 flex items-center justify-between text-[var(--text-secondary)] hover:bg-[#C9A050]/10 group-hover:text-[#C9A050] transition-all bg-[var(--bg-card-hover)]/20 cursor-pointer"
+                className="p-4 flex items-center justify-between text-[var(--text-secondary)] hover:bg-[#f1812e]/10 group-hover:text-[#f1812e] transition-all bg-[var(--bg-card-hover)]/20 cursor-pointer"
               >
                 <span className="text-xs font-medium uppercase tracking-wider opacity-70">{stream.machine}</span>
                 <ChevronRight size={16} />

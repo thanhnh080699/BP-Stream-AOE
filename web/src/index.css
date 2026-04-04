@@ -10,7 +10,7 @@
   --text-primary: #1E293B;
   --text-secondary: #64748B;
   --border-color: rgba(0, 0, 0, 0.05);
-  --accent-primary: #C9A050;
+  --accent-primary: #f1812e;
   --accent-secondary: #1E293B;
   --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
 }
@@ -24,7 +24,7 @@
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --border-color: rgba(255, 255, 255, 0.05);
-  --accent-primary: #C9A050;
+  --accent-primary: #f1812e;
   --accent-secondary: #F8FAFC;
   --card-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
 }
@@ -47,7 +47,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, .font-outfit {
+h1,
+h2,
+h3,
+.font-outfit {
   font-family: 'Roboto', sans-serif;
   font-weight: 900;
 }

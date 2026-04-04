@@ -7,18 +7,18 @@ const AboutUs = () => {
       {/* Hero Section */}
       <section className="relative rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl group h-[350px] md:h-[500px]">
         <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-main)] via-[var(--bg-main)]/20 to-transparent z-10" />
-        <img 
-          src="/aoe_banner_final.png" 
-          alt="BestPrice AOE Tournament" 
+        <img
+          src="/aoe_banner_final.png"
+          alt="BestPrice AOE Tournament"
           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
         />
         <div className="absolute bottom-6 left-6 md:bottom-12 md:left-12 right-6 md:right-12 z-20">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-[#C9A050]/20 border border-[#C9A050]/30 backdrop-blur-md mb-4 md:mb-6">
-            <Shield size={14} className="text-[#C9A050] md:w-4 md:h-4" />
-            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-[#C9A050]">Hệ thống VAR nội bộ</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-[#fff] border border-[#f1812e]/30 backdrop-blur-md mb-4 md:mb-6">
+            <Shield size={14} className="text-[#f1812e] md:w-4 md:h-4" />
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-[#f1812e]">Hệ thống VAR nội bộ</span>
           </div>
           <h1 className="text-3xl md:text-5xl lg:text-7xl font-black font-outfit text-white mb-4 md:mb-6 drop-shadow-2xl uppercase tracking-tighter leading-none">
-            BestPrice <span className="text-[#C9A050]">Tech Hub</span>
+            BestPrice <span className="text-[#f1812e]">Tech Hub</span>
           </h1>
           <p className="text-sm md:text-lg lg:text-xl text-white/80 max-w-3xl font-medium leading-relaxed drop-shadow-lg line-clamp-3 md:line-clamp-none">
             Tiên phong ứng dụng công nghệ truyền tải hình ảnh và phân tích dữ liệu thời gian thực cho các hoạt động văn hóa - thể thao nội bộ tại Công ty CP Công nghệ Du lịch Best Price.
@@ -31,7 +31,7 @@ const AboutUs = () => {
         <div className="lg:col-span-7 space-y-8 md:space-y-12">
           <section>
             <h2 className="text-2xl md:text-3xl font-black font-outfit text-[var(--accent-secondary)] mb-6 md:mb-8 flex items-center gap-3 md:gap-4">
-              <span className="w-10 h-10 md:w-12 md:h-12 bg-[#C9A050]/10 rounded-xl md:rounded-2xl flex items-center justify-center text-[#C9A050] shrink-0">
+              <span className="w-10 h-10 md:w-12 md:h-12 bg-[#f1812e]/10 rounded-xl md:rounded-2xl flex items-center justify-center text-[#f1812e] shrink-0">
                 <Users size={20} className="md:w-7 md:h-7" />
               </span>
               Sứ mệnh Kết nối & Sáng tạo
@@ -49,7 +49,7 @@ const AboutUs = () => {
           {/* INTERNAL VAR TECH SECTION */}
           <section className="bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-main)] p-6 md:p-10 rounded-[1.5rem] md:rounded-[2rem] border border-[var(--border-color)] shadow-inner relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 md:p-8 opacity-5 pointer-events-none">
-                <Camera size={150} className="md:w-[200px] md:h-[200px]" />
+              <Camera size={150} className="md:w-[200px] md:h-[200px]" />
             </div>
             <h2 className="text-2xl md:text-3xl font-black font-outfit text-[var(--accent-secondary)] mb-6 md:mb-8 flex items-center gap-3 md:gap-4">
               <span className="w-10 h-10 md:w-12 md:h-12 bg-red-500/10 rounded-xl md:rounded-2xl flex items-center justify-center text-red-500 shrink-0">
@@ -81,7 +81,7 @@ const AboutUs = () => {
         </div>
 
         <aside className="lg:col-span-5 space-y-6 md:space-y-8">
-          <div className="bg-[#C9A050] rounded-[1.5rem] md:rounded-[2rem] p-8 md:p-10 text-white shadow-xl relative overflow-hidden group">
+          <div className="bg-[#f1812e] rounded-[1.5rem] md:rounded-[2rem] p-8 md:p-10 text-white shadow-xl relative overflow-hidden group">
             <div className="absolute -right-6 -bottom-6 opacity-20 transform group-hover:scale-125 transition-transform duration-700 pointer-events-none">
               <Award size={150} className="md:w-[250px] md:h-[250px]" />
             </div>
@@ -102,21 +102,21 @@ const AboutUs = () => {
           </div>
 
           <div className="bg-[var(--bg-card)] rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-8 border border-[var(--border-color)] shadow-sm">
-             <div className="w-full h-40 md:h-48 rounded-xl md:rounded-2xl overflow-hidden mb-6 md:mb-8">
-                <img src="/aoe_banner_new.png" className="w-full h-full object-cover" />
-             </div>
-             <h3 className="text-lg md:text-xl font-black font-outfit text-[var(--accent-secondary)] mb-4 md:mb-6">Lược sử phát triển</h3>
-             <div className="space-y-4 md:space-y-6">
-                {[
-                  { section: 'Khởi động', event: 'Nghiên cứu và triển khai hệ thống VAR, streaming AOE nội bộ BestPrice (Q1/2026).' },
-                  { section: 'Nhân rộng', event: 'Mở rộng quy mô sang các bộ môn Pickleball, Game Show và văn hóa doanh nghiệp (Q2/2026+).' }
-                ].map((item, idx) => (
-                  <div key={idx} className="flex gap-3 md:gap-4">
-                    <span className="font-black text-[#C9A050] text-[9px] md:text-[10px] uppercase tracking-widest py-1 border-r border-[#C9A050]/30 pr-3 md:pr-4 min-w-[75px] md:min-w-[85px] leading-tight shrink-0">{item.section}</span>
-                    <p className="text-xs md:text-sm text-[var(--text-secondary)]">{item.event}</p>
-                  </div>
-                ))}
-             </div>
+            <div className="w-full h-40 md:h-48 rounded-xl md:rounded-2xl overflow-hidden mb-6 md:mb-8">
+              <img src="/aoe_banner_new.png" className="w-full h-full object-cover" />
+            </div>
+            <h3 className="text-lg md:text-xl font-black font-outfit text-[var(--accent-secondary)] mb-4 md:mb-6">Lược sử phát triển</h3>
+            <div className="space-y-4 md:space-y-6">
+              {[
+                { section: 'Khởi động', event: 'Nghiên cứu và triển khai hệ thống VAR, streaming AOE nội bộ BestPrice (Q1/2026).' },
+                { section: 'Nhân rộng', event: 'Mở rộng quy mô sang các bộ môn Pickleball, Game Show và văn hóa doanh nghiệp (Q2/2026+).' }
+              ].map((item, idx) => (
+                <div key={idx} className="flex gap-3 md:gap-4">
+                  <span className="font-black text-[#f1812e] text-[9px] md:text-[10px] uppercase tracking-widest py-1 border-r border-[#f1812e]/30 pr-3 md:pr-4 min-w-[75px] md:min-w-[85px] leading-tight shrink-0">{item.section}</span>
+                  <p className="text-xs md:text-sm text-[var(--text-secondary)]">{item.event}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </aside>
       </div>
@@ -126,44 +126,44 @@ const AboutUs = () => {
         <div className="grid grid-cols-1 md:grid-cols-2">
           <div className="p-8 md:p-12 border-b md:border-b-0 md:border-r border-[var(--border-color)]">
             <h3 className="text-xl md:text-2xl font-black font-outfit text-[var(--accent-secondary)] mb-6 md:mb-8 flex items-center gap-3">
-              <Cpu size={20} className="text-[#C9A050] md:w-6 md:h-6" />
+              <Cpu size={20} className="text-[#f1812e] md:w-6 md:h-6" />
               Project Stack
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
               <div>
                 <h4 className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] mb-3 md:mb-4">Frontend</h4>
                 <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm font-bold text-[var(--accent-secondary)]">
-                   <li>React 18</li>
-                   <li>Tailwind CSS</li>
-                   <li>Video.js / HLS.js</li>
-                   <li>Lucide Icons</li>
+                  <li>React 18</li>
+                  <li>Tailwind CSS</li>
+                  <li>Video.js / HLS.js</li>
+                  <li>Lucide Icons</li>
                 </ul>
               </div>
               <div>
                 <h4 className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] mb-3 md:mb-4">Backend</h4>
                 <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm font-bold text-[var(--accent-secondary)]">
-                   <li>Node.js (Express)</li>
-                   <li>SRS (RTMP/FLV/HLS)</li>
-                   <li>FFmpeg Processing</li>
-                   <li>Docker Stack</li>
+                  <li>Node.js (Express)</li>
+                  <li>SRS (RTMP/FLV/HLS)</li>
+                  <li>FFmpeg Processing</li>
+                  <li>Docker Stack</li>
                 </ul>
               </div>
             </div>
           </div>
           <div className="p-8 md:p-12 bg-[#0F172A] text-white">
             <h3 className="text-xl md:text-2xl font-black font-outfit mb-6 md:mb-8 flex items-center gap-3">
-              <Terminal size={20} className="text-[#C9A050] md:w-6 md:h-6" />
+              <Terminal size={20} className="text-[#f1812e] md:w-6 md:h-6" />
               Infrastructure
             </h3>
             <div className="space-y-4 md:space-y-6">
-               <div className="p-4 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
-                  <p className="text-[10px] md:text-xs text-white/50 mb-1">Architecture</p>
-                  <p className="text-sm md:text-base font-bold">Microservices based containerization</p>
-               </div>
-               <div className="p-4 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
-                  <p className="text-[10px] md:text-xs text-white/50 mb-1">Services</p>
-                  <p className="text-sm md:text-base font-bold">Nginx Reverse Proxy, SRS Media Gateway, Worker Processor</p>
-               </div>
+              <div className="p-4 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
+                <p className="text-[10px] md:text-xs text-white/50 mb-1">Architecture</p>
+                <p className="text-sm md:text-base font-bold">Microservices based containerization</p>
+              </div>
+              <div className="p-4 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
+                <p className="text-[10px] md:text-xs text-white/50 mb-1">Services</p>
+                <p className="text-sm md:text-base font-bold">Nginx Reverse Proxy, SRS Media Gateway, Worker Processor</p>
+              </div>
             </div>
           </div>
         </div>
@@ -189,11 +189,11 @@ const AboutUs = () => {
                 <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest opacity-60 text-white">Bước 2: Cấu hình Stream</span>
                 <ul className="space-y-2 text-xs md:text-sm">
                   <li className="flex flex-col sm:flex-row sm:gap-2">
-                    <span className="font-bold text-[#C9A050] min-w-[80px]">Server:</span> 
+                    <span className="font-bold text-[#f1812e] min-w-[80px]">Server:</span>
                     <code className="bg-black/20 px-2 py-0.5 rounded break-all">rtmp://192.168.9.233/live</code>
                   </li>
                   <li className="flex flex-col sm:flex-row sm:gap-2 pt-2 sm:pt-0">
-                    <span className="font-bold text-[#C9A050] min-w-[80px]">Stream Key:</span> 
+                    <span className="font-bold text-[#f1812e] min-w-[80px]">Stream Key:</span>
                     <code className="bg-black/20 px-2 py-0.5 rounded">[machine_id]</code>
                   </li>
                 </ul>
@@ -201,25 +201,25 @@ const AboutUs = () => {
             </div>
             <div className="bg-black/20 p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/10 shrink-0">
               <h4 className="font-bold mb-4 flex items-center gap-2 text-sm md:text-base">
-                <CheckCircle2 size={16} className="text-[#C9A050] md:w-[18px] md:h-[18px]" />
+                <CheckCircle2 size={16} className="text-[#f1812e] md:w-[18px] md:h-[18px]" />
                 Thông số Encoder tối ưu
               </h4>
               <ul className="space-y-3 text-xs md:text-sm opacity-90">
                 <li className="flex justify-between border-b border-white/10 pb-2">
-                   <span>Encoder</span>
-                   <span className="font-bold text-[#C9A050]">x264 / NVENC</span>
+                  <span>Encoder</span>
+                  <span className="font-bold text-[#f1812e]">x264 / NVENC</span>
                 </li>
                 <li className="flex justify-between border-b border-white/10 pb-2">
-                   <span>Bitrate</span>
-                   <span className="font-bold text-[#C9A050]">2500 - 4000 Kbps</span>
+                  <span>Bitrate</span>
+                  <span className="font-bold text-[#f1812e]">2500 - 4000 Kbps</span>
                 </li>
                 <li className="flex justify-between border-b border-white/10 pb-2">
-                   <span>Rate Control</span>
-                   <span className="font-bold text-[#C9A050]">CBR</span>
+                  <span>Rate Control</span>
+                  <span className="font-bold text-[#f1812e]">CBR</span>
                 </li>
                 <li className="flex justify-between">
-                   <span>Keyframe Interval</span>
-                   <span className="font-bold text-[#C9A050]">2 seconds</span>
+                  <span>Keyframe Interval</span>
+                  <span className="font-bold text-[#f1812e]">2 seconds</span>
                 </li>
               </ul>
             </div>
@@ -231,10 +231,10 @@ const AboutUs = () => {
       <section className="relative h-48 md:h-64 rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl">
         <img src="/aoe_banner_wide.png" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center text-center p-6 md:p-8">
-           <div>
-              <p className="text-[10px] md:text-[#C9A050] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] mb-2 md:mb-4 text-[#C9A050]">BP AOE Tournament Dashboard</p>
-              <h2 className="text-xl md:text-3xl lg:text-5xl font-black text-white font-outfit uppercase leading-tight">Build By IT Team, For The BestPrice Culture</h2>
-           </div>
+          <div>
+            <p className="text-[10px] md:text-[#f1812e] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] mb-2 md:mb-4 text-[#f1812e]">BP AOE Tournament Dashboard</p>
+            <h2 className="text-xl md:text-3xl lg:text-5xl font-black text-white font-outfit uppercase leading-tight">Build By IT Team, For The BestPrice Culture</h2>
+          </div>
         </div>
       </section>
     </div>
