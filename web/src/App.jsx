@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import LiveView from './components/LiveView';
 import PlaybackView from './components/PlaybackView';
-import { Video, History, Trophy, Sun, Moon, Menu, X, Monitor } from 'lucide-react';
+import AboutUs from './components/AboutUs';
+import { Video, History, Trophy, Sun, Moon, Menu, X, Monitor, Info } from 'lucide-react';
 
 function App() {
   const [tab, setTab] = useState('live');
@@ -41,11 +42,23 @@ function App() {
     }
 
     // Update Document Title for SEO/UX
-    const title = tab === 'live' ? 'Trực Tiếp - BP AOE Streaming' : 'Xem Lại - BP AOE Streaming';
+    let title = 'BP AOE Streaming';
+    if (tab === 'live') title = 'Trực Tiếp - BP AOE Streaming';
+    if (tab === 'playback') title = 'Xem Lại - BP AOE Streaming';
+    if (tab === 'about') title = 'Về Chúng Tôi - BP AOE Streaming';
+    
     document.title = `${title} | BPGROUP Tournament Dashboard`;
   }, [darkMode, tab]);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  const handleTabChange = (newTab) => {
+    setTab(newTab);
+    // Only auto-close sidebar on mobile/tablet (less than 1024px)
+    if (window.innerWidth <= 1024) {
+      setIsSidebarOpen(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen md:h-screen bg-[var(--bg-main)] text-[var(--text-primary)] font-sans selection:bg-blue-500/30 md:overflow-hidden transition-colors duration-300">
@@ -106,7 +119,7 @@ function App() {
 
         <nav className={`flex-1 px-4 space-y-2 mt-4 md:mt-0 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
           <button
-            onClick={() => { setTab('live'); setIsSidebarOpen(false); }}
+            onClick={() => handleTabChange('live')}
             className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
               tab === 'live'
                 ? 'bg-[var(--bg-main)] text-[#C9A050] shadow-md border border-[var(--border-color)]'
@@ -121,7 +134,7 @@ function App() {
           </button>
           
           <button
-            onClick={() => { setTab('playback'); setIsSidebarOpen(false); }}
+            onClick={() => handleTabChange('playback')}
             className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
               tab === 'playback'
                 ? 'bg-[var(--bg-main)] text-[#C9A050] shadow-md border border-[var(--border-color)]'
@@ -133,6 +146,21 @@ function App() {
               <span>Xem lại theo ngày</span>
             </div>
              {tab === 'playback' && <div className="w-1.5 h-1.5 rounded-full bg-[#C9A050] shadow-[0_0_8px_#C9A050]" />}
+          </button>
+
+          <button
+            onClick={() => handleTabChange('about')}
+            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
+              tab === 'about'
+                ? 'bg-[var(--bg-main)] text-[#C9A050] shadow-md border border-[var(--border-color)]'
+                : 'text-[var(--text-secondary)] hover:text-[#C9A050] hover:bg-[var(--bg-main)]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Info size={18} />
+              <span>Về chúng tôi</span>
+            </div>
+             {tab === 'about' && <div className="w-1.5 h-1.5 rounded-full bg-[#C9A050] shadow-[0_0_8px_#C9A050]" />}
           </button>
 
           <div className="pt-4 pb-2 px-4">
@@ -191,7 +219,9 @@ function App() {
           </button>
         )}
         <div className="min-h-full p-6 md:p-12 pb-24 md:pb-12">
-          {tab === 'live' ? <LiveView /> : <PlaybackView />}
+          {tab === 'live' && <LiveView />}
+          {tab === 'playback' && <PlaybackView />}
+          {tab === 'about' && <AboutUs />}
         </div>
       </main>
 
