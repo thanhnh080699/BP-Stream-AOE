@@ -12,12 +12,15 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
     if (!videoRef.current) return;
 
     // Initialize Video.js
-    const videoElement = document.createElement("video");
-    videoElement.className = "video-js vjs-big-play-centered vjs-theme-city";
-    videoElement.setAttribute('playsinline', 'true');
-    videoElement.setAttribute('webkit-playsinline', 'true');
-    videoElement.setAttribute('x5-playsinline', 'true');
-    videoRef.current.appendChild(videoElement);
+    const videoElement = videoRef.current;
+    
+    // Ensure cleanup of previous instances before re-initializing
+    if (playerRef.current) {
+        playerRef.current.dispose();
+    }
+    if (hlsRef.current) {
+        hlsRef.current.destroy();
+    }
 
     const player = playerRef.current = videojs(videoElement, {
       autoplay: autoPlay,
@@ -48,7 +51,11 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
 
     // Handle Source loading
     if (url.endsWith('.m3u8')) {
-        if (Hls.isSupported()) {
+        // Use hls.js for browsers that support MSE (Desktop, Android)
+        // Except for Safari which handles HLS natively and better
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
+        if (Hls.isSupported() && !isSafari) {
             const hls = new Hls({
                 enableWorker: true,
                 lowLatencyMode: true,
@@ -65,31 +72,33 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
                 if (data.fatal) {
                     switch (data.type) {
                         case Hls.ErrorTypes.NETWORK_ERROR:
-                            console.error('HLS Network Error, retrying...', data);
                             hls.startLoad();
                             break;
                         case Hls.ErrorTypes.MEDIA_ERROR:
-                            console.error('HLS Media Error, recovering...', data);
                             hls.recoverMediaError();
                             break;
                         default:
-                            console.error('HLS Fatal Error, destroying...', data);
                             hls.destroy();
                             break;
                     }
                 }
             });
-        } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-            // Safari native HLS support
-            videoElement.src = url;
+            
+            // Sync play state
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                if (autoPlay) {
+                    player.play().catch(e => console.log("Autoplay blocked", e));
+                }
+            });
         } else {
-            // Fallback to Video.js internal HLS (VHS)
+            // Fallback to native HLS (Safari/iOS) via Video.js
             player.src({
                 src: url,
                 type: 'application/x-mpegURL'
             });
         }
     } else {
+        // Standard MP4
         player.src({
             src: url,
             type: 'video/mp4'
@@ -105,16 +114,19 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
-      if (videoRef.current) {
-        videoRef.current.innerHTML = '';
-      }
     };
-  }, [url]);
+  }, [url, autoPlay, muted, poster]);
 
   return (
     <div className="w-full h-full bg-black custom-videojs-theme">
       <div data-vjs-player className="w-full h-full">
-        <div ref={videoRef} className="w-full h-full" />
+        <video 
+          ref={videoRef} 
+          className="video-js vjs-big-play-centered vjs-theme-city"
+          playsInline
+          webkit-playsinline="true"
+          x5-playsinline="true"
+        />
       </div>
 
       <style>{`
@@ -168,6 +180,3 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
 };
 
 export default VideoPlayer;
-
-
-
