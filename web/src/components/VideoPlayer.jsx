@@ -48,10 +48,47 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
 
     // Handle Source loading
     if (url.endsWith('.m3u8')) {
-        player.src({
-            src: url,
-            type: 'application/x-mpegURL'
-        });
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                enableWorker: true,
+                lowLatencyMode: true,
+                backBufferLength: 30,
+                manifestLoadingMaxRetry: 10,
+                levelLoadingMaxRetry: 10,
+            });
+            
+            hls.loadSource(url);
+            hls.attachMedia(videoElement);
+            hlsRef.current = hls;
+
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                if (data.fatal) {
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.error('HLS Network Error, retrying...', data);
+                            hls.startLoad();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.error('HLS Media Error, recovering...', data);
+                            hls.recoverMediaError();
+                            break;
+                        default:
+                            console.error('HLS Fatal Error, destroying...', data);
+                            hls.destroy();
+                            break;
+                    }
+                }
+            });
+        } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+            // Safari native HLS support
+            videoElement.src = url;
+        } else {
+            // Fallback to Video.js internal HLS (VHS)
+            player.src({
+                src: url,
+                type: 'application/x-mpegURL'
+            });
+        }
     } else {
         player.src({
             src: url,
