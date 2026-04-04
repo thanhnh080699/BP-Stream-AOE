@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import VideoPlayer from './VideoPlayer';
-import { Calendar, Play, Clock, Monitor, Archive, Filter, ChevronRight, HardDrive, AlertCircle } from 'lucide-react';
+import { Calendar, Play, Clock, Monitor, Archive, Filter, ChevronRight, HardDrive, AlertCircle, Trash2 } from 'lucide-react';
 
 const PlaybackView = () => {
     const [replays, setReplays] = useState({});
@@ -22,9 +22,53 @@ const PlaybackView = () => {
                         const streamIds = Object.keys(streams);
                         if (streamIds.length > 0) setSelectedStream(streamIds[0]);
                     }
+                } else if (!data[selectedDate]) {
+                    // Current selected date was deleted
+                    const dates = Object.keys(data).sort((a, b) => b.localeCompare(a));
+                    if (dates.length > 0) {
+                        setSelectedDate(dates[0]);
+                        const streams = data[dates[0]].streams || {};
+                        const streamIds = Object.keys(streams);
+                        if (streamIds.length > 0) setSelectedStream(streamIds[0]);
+                    } else {
+                        setSelectedDate(null);
+                        setSelectedStream(null);
+                    }
+                } else if (selectedStream && (!data[selectedDate].streams || !data[selectedDate].streams[selectedStream])) {
+                    // Selected stream was deleted
+                    const streams = data[selectedDate].streams || {};
+                    const streamIds = Object.keys(streams);
+                    if (streamIds.length > 0) setSelectedStream(streamIds[0]);
+                    else setSelectedStream(null);
                 }
             })
             .catch(err => console.error("Error fetching replays:", err));
+    };
+
+    const handleDelete = (date, streamId = null) => {
+        const type = streamId ? `máy ${playerNames[streamId] || streamId}` : `toàn bộ dữ liệu ngày ${date}`;
+        const password = window.prompt(`Xác nhận xoá ${type}?\nNhập password để xác nhận:`);
+        
+        if (password === null) return; // Cancelled
+
+        fetch('/api/v1/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password, date, stream: streamId })
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (res.ok) {
+                alert('Xoá thành công!');
+                fetchMetadata();
+            } else {
+                alert(`Lỗi: ${data.error || 'Không thể xoá'}`);
+            }
+        })
+        .catch(err => {
+            console.error('Delete error:', err);
+            alert('Lỗi kết nối server');
+        });
     };
 
     useEffect(() => {
@@ -197,6 +241,14 @@ const PlaybackView = () => {
                                                     </div>
                                                 </div>
                                             )}
+
+                                            <button
+                                                onClick={() => handleDelete(date)}
+                                                className="w-full py-2.5 text-[9px] font-bold rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500/70 hover:text-red-500 transition-all uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
+                                            >
+                                                <Trash2 size={12} />
+                                                Xoá Toàn Bộ Ngày
+                                            </button>
                                         </div>
                                     )}
                                 </div>
@@ -238,9 +290,21 @@ const PlaybackView = () => {
                                             <span className={`text-[10px] font-bold uppercase tracking-widest ${selectedStream === s_id ? 'text-[#0B0E14]/70' : 'text-[var(--text-secondary)] opacity-40'}`}>Đã lưu</span>
                                         </div>
                                         {selectedStream === s_id && (
-                                            <div className="absolute right-4 bottom-4 p-1 bg-[#0B0E14] rounded-full text-[#C9A050] shadow-lg">
-                                                <Play size={10} fill="currentColor" />
-                                            </div>
+                                            <>
+                                                <div className="absolute right-4 bottom-4 p-1 bg-[#0B0E14] rounded-full text-[#C9A050] shadow-lg">
+                                                    <Play size={10} fill="currentColor" />
+                                                </div>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(selectedDate, s_id);
+                                                    }}
+                                                    className="absolute right-12 bottom-4 p-1 bg-red-500/20 hover:bg-red-500 rounded-full text-red-500 hover:text-white transition-all shadow-lg border border-red-500/30"
+                                                    title="Xoá máy này"
+                                                >
+                                                    <Trash2 size={10} />
+                                                </button>
+                                            </>
                                         )}
                                     </button>
                                 ))}

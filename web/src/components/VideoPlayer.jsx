@@ -9,50 +9,47 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
   const hlsRef = useRef(null);
 
   useEffect(() => {
-    if (!videoRef.current) return;
-
-    // Initialize Video.js
-    const videoElement = videoRef.current;
-    
-    // Ensure cleanup of previous instances before re-initializing
-    if (playerRef.current) {
-        playerRef.current.dispose();
+    // 1. Initialize player only once
+    if (!playerRef.current && videoRef.current) {
+        const player = playerRef.current = videojs(videoRef.current, {
+            autoplay: autoPlay,
+            controls: true,
+            responsive: true,
+            fluid: true,
+            muted: muted,
+            poster: poster,
+            preload: 'auto',
+            playbackRates: [0.5, 1, 1.25, 1.5, 2],
+            userActions: { hotkeys: true },
+            controlBar: {
+                children: [
+                    'playToggle',
+                    'volumePanel',
+                    'currentTimeDisplay',
+                    'timeDivider',
+                    'durationDisplay',
+                    'progressControl',
+                    'liveDisplay',
+                    'playbackRateMenuButton',
+                    'fullscreenToggle',
+                ],
+            },
+        });
     }
+
+    const player = playerRef.current;
+    if (!player) return;
+
+    // 2. Clear previous HLS instance if any
     if (hlsRef.current) {
         hlsRef.current.destroy();
+        hlsRef.current = null;
     }
 
-    const player = playerRef.current = videojs(videoElement, {
-      autoplay: autoPlay,
-      controls: true,
-      responsive: true,
-      fluid: true,
-      muted: muted,
-      poster: poster,
-      preload: 'auto',
-      playbackRates: [0.5, 1, 1.25, 1.5, 2],
-      userActions: {
-        hotkeys: true
-      },
-      controlBar: {
-          children: [
-              'playToggle',
-              'volumePanel',
-              'currentTimeDisplay',
-              'timeDivider',
-              'durationDisplay',
-              'progressControl',
-              'liveDisplay',
-              'playbackRateMenuButton',
-              'fullscreenToggle',
-          ],
-      },
-    });
-
-    // Handle Source loading
+    // 3. Load NEW URL
+    console.log("VideoPlayer: Loading source:", url);
+    
     if (url.endsWith('.m3u8')) {
-        // Use hls.js for browsers that support MSE (Desktop, Android)
-        // Except for Safari which handles HLS natively and better
         const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         
         if (Hls.isSupported() && !isSafari) {
@@ -65,46 +62,41 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
             });
             
             hls.loadSource(url);
-            hls.attachMedia(videoElement);
+            hls.attachMedia(videoRef.current);
             hlsRef.current = hls;
 
             hls.on(Hls.Events.ERROR, (event, data) => {
                 if (data.fatal) {
                     switch (data.type) {
-                        case Hls.ErrorTypes.NETWORK_ERROR:
-                            hls.startLoad();
-                            break;
-                        case Hls.ErrorTypes.MEDIA_ERROR:
-                            hls.recoverMediaError();
-                            break;
-                        default:
-                            hls.destroy();
-                            break;
+                        case Hls.ErrorTypes.NETWORK_ERROR: hls.startLoad(); break;
+                        case Hls.ErrorTypes.MEDIA_ERROR: hls.recoverMediaError(); break;
+                        default: hls.destroy(); break;
                     }
                 }
             });
             
-            // Sync play state
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
                 if (autoPlay) {
-                    player.play().catch(e => console.log("Autoplay blocked", e));
+                    player.play().catch(e => console.log("HLS Autoplay blocked", e));
                 }
             });
         } else {
-            // Fallback to native HLS (Safari/iOS) via Video.js
-            player.src({
-                src: url,
-                type: 'application/x-mpegURL'
-            });
+            player.src({ src: url, type: 'application/x-mpegURL' });
+            if (autoPlay) player.play().catch(e => console.log("Native HLS Autoplay blocked", e));
         }
     } else {
-        // Standard MP4
-        player.src({
-            src: url,
-            type: 'video/mp4'
-        });
+        player.src({ src: url, type: 'video/mp4' });
+        if (autoPlay) player.play().catch(e => console.log("MP4 Autoplay blocked", e));
     }
 
+    // Update settings if they changed
+    player.muted(muted);
+    if (poster) player.poster(poster);
+
+  }, [url, autoPlay, muted, poster]);
+
+  // Handle disposal only on UNMOUNT
+  useEffect(() => {
     return () => {
       if (playerRef.current) {
         playerRef.current.dispose();
@@ -115,7 +107,7 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
         hlsRef.current = null;
       }
     };
-  }, [url, autoPlay, muted, poster]);
+  }, []);
 
   return (
     <div className="w-full h-full bg-black custom-videojs-theme">

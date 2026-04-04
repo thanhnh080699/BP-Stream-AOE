@@ -4,6 +4,7 @@ import subprocess
 from datetime import datetime
 import json
 import threading
+import shutil
 
 app = Flask(__name__)
 DATA_DIR = os.environ.get('DATA_DIR', '/data')
@@ -96,6 +97,88 @@ def debug_hook():
 def merge_date(date_str):
     threading.Thread(target=do_merge, args=(date_str,)).start()
     return jsonify({"status": "Merging started", "date": date_str})
+
+@app.route('/api/v1/delete', methods=['POST'])
+def delete_recordings():
+    data = request.json
+    password = data.get('password')
+    date_str = data.get('date')
+    stream_id = data.get('stream')
+
+    if password != "1234567890":
+        return jsonify({"error": "Wrong password"}), 403
+
+    if not date_str:
+        return jsonify({"error": "Date is required"}), 400
+
+    recordings = get_recordings()
+    meta_file = os.path.join(DATA_DIR, 'metadata.json')
+    meta = {}
+    if os.path.exists(meta_file):
+        with open(meta_file, 'r') as f:
+            meta = json.load(f)
+
+    if date_str not in recordings and date_str not in meta:
+        return jsonify({"error": "No data for this date"}), 404
+
+    # Target directories/files to delete
+    if stream_id:
+        # Delete specific stream
+        # 1. Delete replay files
+        replay_dir = os.path.join(DATA_DIR, 'replays', date_str, stream_id)
+        if os.path.exists(replay_dir):
+            shutil.rmtree(replay_dir)
+
+        # 2. Delete raw FLV segments from recordings.json and disk
+        if date_str in recordings:
+            new_recs = []
+            for r in recordings[date_str]:
+                if r['stream'] == stream_id:
+                    if os.path.exists(r['file']):
+                        os.remove(r['file'])
+                else:
+                    new_recs.append(r)
+            
+            if not new_recs:
+                del recordings[date_str]
+            else:
+                recordings[date_str] = new_recs
+            save_recordings(recordings)
+
+        # 3. Update metadata.json
+        if date_str in meta and 'streams' in meta[date_str]:
+            if stream_id in meta[date_str]['streams']:
+                del meta[date_str]['streams'][stream_id]
+            
+            if not meta[date_str]['streams']:
+                del meta[date_str]
+        
+        with open(meta_file, 'w') as f:
+            json.dump(meta, f, indent=4)
+
+        return jsonify({"status": f"Deleted stream {stream_id} for {date_str}"}), 200
+    else:
+        # Delete entire date
+        # 1. Delete replay files
+        date_replay_dir = os.path.join(DATA_DIR, 'replays', date_str)
+        if os.path.exists(date_replay_dir):
+            shutil.rmtree(date_replay_dir)
+
+        # 2. Delete raw FLV segments
+        if date_str in recordings:
+            for r in recordings[date_str]:
+                if os.path.exists(r['file']):
+                    os.remove(r['file'])
+            del recordings[date_str]
+            save_recordings(recordings)
+
+        # 3. Update metadata.json
+        if date_str in meta:
+            del meta[date_str]
+            with open(meta_file, 'w') as f:
+                json.dump(meta, f, indent=4)
+
+        return jsonify({"status": f"Deleted all data for {date_str}"}), 200
 
 def run_ffmpeg(cmd, timeout=3600):
     """Chạy FFmpeg, trả về (success, stderr)"""
