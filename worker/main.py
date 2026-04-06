@@ -47,15 +47,15 @@ def get_db_connection(with_db=True):
     if not with_db:
         config.pop('database', None)
         
-    max_retries = 5
+    max_retries = 15
     retry_count = 0
     while retry_count < max_retries:
         try:
             return mysql.connector.connect(**config)
         except Error as e:
-            print(f"Error connecting to MariaDB: {e}")
+            print(f"[{retry_count+1}/{max_retries}] Connecting to MariaDB... (Waiting for DB to start)")
             retry_count += 1
-            time.sleep(3)
+            time.sleep(5)
     return None
 
 def init_db():
