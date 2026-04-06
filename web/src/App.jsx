@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import LiveView from './components/LiveView';
 import PlaybackView from './components/PlaybackView';
 import AboutUs from './components/AboutUs';
-import { Video, History, Trophy, Sun, Moon, Menu, X, Monitor, Info } from 'lucide-react';
+import ScoreboardView from './components/ScoreboardView';
+import PlayerManagementView from './components/PlayerManagementView';
+import AnalyticsView from './components/AnalyticsView';
+import { Video, History, Trophy, Sun, Moon, Menu, X, Monitor, Info, LayoutTemplate, Users, BarChart3 } from 'lucide-react';
 
 function App() {
   const [tab, setTab] = useState('live');
@@ -45,6 +48,9 @@ function App() {
     let title = 'BP AOE Streaming';
     if (tab === 'live') title = 'Trực Tiếp - BP AOE Streaming';
     if (tab === 'playback') title = 'Xem Lại - BP AOE Streaming';
+    if (tab === 'players') title = 'Cài Đặt Người Chơi - BP AOE Streaming';
+    if (tab === 'scores') title = 'Bảng Tỷ Số - BP AOE Streaming';
+    if (tab === 'analytics') title = 'Thống Kê - BP AOE Streaming';
     if (tab === 'about') title = 'Về Chúng Tôi - BP AOE Streaming';
 
     document.title = `${title} | BPGROUP Tournament Dashboard`;
@@ -166,25 +172,45 @@ function App() {
           </div>
 
           <button
-            disabled
-            className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] opacity-50 cursor-not-allowed group"
+            onClick={() => handleTabChange('players')}
+            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'players'
+                ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
+                : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
+              }`}
           >
             <div className="flex items-center gap-3">
-              <Trophy size={18} />
-              <span>Thống kê trận đấu</span>
+              <Users size={18} />
+              <span>Cài đặt người chơi</span>
             </div>
-            <span className="text-[8px] font-black bg-[var(--bg-main)] px-1.5 py-0.5 rounded border border-[var(--border-color)] group-hover:text-[#f1812e] transition-colors">SOON</span>
+            {tab === 'players' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
           </button>
 
           <button
-            disabled
-            className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] opacity-50 cursor-not-allowed group"
+            onClick={() => handleTabChange('analytics')}
+            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'analytics'
+                ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
+                : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
+              }`}
+          >
+            <div className="flex items-center gap-3">
+              <BarChart3 size={18} />
+              <span>Phân tích thống kê</span>
+            </div>
+            {tab === 'analytics' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
+          </button>
+
+          <button
+            onClick={() => handleTabChange('scores')}
+            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'scores'
+                ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
+                : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Monitor size={18} />
-              <span>Thống kê tỷ số</span>
+              <span>Bảng tỷ số</span>
             </div>
-            <span className="text-[8px] font-black bg-[var(--bg-main)] px-1.5 py-0.5 rounded border border-[var(--border-color)] group-hover:text-[#f1812e] transition-colors">SOON</span>
+            {tab === 'scores' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
           </button>
         </nav>
 
@@ -218,6 +244,9 @@ function App() {
         <div className="min-h-full p-6 md:p-12 pb-24 md:pb-12">
           {tab === 'live' && <LiveView />}
           {tab === 'playback' && <PlaybackView />}
+          {tab === 'players' && <PlayerManagementView />}
+          {tab === 'scores' && <ScoreboardView />}
+          {tab === 'analytics' && <AnalyticsView />}
           {tab === 'about' && <AboutUs />}
         </div>
       </main>

@@ -6,6 +6,9 @@ import json
 import threading
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import mysql.connector
+from mysql.connector import Error
+import time
 
 app = Flask(__name__)
 DATA_DIR = os.environ.get('DATA_DIR', '/data')
@@ -30,6 +33,77 @@ FFMPEG_THREADS     = 2
 
 meta_lock = threading.Lock()
 
+# DB Configuration
+DB_CONFIG = {
+    'host': os.environ.get('DB_HOST', 'host.docker.internal'),
+    'port': int(os.environ.get('DB_PORT', 3306)),
+    'user': os.environ.get('DB_USER', 'root'),
+    'password': os.environ.get('DB_PASSWORD', 'root'),
+    'database': os.environ.get('DB_NAME', 'aoe_scoreboard')
+}
+
+def get_db_connection(with_db=True):
+    config = DB_CONFIG.copy()
+    if not with_db:
+        config.pop('database', None)
+        
+    max_retries = 5
+    retry_count = 0
+    while retry_count < max_retries:
+        try:
+            return mysql.connector.connect(**config)
+        except Error as e:
+            print(f"Error connecting to MariaDB: {e}")
+            retry_count += 1
+            time.sleep(3)
+    return None
+
+def init_db():
+    # 1. First ensure the database exists
+    conn = get_db_connection(with_db=False)
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {DB_CONFIG['database']}")
+            conn.commit()
+            cursor.close()
+            conn.close()
+        except Error as e:
+            print(f"Error creating database: {e}")
+            if conn: conn.close()
+
+    # 2. Then ensure the table exists
+    conn = get_db_connection(with_db=True)
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS scoreboard (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    match_date DATE NOT NULL,
+                    match_type VARCHAR(50) NOT NULL,
+                    team_a_players TEXT NOT NULL,
+                    team_b_players TEXT NOT NULL,
+                    score_a INT DEFAULT 0,
+                    score_b INT DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS players (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL UNIQUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+            cursor.close()
+        except Error as e:
+            print(f"Error initializing table: {e}")
+        finally:
+            conn.close()
+
+init_db()
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -80,21 +154,6 @@ def get_duration(file_path):
         return 0.0
 
 def convert_flv_to_ts(flv_path, ts_path):
-    """
-    Convert một FLV segment sang MPEG-TS bằng stream copy (không encode lại).
-
-    Tại sao cần bước này:
-    - FLV của SRS reset timestamp về 0 tại mỗi segment mới
-    - Nếu concat FLV thẳng → FFmpeg thấy timestamp lùi về 0 → coi stream kết
-      thúc → chỉ lấy được ~1 phút đầu tiên
-    - MPEG-TS dùng continuous PTS/DTS → concat hoàn toàn sạch
-
-    Tại sao KHÔNG có -bsf:v h264_mp4toannexb ở đây:
-    - Filter này chỉ chấp nhận codec_id = H.264 software (x264)
-    - OBS QSV H.264 có codec_id khác → filter từ chối → lỗi "not supported"
-    - Khi output sang -f mpegts, FFmpeg tự chuyển Annex B mà không cần bsf
-    - bsf chỉ cần thiết ở bước MP4 → HLS (đã giữ ở đó)
-    """
     return run_ffmpeg([
         'ffmpeg', '-y',
         '-fflags', '+genpts+igndts+discardcorrupt',
@@ -104,12 +163,9 @@ def convert_flv_to_ts(flv_path, ts_path):
         '-i', flv_path,
         '-c:v', 'copy',
         '-c:a', 'copy',
-        # KHÔNG dùng -bsf:v h264_mp4toannexb ở đây
-        # FFmpeg tự xử lý Annex B khi mux vào mpegts container
         '-f', 'mpegts',
         ts_path
     ])
-
 
 # ── Flask Routes ──────────────────────────────────────────────────────────────
 
@@ -242,6 +298,128 @@ def delete_recordings():
                 json.dump(meta, f, indent=4)
         return jsonify({"status": f"Deleted all data for {date_str}"}), 200
 
+# Scoreboard APIs
+@app.route('/api/v1/scores', methods=['GET'])
+def get_scores():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM scoreboard ORDER BY match_date DESC, id DESC")
+        scores = cursor.fetchall()
+        
+        grouped_scores = {}
+        for row in scores:
+            date_str = str(row['match_date'])
+            if date_str not in grouped_scores:
+                grouped_scores[date_str] = []
+            
+            row['match_date'] = date_str
+            grouped_scores[date_str].append(row)
+            
+        return jsonify(grouped_scores)
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/v1/scores', methods=['POST'])
+def add_score():
+    data = request.json
+    match_date = data.get('match_date')
+    match_type = data.get('match_type')
+    team_a_players = data.get('team_a_players')
+    team_b_players = data.get('team_b_players')
+    score_a = data.get('score_a', 0)
+    score_b = data.get('score_b', 0)
+    
+    if not all([match_date, match_type, team_a_players, team_b_players]):
+        return jsonify({"error": "Missing required fields"}), 400
+        
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+        
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO scoreboard (match_date, match_type, team_a_players, team_b_players, score_a, score_b)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (match_date, match_type, team_a_players, team_b_players, score_a, score_b))
+        conn.commit()
+        return jsonify({"status": "Score added", "id": cursor.lastrowid}), 201
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/v1/scores/<int:score_id>', methods=['DELETE'])
+def delete_score(score_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+        
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM scoreboard WHERE id = %s", (score_id,))
+        conn.commit()
+        return jsonify({"status": "Score deleted"}), 200
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+# Players DB APIs
+@app.route('/api/v1/players-db', methods=['GET'])
+def get_players_db():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM players ORDER BY name ASC")
+        players = cursor.fetchall()
+        return jsonify(players)
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/v1/players-db', methods=['POST'])
+def add_player_db():
+    data = request.json
+    name = data.get('name')
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO players (name) VALUES (%s)", (name,))
+        conn.commit()
+        return jsonify({"status": "Player added", "id": cursor.lastrowid}), 201
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/v1/players-db/<int:player_id>', methods=['DELETE'])
+def delete_player_db(player_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM players WHERE id = %s", (player_id,))
+        conn.commit()
+        return jsonify({"status": "Player deleted"}), 200
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
 
 # ── Core merge workers ────────────────────────────────────────────────────────
 
@@ -271,7 +449,6 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
     hls_output = os.path.join(replay_dir, 'index.m3u8')
 
     try:
-        # ── Bước 1: Lọc segment tồn tại trên disk ─────────────────────────────
         valid_files = sorted([f for f in files if os.path.exists(f)])
         skipped = len(files) - len(valid_files)
         if skipped:
@@ -287,7 +464,6 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
             progress_percent=machine_progress_start + int(machine_progress_step * 0.05)
         )
 
-        # ── Bước 2: Convert FLV → TS song song ────────────────────────────────
         seg_args = [
             (j, flv_path, os.path.join(ts_dir, f"seg_{j:04d}.ts"))
             for j, flv_path in enumerate(valid_files)
@@ -319,7 +495,6 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
 
         print(f"[{s_id}] Convert xong: {len(ts_files)}/{len(valid_files)} segments hợp lệ")
 
-        # ── Bước 3: Concat TS → MP4 ────────────────────────────────────────────
         update_meta_field(meta, meta_file, date_str,
             progress_text=f"[{s_id}] Nối {len(ts_files)} segments → MP4...",
             progress_percent=machine_progress_start + int(machine_progress_step * 0.70)
@@ -344,7 +519,6 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
         total_duration = get_duration(mp4_output)
         print(f"[{s_id}] ✓ MP4: {total_duration:.1f}s ({total_duration/60:.2f} phút)")
 
-        # ── Bước 4: MP4 → HLS ─────────────────────────────────────────────────
         update_meta_field(meta, meta_file, date_str,
             progress_text=f"[{s_id}] Tạo HLS...",
             progress_percent=machine_progress_start + int(machine_progress_step * 0.85)
@@ -355,7 +529,7 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
             '-i', mp4_output,
             '-c:v', 'copy',
             '-c:a', 'copy',
-            '-bsf:v', 'h264_mp4toannexb',   # Giữ ở đây vì input là MP4 chuẩn
+            '-bsf:v', 'h264_mp4toannexb',
             '-hls_time', '5',
             '-hls_list_size', '0',
             '-hls_flags', 'independent_segments',
@@ -365,7 +539,6 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
         if not success:
             raise RuntimeError(f"Tạo HLS thất bại:\n{stderr[-500:]}")
 
-        # ── Cleanup TS trung gian ──────────────────────────────────────────────
         for ts_path in ts_files:
             if os.path.exists(ts_path):
                 os.remove(ts_path)

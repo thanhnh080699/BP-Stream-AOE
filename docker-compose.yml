@@ -19,6 +19,13 @@ services:
       - srs_data:/data
     environment:
       - DATA_DIR=/data
+      - DB_HOST=host.docker.internal
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=aoe_scoreboard
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: always
 
   dashboard:
@@ -30,13 +37,15 @@ services:
       - srs_data:/data
     depends_on:
       - srs
+      - worker
     restart: always
 
 volumes:
   srs_data:
     driver: local
-    driver_opts:
-      type: 'none'
-      o: 'bind'
-      device: '/stream/data'
+    # production only
+    # driver_opts:
+    #   type: 'none'
+    #   o: 'bind'
+    #   device: '/stream/data'
 

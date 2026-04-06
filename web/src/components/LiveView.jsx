@@ -4,6 +4,7 @@ import { Tv, ChevronRight, Monitor, Edit2, Check, X } from 'lucide-react';
 
 const LiveView = () => {
   const [playerNames, setPlayerNames] = useState({});
+  const [dbPlayers, setDbPlayers] = useState([]);
   const [activeStreams, setActiveStreams] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
@@ -20,11 +21,23 @@ const LiveView = () => {
     { id: 'team2-4', label: 'TEAM2-4', team: 'TEAM 2', teamColor: 'text-blue-500 bg-blue-500/10 border-blue-500/20', machine: 'Máy 4' },
   ];
 
+  const fetchDbPlayers = async () => {
+    try {
+      const res = await fetch('/api/v1/players-db');
+      const data = await res.json();
+      setDbPlayers(data || []);
+    } catch (err) {
+      console.error('Error fetching DB players:', err);
+    }
+  };
+
   useEffect(() => {
     fetch('/api/v1/players')
       .then(res => res.json())
       .then(data => setPlayerNames(data))
       .catch(err => console.error('Error fetching player names:', err));
+
+    fetchDbPlayers();
 
     const checkStatus = () => {
       fetch('/srs/api/v1/streams/')
@@ -50,8 +63,9 @@ const LiveView = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const saveName = (id) => {
-    const newNames = { ...playerNames, [id]: editValue };
+  const saveName = (id, value) => {
+    const nameToSave = value || editValue;
+    const newNames = { ...playerNames, [id]: nameToSave };
     setPlayerNames(newNames);
     fetch('/api/v1/players', {
       method: 'POST',
@@ -109,9 +123,36 @@ const LiveView = () => {
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
-                      <h3 className="text-3xl font-black font-outfit text-[var(--accent-secondary)] uppercase tracking-tight">
-                        {playerName}
-                      </h3>
+                      {editingId === stream.id ? (
+                        <select
+                          autoFocus
+                          className="text-lg font-black bg-[var(--bg-main)] text-[#f1812e] border border-[#f1812e]/30 rounded-lg px-3 py-1 outline-none appearance-none cursor-pointer"
+                          value={editValue}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditValue(val);
+                            saveName(stream.id, val);
+                          }}
+                          onBlur={() => setEditingId(null)}
+                        >
+                          <option value="">-- Chọn --</option>
+                          {dbPlayers.map(p => (
+                            <option key={p.id} value={p.name}>{p.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="flex items-center gap-3 group/detail">
+                          <h3 className="text-3xl font-black font-outfit text-[var(--accent-secondary)] uppercase tracking-tight">
+                            {playerName}
+                          </h3>
+                          <button
+                            onClick={() => { setEditingId(stream.id); setEditValue(playerName); }}
+                            className="opacity-0 group-hover/detail:opacity-100 p-2 text-[var(--text-secondary)] hover:text-[#f1812e] transition-all cursor-pointer bg-[var(--bg-main)] rounded-lg border border-[var(--border-color)]"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                        </div>
+                      )}
                       <div className={`px-3 py-1 text-[10px] font-black rounded-full border ${stream.teamColor} uppercase tracking-widest`}>
                         {stream.team}
                       </div>
@@ -192,20 +233,23 @@ const LiveView = () => {
                   <Monitor size={18} className="text-[var(--text-secondary)] opacity-70" />
 
                   {editingId === stream.id ? (
-                    <div className="flex items-center gap-1.5">
-                      <input
+                    <div className="flex items-center gap-1.5 animate-in slide-in-from-left-2 duration-200">
+                      <select
                         autoFocus
-                        className="text-sm font-bold bg-[var(--bg-main)] text-[var(--text-primary)] border border-[var(--border-color)] rounded-lg px-2 py-1 outline-none w-24"
+                        className="text-xs font-black bg-[var(--bg-main)] text-[#f1812e] border border-[#f1812e]/30 rounded-lg px-2 py-1 outline-none w-32 appearance-none cursor-pointer"
                         value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && saveName(stream.id)}
-                      />
-                      <button
-                        onClick={() => saveName(stream.id)}
-                        className="text-emerald-500 hover:text-emerald-400 cursor-pointer p-1 transition-colors"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setEditValue(val);
+                          saveName(stream.id, val);
+                        }}
+                        onBlur={() => setEditingId(null)}
                       >
-                        <Check size={14} />
-                      </button>
+                        <option value="">-- Chọn --</option>
+                        {dbPlayers.map(p => (
+                          <option key={p.id} value={p.name}>{p.name}</option>
+                        ))}
+                      </select>
                       <button
                         onClick={() => setEditingId(null)}
                         className="text-red-500 hover:text-red-400 cursor-pointer p-1 transition-colors"

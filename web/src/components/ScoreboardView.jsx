@@ -1,0 +1,384 @@
+import React, { useState, useEffect } from 'react';
+import { Plus, Trash2, Users, X, Calendar, Trophy, Save, Loader2, LayoutTemplate } from 'lucide-react';
+
+const ScoreboardView = () => {
+  const [scores, setScores] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
+  const [playersList, setPlayersList] = useState([]);
+  const [error, setError] = useState(null);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    match_date: new Date().toISOString().split('T')[0],
+    match_type: 'Kèo đấu',
+    team_a_players: '',
+    team_b_players: '',
+    score_a: 0,
+    score_b: 0
+  });
+
+  const fetchScores = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/v1/scores');
+      if (!response.ok) throw new Error('Không thể tải dữ liệu tỷ số');
+      const data = await response.json();
+      setScores(data || {});
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPlayers = async () => {
+    try {
+      const response = await fetch('/api/v1/players-db');
+      if (!response.ok) throw new Error('Không thể tải danh sách thành viên');
+      const data = await response.json();
+      setPlayersList(data || []);
+    } catch (err) {
+      console.error('Lỗi tải players:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchScores();
+    fetchPlayers();
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const togglePlayer = (teamKey, playerName) => {
+    const currentMembers = formData[teamKey] ? formData[teamKey].split(',').map(s => s.trim()).filter(s => s) : [];
+    let newMembers;
+    
+    if (currentMembers.includes(playerName)) {
+      newMembers = currentMembers.filter(m => m !== playerName);
+    } else {
+      newMembers = [...currentMembers, playerName];
+    }
+    
+    setFormData(prev => ({ ...prev, [teamKey]: newMembers.join(', ') }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.team_a_players || !formData.team_b_players) return;
+    
+    try {
+      const response = await fetch('/api/v1/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      
+      if (!response.ok) throw new Error('Lỗi khi lưu tỷ số');
+      
+      setIsAdding(false);
+      setFormData({
+        match_date: new Date().toISOString().split('T')[0],
+        match_type: 'Kèo đấu',
+        team_a_players: '',
+        team_b_players: '',
+        score_a: 0,
+        score_b: 0
+      });
+      fetchScores();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const password = window.prompt('Nhập mật khẩu để xóa kết quả này:');
+    if (password !== '1234567890') {
+      if (password !== null) alert('Mật khẩu không đúng!');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/v1/scores/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Lỗi khi xóa');
+      fetchScores();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const getSelected = (teamKey) => formData[teamKey] ? formData[teamKey].split(',').map(s => s.trim()).filter(s => s) : [];
+
+  const PlayerPicker = ({ teamKey, colorClass }) => {
+    const otherTeamKey = teamKey === 'team_a_players' ? 'team_b_players' : 'team_a_players';
+    const otherTeamSelected = getSelected(otherTeamKey);
+
+    return (
+      <div className="space-y-4">
+        <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest block mb-1 opacity-60">
+          Chọn thành viên thi đấu
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1 scrollbar-hide">
+          {playersList.length === 0 ? (
+            <p className="col-span-full text-[10px] italic opacity-40 py-2">Chưa có người chơi nào trong DB</p>
+          ) : (
+            playersList
+              .filter(p => !otherTeamSelected.includes(p.name))
+              .map(player => {
+                const name = player.name;
+                const isSelected = getSelected(teamKey).includes(name);
+                return (
+                  <button
+                    key={player.id}
+                    type="button"
+                    onClick={() => togglePlayer(teamKey, name)}
+                    className={`text-[10px] font-bold px-2 py-2 rounded-lg border transition-all truncate text-left flex items-center gap-1.5 ${
+                      isSelected 
+                        ? `${colorClass} border-transparent shadow-sm scale-95` 
+                        : 'bg-[var(--bg-main)] border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[#f1812e]/50'
+                    }`}
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-gray-400 opacity-30'}`} />
+                    {name}
+                  </button>
+                );
+              })
+          )}
+        </div>
+        <div className="mt-2 p-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] min-h-[3rem] flex flex-wrap gap-2">
+          {getSelected(teamKey).length === 0 ? (
+            <span className="text-[10px] italic text-[var(--text-secondary)] opacity-40">Chưa chọn ai</span>
+          ) : (
+            getSelected(teamKey).map((m, i) => (
+              <span key={i} className={`text-[10px] font-black px-2 py-1 rounded-md flex items-center gap-1 ${colorClass}`}>
+                {m}
+                <X size={10} className="cursor-pointer" onClick={() => togglePlayer(teamKey, m)} />
+              </span>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (loading && Object.keys(scores).length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-[var(--text-secondary)] opacity-60">
+        <Loader2 className="animate-spin mb-4" size={32} />
+        <p className="font-bold uppercase tracking-widest text-xs">Đang tải bảng tỷ số...</p>
+      </div>
+    );
+  }
+
+  const canSave = formData.team_a_players && formData.team_b_players;
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-32">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h2 className="text-5xl font-black font-outfit text-[var(--accent-secondary)] tracking-tight uppercase leading-none mb-3">
+            Bảng tỷ số
+          </h2>
+          <p className="text-[var(--text-secondary)] text-sm font-medium opacity-70">
+            Thống kê kết quả thi đấu AOE nội bộ
+          </p>
+        </div>
+        
+        <button
+          onClick={() => setIsAdding(!isAdding)}
+          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl hover:scale-105 active:scale-95 ${
+            isAdding ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-color)]' : 'bg-[#f1812e] text-white'
+          }`}
+        >
+          {isAdding ? <X size={20} /> : <Plus size={20} />}
+          <span>{isAdding ? 'Đóng' : 'Thêm kết quả'}</span>
+        </button>
+      </div>
+
+      {isAdding && (
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-8 md:p-12 shadow-2xl animate-in zoom-in-95 duration-300">
+          <form onSubmit={handleSubmit} className="space-y-10 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest block mb-2 opacity-60">Ngày thi đấu</label>
+                <div className="relative">
+                  <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-[#f1812e]" size={20} />
+                  <input
+                    type="date"
+                    name="match_date"
+                    value={formData.match_date}
+                    onChange={handleInputChange}
+                    className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] rounded-2xl py-4 pl-14 pr-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#f1812e]/30 transition-all"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
+              {/* Team A */}
+              <div className="bg-[var(--bg-main)]/50 p-6 rounded-2xl border border-[var(--border-color)] space-y-6">
+                <div className="flex items-center gap-3 text-orange-500">
+                  <Users size={20} />
+                  <h3 className="font-black font-outfit uppercase tracking-tight">Team A</h3>
+                </div>
+                <PlayerPicker teamKey="team_a_players" colorClass="bg-orange-500 text-white" />
+                <div className="pt-4 border-t border-[var(--border-color)]">
+                  <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest block mb-2 opacity-60">Tỷ số</label>
+                  <input
+                    type="number"
+                    name="score_a"
+                    value={formData.score_a}
+                    onChange={handleInputChange}
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl py-4 text-3xl font-black text-center focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                  />
+                </div>
+              </div>
+
+              {/* Team B */}
+              <div className="bg-[var(--bg-main)]/50 p-6 rounded-2xl border border-[var(--border-color)] space-y-6">
+                <div className="flex items-center gap-3 text-blue-500">
+                  <Users size={20} />
+                  <h3 className="font-black font-outfit uppercase tracking-tight">Team B</h3>
+                </div>
+                <PlayerPicker teamKey="team_b_players" colorClass="bg-blue-500 text-white" />
+                <div className="pt-4 border-t border-[var(--border-color)]">
+                  <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest block mb-2 opacity-60">Tỷ số</label>
+                  <input
+                    type="number"
+                    name="score_b"
+                    value={formData.score_b}
+                    onChange={handleInputChange}
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl py-4 text-3xl font-black text-center focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!canSave}
+              className={`inline-flex items-center gap-3 px-12 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl ${
+                canSave 
+                ? 'bg-[#f1812e] text-white hover:bg-[#d96d1c] hover:scale-105 active:scale-95 shadow-orange-900/20' 
+                : 'bg-gray-500/20 text-gray-500 cursor-not-allowed opacity-50 grayscale'
+              }`}
+            >
+              <Save size={18} />
+              LƯU KẾT QUẢ THI ĐẤU
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Results List */}
+      <div className="grid grid-cols-1 gap-10">
+        {Object.keys(scores).length === 0 ? (
+          <div className="py-20 text-center opacity-30 bg-[var(--bg-card)] rounded-[32px] border border-dashed border-[var(--border-color)]">
+            <Trophy size={64} className="mx-auto mb-6 opacity-10" />
+            <p className="font-black uppercase tracking-[0.3em] text-xs">Chưa có dữ liệu thống kê</p>
+          </div>
+        ) : (
+          Object.keys(scores).sort((a, b) => new Date(b) - new Date(a)).map(date => (
+            <div key={date} className="flex flex-col bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] overflow-hidden shadow-xl hover:shadow-2xl transition-all h-fit animate-in fade-in slide-in-from-bottom-2">
+              <div className="p-6 bg-[var(--bg-main)]/50 border-b border-[var(--border-color)] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[#f1812e]/10 rounded-lg">
+                    <Calendar className="text-[#f1812e]" size={16} />
+                  </div>
+                  <span className="font-black text-sm uppercase tracking-tight">
+                    {new Date(date).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="px-2.5 py-1 bg-[#f1812e]/10 rounded-full text-[#f1812e] text-[9px] font-black uppercase tracking-tighter">
+                    {scores[date].length} Kèo đấu
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6 space-y-6 max-h-[600px] overflow-y-auto scrollbar-thin">
+                {[...scores[date]].sort((a, b) => b.id - a.id).map((match, idx) => (
+                  <div key={match.id} className="relative bg-[var(--bg-main)]/40 rounded-[24px] p-6 md:p-8 border border-[var(--border-color)]/30 group hover:border-[#f1812e]/40 transition-all flex items-center min-h-[160px]">
+                    <div className="w-full flex items-center justify-between gap-6 md:gap-16">
+                      {/* Team A Players */}
+                      <div className="flex-1 text-right">
+                        <div className="flex flex-wrap justify-end gap-2 mb-3">
+                          {match.team_a_players.split(',').map((p, i) => (
+                            <span key={i} className="px-4 py-1.5 bg-orange-500 text-white rounded-lg text-sm font-black shadow-lg shadow-orange-500/10 whitespace-nowrap">{p.trim()}</span>
+                          ))}
+                        </div>
+                        <div className="text-[10px] font-black text-orange-500/50 uppercase tracking-[0.3em]">TEAM A</div>
+                      </div>
+
+                      {/* Score Badge */}
+                      <div className="flex flex-col items-center justify-center min-w-[120px] bg-[var(--bg-card)] rounded-[20px] py-4 px-4 border border-[var(--border-color)] shadow-xl relative z-10">
+                        <div className="text-4xl font-black font-outfit tracking-tighter flex items-center gap-3">
+                          <span className={match.score_a > match.score_b ? 'text-orange-500' : 'text-[var(--text-primary)] opacity-20'}>{match.score_a}</span>
+                          <span className="opacity-10">:</span>
+                          <span className={match.score_b > match.score_a ? 'text-blue-500' : 'text-[var(--text-primary)] opacity-20'}>{match.score_b}</span>
+                        </div>
+                      </div>
+
+                      {/* Team B Players */}
+                      <div className="flex-1 text-left">
+                        <div className="flex flex-wrap justify-start gap-2 mb-3">
+                          {match.team_b_players.split(',').map((p, i) => (
+                            <span key={i} className="px-4 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-black shadow-lg shadow-blue-500/10 whitespace-nowrap">{p.trim()}</span>
+                          ))}
+                        </div>
+                        <div className="text-[10px] font-black text-blue-500/50 uppercase tracking-[0.3em]">TEAM B</div>
+                      </div>
+                    </div>
+                    
+                    {isAdding && (
+                      <button
+                        onClick={() => handleDelete(match.id)}
+                        className="absolute -top-2 -right-2 p-2 bg-red-500 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-xl hover:scale-110 active:scale-90"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Stats Summary Footer */}
+      {Object.keys(scores).length > 0 && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-20 md:left-auto md:right-10 md:translate-x-0">
+          <div className="bg-[var(--bg-sidebar)]/80 backdrop-blur-xl border border-[var(--border-color)] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-8 animate-in slide-in-from-right-4">
+            <div className="flex items-center gap-3">
+              <Trophy className="text-yellow-500" size={20} />
+              <div>
+                <p className="text-[8px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">Tổng số trận</p>
+                <p className="text-xl font-black font-outfit leading-none">
+                  {Object.values(scores).flat().length}
+                </p>
+              </div>
+            </div>
+            <div className="w-px h-8 bg-[var(--border-color)] opacity-50" />
+            <div className="flex items-center gap-3 text-[#f1812e]">
+              <Users size={20} />
+              <div>
+                <p className="text-[8px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">Cập nhật lúc</p>
+                <p className="text-xs font-black font-outfit leading-none">
+                  {new Date().toLocaleTimeString('vi-VN')}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ScoreboardView;
