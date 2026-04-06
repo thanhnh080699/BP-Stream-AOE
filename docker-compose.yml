@@ -12,21 +12,39 @@ services:
     command: ["./objs/srs", "-c", "conf/srs.conf"]
     restart: always
 
+  db:
+    image: mariadb:latest
+    container_name: srs-db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: aoe_scoreboard
+      MARIADB_USER: aoe_user
+      MARIADB_PASSWORD: aoe_password
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    networks:
+      - srs-network
+
   worker:
     build: ./worker
     container_name: srs-worker
+    restart: always
     volumes:
       - srs_data:/data
     environment:
       - DATA_DIR=/data
-      - DB_HOST=host.docker.internal
+      - DB_HOST=db
       - DB_PORT=3306
       - DB_USER=root
       - DB_PASSWORD=root
       - DB_NAME=aoe_scoreboard
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    restart: always
+    networks:
+      - srs-network
+    depends_on:
+      - db
 
   dashboard:
     build: ./web
