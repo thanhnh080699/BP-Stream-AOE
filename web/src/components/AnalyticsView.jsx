@@ -392,33 +392,68 @@ const AnalyticsView = () => {
                     </div>
                   </div>
 
-                  {/* Team Categories Breakdown - Professional Horizontal Bars */}
-                  <div className="lg:col-span-5 grid grid-cols-1 gap-4">
-                    {Object.keys(player.categories).sort().map(cat => {
-                      const data = player.categories[cat];
-                      const rate = data.total > 0 ? ((data.wins / data.total) * 100).toFixed(0) : 0;
-                      return (
-                        <div key={cat} className="group/item">
-                          <div className="flex justify-between items-center mb-1.5">
-                            <div className="flex items-center gap-2">
-                              <span className="w-8 h-8 rounded-lg bg-[var(--bg-main)] flex items-center justify-center text-[10px] font-black border border-[var(--border-color)]">{cat}</span>
-                              <span className="text-xs font-black text-[#f1812e] uppercase tracking-widest">{data.wins}W / {data.losses}L</span>
+                  {/* Team Categories Breakdown - Professional Radial Charts */}
+                  <div className="lg:col-span-5">
+                    <div className="flex justify-between items-end mb-6">
+                      <div>
+                        <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] mb-1">Hiệu suất theo thể thức</p>
+                        <h4 className="text-xs font-black text-[#f1812e] uppercase tracking-widest">Tỷ lệ thắng từng kèo</h4>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                      {['1-1', '2-2', '3-3', '4-4'].map(cat => {
+                        const data = player.categories[cat] || { wins: 0, losses: 0, total: 0 };
+                        const rate = data.total > 0 ? (data.wins / data.total) * 100 : 0;
+                        const colors = {
+                          '1-1': '#f1812e',
+                          '2-2': '#3b82f6',
+                          '3-3': '#10b981',
+                          '4-4': '#a855f7'
+                        };
+                        const color = colors[cat] || '#64748b';
+                        const radius = 32;
+                        const circum = 2 * Math.PI * radius;
+                        
+                        return (
+                          <div key={cat} className="flex flex-col items-center gap-4 group/bar transition-transform hover:scale-110 duration-300">
+                            <div className="relative flex items-center justify-center">
+                              {/* Tooltip */}
+                              <div className="absolute -top-14 bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-2 rounded-xl text-[10px] font-black opacity-0 group-hover/bar:opacity-100 transition-all duration-300 translate-y-2 group-hover/bar:translate-y-0 whitespace-nowrap z-20 shadow-2xl pointer-events-none text-center border-b-2" style={{ borderBottomColor: color }}>
+                                <p style={{ color }} className="mb-0.5">{rate.toFixed(1)}% THẮNG</p>
+                                <p className="text-[8px] opacity-40 uppercase tracking-tighter">Click để xem chi tiết</p>
+                              </div>
+
+                              <svg className="w-20 h-20 transform -rotate-90">
+                                <circle cx="40" cy="40" r={radius} fill="transparent" stroke="currentColor" strokeWidth="6" className="text-[var(--border-color)] opacity-20" />
+                                <circle 
+                                  cx="40" cy="40" r={radius} fill="transparent" stroke={color} strokeWidth="6" 
+                                  strokeDasharray={circum} 
+                                  strokeDashoffset={circum * (1 - rate / 100)} 
+                                  strokeLinecap="round" className="transition-all duration-1000 ease-out shadow-lg" 
+                                />
+                              </svg>
+                              
+                              <div className="absolute inset-0 flex flex-col items-center justify-center transition-all duration-300 group-hover/bar:opacity-0">
+                                <p className="text-[14px] font-black font-outfit leading-none tabular-nums">{rate.toFixed(0)}%</p>
+                              </div>
+
+                              <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover/bar:opacity-100 transition-all duration-300">
+                                <div className="text-center bg-[var(--bg-card)]/80 backdrop-blur-sm rounded-full w-full h-full flex flex-col items-center justify-center border border-[var(--border-color)]/20">
+                                  <p className="text-[11px] font-black text-green-500 leading-none">{data.wins}W</p>
+                                  <div className="w-6 h-px bg-[var(--border-color)] my-1" />
+                                  <p className="text-[11px] font-black text-red-500 leading-none">{data.losses}L</p>
+                                </div>
+                              </div>
                             </div>
-                            <span className="text-xs font-black opacity-30 uppercase">{data.total} KÈO</span>
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="text-[11px] font-black text-[var(--text-secondary)] opacity-60 uppercase">{cat}</span>
+                              <span className="text-[8px] font-black text-orange-500/40 uppercase tracking-tighter">{data.total > 0 ? `${data.total} KÈO` : 'TRỐNG'}</span>
+                            </div>
                           </div>
-                          <div className="h-4 w-full bg-[var(--bg-main)] rounded-full overflow-hidden flex p-0.5 border border-[var(--border-color)]">
-                            <div 
-                              className="h-full bg-orange-500 dark:bg-[#f1812e] rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(241,129,46,0.3)]" 
-                              style={{ width: `${rate}%` }}
-                            />
-                            <div 
-                              className="h-full bg-slate-300 dark:bg-slate-700 transition-all duration-1000 ml-0.5 rounded-full" 
-                              style={{ width: `${data.total > 0 ? 100 - rate : 0}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
