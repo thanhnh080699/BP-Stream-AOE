@@ -72,6 +72,7 @@ const AnalyticsView = () => {
 
     const players = {};
     const globalStats = {
+      seriesTotal: 0,
       seriesCount: 0,
       dailyActivity: {},
       categories: {} 
@@ -85,11 +86,13 @@ const AnalyticsView = () => {
       
       const cat = teamA.length === teamB.length ? `${teamA.length}-${teamA.length}` : `${teamA.length}-${teamB.length}`;
       
-      globalStats.seriesCount++;
+      const gameTotal = scoreA + scoreB;
+      globalStats.seriesTotal++;
+      globalStats.seriesCount += gameTotal;
       if (!globalStats.categories[cat]) {
         globalStats.categories[cat] = { count: 0, wins: 0, losses: 0 };
       }
-      globalStats.categories[cat].count++;
+      globalStats.categories[cat].count += gameTotal;
       globalStats.categories[cat].wins += scoreA;
       globalStats.categories[cat].losses += scoreB;
       
@@ -97,7 +100,7 @@ const AnalyticsView = () => {
       if (!globalStats.dailyActivity[dateStr]) {
         globalStats.dailyActivity[dateStr] = {};
       }
-      globalStats.dailyActivity[dateStr][cat] = (globalStats.dailyActivity[dateStr][cat] || 0) + 1;
+      globalStats.dailyActivity[dateStr][cat] = (globalStats.dailyActivity[dateStr][cat] || 0) + gameTotal;
 
       const processPlayer = (playerName, pWins, pLosses) => {
         if (!players[playerName]) {
@@ -185,7 +188,7 @@ const AnalyticsView = () => {
           </div>
           <div>
             <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] mb-1">Tổng số kèo</p>
-            <p className="text-3xl font-black font-outfit">{globalStats.seriesCount}</p>
+            <p className="text-3xl font-black font-outfit">{globalStats.seriesTotal}</p>
           </div>
         </div>
 
