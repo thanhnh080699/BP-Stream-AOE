@@ -74,7 +74,7 @@ const PlayerManagementView = () => {
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-4xl font-black font-outfit text-[var(--accent-secondary)] tracking-tight uppercase leading-none mb-3">
+          <h2 className="text-3xl font-black font-outfit text-[var(--accent-secondary)] tracking-tight uppercase leading-none mb-3">
             Cài đặt người chơi
           </h2>
           <p className="text-[var(--text-secondary)] text-sm font-medium opacity-70">

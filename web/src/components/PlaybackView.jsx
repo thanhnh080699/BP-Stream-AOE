@@ -110,9 +110,9 @@ const PlaybackView = () => {
         <div className="max-w-[1600px] mx-auto space-y-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 overflow-hidden">
                 <div className="space-y-2">
-                    <h1 className="text-4xl font-black font-outfit text-[var(--accent-secondary)]">
+                    <h2 className="text-3xl font-black font-outfit text-[var(--accent-secondary)]">
                         <span className="text-[#f1812e]">Lưu trữ</span> Trận đấu
-                    </h1>
+                    </h2>
                     <p className="text-[var(--text-secondary)] font-medium">Xem lại lịch sử thi đấu của các đội</p>
                 </div>
             </div>

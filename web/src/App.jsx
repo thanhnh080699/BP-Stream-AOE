@@ -85,7 +85,7 @@ function App() {
 
       {/* Backdrop */}
       <div
-        className={`fixed md:hidden inset-0 bg-black/60 backdrop-blur-sm z-40 transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed md:hidden inset-0 bg-black/60 z-40 transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsSidebarOpen(false)}
       />
 
@@ -98,9 +98,9 @@ function App() {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-3">
               <Trophy className="text-[#f1812e]" size={28} />
-              <h1 className="text-2xl font-black font-outfit tracking-tight text-[var(--accent-secondary)] leading-none uppercase">
+              <h2 className="text-xl font-black font-outfit tracking-tight text-[var(--accent-secondary)] leading-none uppercase">
                 BP AOE
-              </h1>
+              </h2>
             </div>
 
             <button
@@ -119,7 +119,7 @@ function App() {
         <div className={`p-6 md:hidden border-b border-[var(--border-color)] mb-4 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
           <div className="flex items-center gap-3">
             <Trophy className="text-[#f1812e]" size={24} />
-            <span className="text-xl font-black font-outfit text-[var(--accent-secondary)] uppercase">BP AOE Dashboard</span>
+            <span className="text-lg font-black font-outfit text-[var(--accent-secondary)] uppercase">BP AOE Dashboard</span>
           </div>
         </div>
 

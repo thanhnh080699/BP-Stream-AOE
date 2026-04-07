@@ -156,7 +156,7 @@ const AnalyticsView = () => {
       {/* Header sections */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
         <div>
-          <h2 className="text-5xl font-black font-outfit text-[var(--accent-secondary)] tracking-tight uppercase leading-none mb-3">
+          <h2 className="text-3xl font-black font-outfit text-[var(--accent-secondary)] tracking-tight uppercase leading-none mb-3">
             Phân tích thống kê
           </h2>
           <p className="text-[var(--text-secondary)] text-sm font-medium opacity-70">
@@ -183,12 +183,12 @@ const AnalyticsView = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-6 shadow-xl flex items-center gap-6 group hover:-translate-y-1 transition-all duration-300">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/20 flex items-center justify-center text-white shrink-0 group-hover:rotate-6 transition-transform">
-            <Activity size={28} />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/20 flex items-center justify-center text-white shrink-0 transition-transform">
+            <Activity size={24} />
           </div>
           <div>
-            <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] mb-1">Tổng số kèo</p>
-            <p className="text-3xl font-black font-outfit">{globalStats.seriesTotal}</p>
+            <p className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] mb-1">Tổng số kèo</p>
+            <p className="text-4xl font-black font-outfit">{globalStats.seriesTotal}</p>
           </div>
         </div>
 
@@ -342,23 +342,23 @@ const AnalyticsView = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
                   <div className="lg:col-span-3 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
                     <div className="relative">
-                      <div className="w-28 h-28 rounded-[38px] bg-gradient-to-br from-[#f1812e] to-[#ffaa45] flex items-center justify-center text-white shadow-2xl shadow-orange-500/30 transform group-hover:rotate-6 transition-transform">
-                        <span className="text-4xl font-black">{player.name.charAt(0).toUpperCase()}</span>
+                      <div className="w-20 h-20 rounded-[28px] bg-gradient-to-br from-[#f1812e] to-[#ffaa45] flex items-center justify-center text-white shadow-2xl shadow-orange-500/30 transition-transform">
+                        <span className="text-3xl font-black">{player.name.charAt(0).toUpperCase()}</span>
                       </div>
-                      <div className="absolute -top-4 -left-4 w-12 h-12 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] flex items-center justify-center shadow-lg font-black italic text-[#f1812e]">#{idx + 1}</div>
+                      <div className="absolute -top-3 -left-3 w-10 h-10 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] flex items-center justify-center shadow-lg font-black italic text-[#f1812e] text-lg">#{idx + 1}</div>
                       {idx < 3 && <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-yellow-500 rounded-2xl border-4 border-[var(--bg-card)] flex items-center justify-center shadow-lg animate-bounce"><Medal size={18} className="text-white" /></div>}
                     </div>
                     <div>
-                      <h3 className="text-3xl font-black tracking-tight mb-2">{player.name}</h3>
+                      <h3 className="text-4xl font-black tracking-tight mb-2">{player.name}</h3>
                       <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                        <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest bg-orange-500/10 px-3 py-1 rounded-full">Pro Player</span>
-                        <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-full">{player.totalSeries} KÈO</span>
+                        <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest bg-orange-500/10 px-3 py-1 rounded-full">Pro Player</span>
+                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-full">{player.totalSeries} KÈO</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Main Win/Loss Stats with Radial Chart */}
-                  <div className="lg:col-span-4 flex items-center justify-between bg-[var(--bg-main)]/40 rounded-[32px] p-8 border border-[var(--border-color)] backdrop-blur-sm">
+                  <div className="lg:col-span-4 flex items-center justify-between bg-[var(--bg-main)]/40 rounded-[32px] p-8 border border-[var(--border-color)]">
                     <div className="space-y-6">
                       <div className="flex items-center gap-4">
                         <div className="w-1.5 h-10 bg-green-500 rounded-full" />
@@ -401,10 +401,10 @@ const AnalyticsView = () => {
                         <div key={cat} className="group/item">
                           <div className="flex justify-between items-center mb-1.5">
                             <div className="flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-lg bg-[var(--bg-main)] flex items-center justify-center text-[8px] font-black border border-[var(--border-color)]">{cat}</span>
-                              <span className="text-[9px] font-black text-[#f1812e] uppercase tracking-widest">{data.wins}W / {data.losses}L</span>
+                              <span className="w-8 h-8 rounded-lg bg-[var(--bg-main)] flex items-center justify-center text-[10px] font-black border border-[var(--border-color)]">{cat}</span>
+                              <span className="text-xs font-black text-[#f1812e] uppercase tracking-widest">{data.wins}W / {data.losses}L</span>
                             </div>
-                            <span className="text-[9px] font-black opacity-30 uppercase">{data.total} KÈO</span>
+                            <span className="text-xs font-black opacity-30 uppercase">{data.total} KÈO</span>
                           </div>
                           <div className="h-2.5 w-full bg-[var(--bg-main)] rounded-full overflow-hidden flex p-0.5 border border-[var(--border-color)]">
                             <div 

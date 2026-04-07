@@ -180,7 +180,7 @@ const ScoreboardView = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-5xl font-black font-outfit text-[var(--accent-secondary)] tracking-tight uppercase leading-none mb-3">
+          <h2 className="text-3xl font-black font-outfit text-[var(--accent-secondary)] tracking-tight uppercase leading-none mb-3">
             Bảng tỷ số
           </h2>
           <p className="text-[var(--text-secondary)] text-sm font-medium opacity-70">
@@ -354,7 +354,7 @@ const ScoreboardView = () => {
       {/* Stats Summary Footer */}
       {Object.keys(scores).length > 0 && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-20 md:left-auto md:right-10 md:translate-x-0">
-          <div className="bg-[var(--bg-sidebar)]/80 backdrop-blur-xl border border-[var(--border-color)] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-8 animate-in slide-in-from-right-4">
+          <div className="bg-[var(--bg-sidebar)] border border-[var(--border-color)] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-8 animate-in slide-in-from-right-4">
             <div className="flex items-center gap-3">
               <Trophy className="text-yellow-500" size={20} />
               <div>

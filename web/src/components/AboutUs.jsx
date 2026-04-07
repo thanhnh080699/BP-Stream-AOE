@@ -13,13 +13,13 @@ const AboutUs = () => {
           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
         />
         <div className="absolute bottom-6 left-6 md:bottom-12 md:left-12 right-6 md:right-12 z-20">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-[#fff] border border-[#f1812e]/30 backdrop-blur-md mb-4 md:mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-[#fff] border border-[#f1812e]/30 mb-4 md:mb-6">
             <Shield size={14} className="text-[#f1812e] md:w-4 md:h-4" />
             <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-[#f1812e]">Hệ thống VAR nội bộ</span>
           </div>
-          <h1 className="text-3xl md:text-5xl lg:text-7xl font-black font-outfit text-white mb-4 md:mb-6 drop-shadow-2xl uppercase tracking-tighter leading-none">
+          <h2 className="text-2xl md:text-3xl font-black font-outfit text-white mb-4 md:mb-6 drop-shadow-2xl uppercase tracking-tighter leading-none">
             BestPrice <span className="text-[#f1812e]">Tech Hub</span>
-          </h1>
+          </h2>
           <p className="text-sm md:text-lg lg:text-xl text-white/80 max-w-3xl font-medium leading-relaxed drop-shadow-lg line-clamp-3 md:line-clamp-none">
             Tiên phong ứng dụng công nghệ truyền tải hình ảnh và phân tích dữ liệu thời gian thực cho các hoạt động văn hóa - thể thao nội bộ tại Công ty CP Công nghệ Du lịch Best Price.
           </p>
@@ -30,12 +30,12 @@ const AboutUs = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-start">
         <div className="lg:col-span-7 space-y-8 md:space-y-12">
           <section>
-            <h2 className="text-2xl md:text-3xl font-black font-outfit text-[var(--accent-secondary)] mb-6 md:mb-8 flex items-center gap-3 md:gap-4">
+            <h3 className="text-xl md:text-2xl font-black font-outfit text-[var(--accent-secondary)] mb-6 md:mb-8 flex items-center gap-3 md:gap-4">
               <span className="w-10 h-10 md:w-12 md:h-12 bg-[#f1812e]/10 rounded-xl md:rounded-2xl flex items-center justify-center text-[#f1812e] shrink-0">
                 <Users size={20} className="md:w-7 md:h-7" />
               </span>
               Sứ mệnh Kết nối & Sáng tạo
-            </h2>
+            </h3>
             <div className="space-y-4 md:space-y-6 text-[var(--text-secondary)] text-base md:text-lg leading-relaxed">
               <p>
                 Tại <strong>Công ty CP Công nghệ Du lịch Best Price (BestPrice Travel)</strong>, chúng tôi không chỉ coi công nghệ là công cụ phục vụ kinh doanh, mà còn là linh hồn của sự gắn kết nội bộ. Nền tảng streaming này được ra đời từ khát khao chuyên nghiệp hóa các giải đấu phong trào, biến mỗi phút thi đấu thành những trải nghiệm số đỉnh cao.
@@ -51,12 +51,12 @@ const AboutUs = () => {
             <div className="absolute top-0 right-0 p-4 md:p-8 opacity-5 pointer-events-none">
               <Camera size={150} className="md:w-[200px] md:h-[200px]" />
             </div>
-            <h2 className="text-2xl md:text-3xl font-black font-outfit text-[var(--accent-secondary)] mb-6 md:mb-8 flex items-center gap-3 md:gap-4">
+            <h3 className="text-xl md:text-2xl font-black font-outfit text-[var(--accent-secondary)] mb-6 md:mb-8 flex items-center gap-3 md:gap-4">
               <span className="w-10 h-10 md:w-12 md:h-12 bg-red-500/10 rounded-xl md:rounded-2xl flex items-center justify-center text-red-500 shrink-0">
                 <Zap size={20} className="md:w-7 md:h-7" />
               </span>
               Công nghệ VAR Nội bộ
-            </h2>
+            </h3>
             <div className="space-y-4 md:space-y-6 text-[var(--text-secondary)] relative z-10">
               <p className="border-l-4 border-red-500 pl-4 md:pl-6 py-1 md:py-2 italic font-medium text-sm md:text-base">
                 "Đưa tính chuyên nghiệp của các giải đấu quốc tế vào trong hoạt động nội bộ công ty."
@@ -230,10 +230,10 @@ const AboutUs = () => {
       {/* Banner Footer */}
       <section className="relative h-48 md:h-64 rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl">
         <img src="/aoe_banner_wide.png" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center text-center p-6 md:p-8">
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-center p-6 md:p-8">
           <div>
             <p className="text-[10px] md:text-[#f1812e] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] mb-2 md:mb-4 text-[#f1812e]">BP AOE Tournament Dashboard</p>
-            <h2 className="text-xl md:text-3xl lg:text-5xl font-black text-white font-outfit uppercase leading-tight">Build By IT Team, For The BestPrice Culture</h2>
+            <h3 className="text-lg md:text-xl lg:text-2xl font-black text-white font-outfit uppercase leading-tight">Build By IT Team, For The BestPrice Culture</h3>
           </div>
         </div>
       </section>

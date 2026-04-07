@@ -43,23 +43,30 @@ body {
   font-family: 'Roboto', sans-serif;
   background-color: var(--bg-main);
   color: var(--text-primary);
+  font-size: 15px; /* Default content size 14-16px */
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1,
-h2,
-h3,
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 900;
+  margin: 0;
+}
+
+h1 { font-size: 24px; }
+h2 { font-size: 20px; } /* Header size 18-20px */
+h3 { font-size: 18px; } /* Header size 18-20px */
+
 .font-outfit {
   font-family: 'Roboto', sans-serif;
   font-weight: 900;
 }
 
-/* Glassmorphism */
+/* Remove Glassmorphism */
 .glass {
-  background: rgba(15, 18, 25, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
 }
 

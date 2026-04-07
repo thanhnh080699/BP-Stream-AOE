@@ -11,50 +11,45 @@ A specialized skill for managing the AOE Streaming stack at BestPrice.
 
 The system is a multi-container Docker environment:
 1. **SRS Media Server**: Core engine. Custom config must be enforced via `command: ["./objs/srs", "-c", "conf/srs.conf"]`.
-2. **Python Worker**: Handles `on_dvr` hooks, concatenates segments using `ffmpeg`, and manages `metadata.json`.
-3. **React Dashboard**: Frontend serving Live (8 streams) and Archive (daily per-PC videos).
-4. **Shared Volume**: `srs_data` mounted at `/data` across all services for persistent JSON and video storage.
+2. **MariaDB Persistence**: Centralized database for match scores, players, and historical statistics. Uses a normalized schema (matches, match_participants, players).
+3. **Python Worker**: Handles `on_dvr` hooks, concatenates segments using `ffmpeg`, and manages **Database Syncing**. It also provides the `/api/v1/stats` endpoint.
+4. **React Dashboard**: Frontend serving Live (8 streams), Archive (daily per-PC videos), and **Analytics Dashboard**.
+5. **Shared Volume**: `srs_data` mounted at `/data` across all services for persistent video storage.
 
 ## Critical Technical Requirements
 
-### 1. SRS Configuration & DVR
-- **Config Path**: Custom configs must be mounted to `/usr/local/srs/conf/srs.conf`.
-- **DVR Plan**: Use `dvr_plan segment;` with `dvr_duration 60;` and `dvr_wait_keyframe on;` to ensure segments are closed cleanly at keyframes.
-- **Paths**: SRS `dvr_path` and `hls_path` should use absolute paths like `/usr/local/srs/objs/nginx/html/dvr/...` to match volume mounts.
+### 1. Database & Statistics
+- **Normalized Schema**: Always track statistics at the player level. A single "Match" consists of multiple "Participants" and scores.
+- **Game-Based Counting**: When calculating volumne or distribution, always sum the individual scores (e.g., 4-3 = 7 games) to reflect actual gameplay intensity.
+- **Winrate Calculation**: Calculate based on individual wins/losses within each match, NOT just overall win/loss of the series.
 
-### 2. HTTP Hooks Protocol
-- **Success Response**: SRS hooks (e.g., `on_dvr`) **MUST** return a string `"0"` or integer `0` with HTTP 200. Any other response (like "OK" or HTML 404) will cause SRS to disconnect the client with error `4005`.
-- **Debug Hook**: Use `/api/v1/debug` to log raw SRS payloads during troubleshooting.
+### 2. SRS Configuration & DVR
+- **Config Path**: Custom configs must be mounted to `/usr/local/srs/conf/srs.conf`.
+- **DVR Plan**: Use `dvr_plan segment;` with `dvr_duration 60;` and `dvr_wait_keyframe on;` to ensure segments are closed cleanly.
 
 ### 3. Worker Operations
-- **Rebuilding**: Changes to `worker/main.py` require a container rebuild on the PRODUCTION server.
-- **FFmpeg Merging**: Uses `ffmpeg -f concat` on `.flv` segments to create a single `.mp4` daily summary, then creates HLS segments from that MP4 with audio transcoding (`-c:a aac`) to prevent frame size errors.
+- **Database Init**: On startup, the worker ensures tables exist and migrates legacy JSON data if a fresh DB is detected.
+- **FFmpeg Merging**: Uses `ffmpeg -f concat` on `.flv` segments to create a single `.mp4` daily summary.
+- **Stats API**: Use `GET /api/v1/stats` for individual player performance and chronological activity.
 
-### 4. Frontend Playback
-- **Video Library**: Use `Video.js` for both live feeds and playback.
-- **Mixed Formats**: `VideoPlayer.jsx` must support HLS (`.m3u8`) for live feeds and direct MP4 playback for archives.
-- **Dynamic URLs**: Live streams use `/live/[stream_id].m3u8` or `/__defaultApp__/[stream_id].m3u8`. Archives use `/replays/[filename].mp4`.
-- **No Download**: Remove download buttons from the playback view.
-
-### 5. Responsive Design Standards
-- **Core Principle**: EVERY view must be fully responsive (mobile/desktop).
-- **Navigation**: Sidebar is persistent on large screens and collapsible on mobile. It MUST default to 'Open' (if requested), but should be easily dismissible.
-- **Grids**: Stream grids (e.g., in `LiveView`) must adapt (1 col on mobile, 2 col on tablet, 4 col on desktop). 
-- **Video Player**: Maintain `aspect-video` and handle touch interaction.
+### 4. Frontend & Analytics
+- **Analytics Dashboard**: Uses SVG-based visualizations. Includes a Heatmap/Bar chart for frequency and a Donut chart for category distribution.
+- **Dynamic Categories**: Support asymmetrical matches (e.g., 3-4, 1-2). Categories are named dynamically based on team sizes.
+- **Professional Styling**: Maintain high-contrast, premium dark-mode visuals using `var(--accent-secondary)` and `f1812e` orange themes.
 
 ## Operations
-- **Remote Execution**: All docker commands MUST be executed on the production server via SSH. DO NOT run docker locally.
+- **Remote Execution**: All docker commands MUST be executed on the production server via SSH.
 - **Full Refresh**: `ssh 192.168.9.233 "cd /home/ubuntu/streaming && sudo docker compose down && sudo docker compose up -d --build"`.
-- **View Recording Log**: `ssh 192.168.9.233 "sudo docker compose exec worker cat /data/recordings.json"`.
-- **Manual Merge**: Trigger via `POST /api/v1/merge/[YYYY-MM-DD]`.
-- **Troubleshooting**: Check logs with `ssh 192.168.9.233 "sudo docker compose logs -f worker"`.
+- **Database Backup**: Periodic exports of MariaDB are recommended. `mysql_data` should be excluded from Git via `.gitignore`.
+- **Debugging**: Check logs with `ssh 192.168.9.233 "sudo docker compose logs -f srs-worker"`.
 
 ## Directory Structure
 - `/srs.conf`: Server logic.
-- `/docker-compose.yml`: Infrastructure.
-- `/worker/main.py`: Backend & Video merging.
-- `/web/src/components/`: Dashboard views (LiveView, PlaybackView, VideoPlayer).
-- `/data/`: (Volume) Persistent storage for metadata and video files.
+- `/docker-compose.yml`: Infrastructure (DB, SRS, Worker, Dashboard).
+- `/worker/main.py`: Backend, DB logic & Video merging.
+- `/web/src/components/AnalyticsView.jsx`: High-level statistics dashboard.
+- `/data/`: (Volume) Video storage.
+- `/mysql_data/`: (Volume) Persistent database storage (ignored by git).
 
 ## Development Workflow
 - **Atomic Commits**: Every time you modify or add a new feature, component, or configuration, you **MUST** immediately commit and push the changes.

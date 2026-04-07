@@ -198,9 +198,9 @@ const LiveView = () => {
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 overflow-hidden">
         <div className="lg:w-2/3 space-y-3">
-          <h1 className="text-4xl md:text-5xl font-black font-outfit text-[var(--accent-secondary)] leading-tight">
+          <h2 className="text-3xl md:text-4xl font-black font-outfit text-[var(--accent-secondary)] leading-tight">
             <span className="text-[#f1812e]">BPGROUP</span> AOE Tournament
-          </h1>
+          </h2>
 
           <p className="text-[var(--text-secondary)] font-medium leading-relaxed max-w-2xl">
             Nền tảng livestream và xem lại trận đấu giải AOE nội bộ BestPrice, nơi lưu giữ mọi khoảnh khắc kịch tính,
