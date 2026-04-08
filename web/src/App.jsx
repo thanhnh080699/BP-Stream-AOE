@@ -6,9 +6,24 @@ import ScoreboardView from './components/ScoreboardView';
 import PlayerManagementView from './components/PlayerManagementView';
 import AnalyticsView from './components/AnalyticsView';
 import { Video, History, Trophy, Sun, Moon, Menu, X, Monitor, Info, LayoutTemplate, Users, BarChart3 } from 'lucide-react';
+import { Routes, Route, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 function App() {
-  const [tab, setTab] = useState('live');
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Determine current tab based on path for backward compatibility with logic
+  const getTabFromPath = (path) => {
+    if (path.startsWith('/playback')) return 'playback';
+    if (path.startsWith('/players')) return 'players';
+    if (path.startsWith('/scores')) return 'scores';
+    if (path.startsWith('/analytics')) return 'analytics';
+    if (path.startsWith('/about')) return 'about';
+    return 'live';
+  };
+  
+  const tab = getTabFromPath(location.pathname);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth > 1024;
@@ -58,13 +73,14 @@ function App() {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  const handleTabChange = (newTab) => {
-    setTab(newTab);
-    // Only auto-close sidebar on mobile/tablet (less than 1024px)
+  // Close sidebar on navigation if on mobile
+  useEffect(() => {
     if (window.innerWidth <= 1024) {
       setIsSidebarOpen(false);
     }
-  };
+    // Scroll to top on route change
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <div className="flex min-h-screen md:h-screen bg-[var(--bg-main)] text-[var(--text-primary)] font-sans selection:bg-blue-500/30 md:overflow-hidden transition-colors duration-300">
@@ -124,94 +140,100 @@ function App() {
         </div>
 
         <nav className={`flex-1 px-4 space-y-2 mt-4 md:mt-0 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
-          <button
-            onClick={() => handleTabChange('live')}
-            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'live'
+          <NavLink
+            to="/live"
+            className={({ isActive }) => `w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${isActive
                 ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
                 : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
-              }`}
+              }`
+            }
           >
             <div className="flex items-center gap-3">
               <Video size={18} />
               <span>Xem trực tiếp</span>
             </div>
             {tab === 'live' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
-          </button>
+          </NavLink>
 
-          <button
-            onClick={() => handleTabChange('playback')}
-            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'playback'
+          <NavLink
+            to="/playback"
+            className={({ isActive }) => `w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${isActive
                 ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
                 : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
-              }`}
+              }`
+            }
           >
             <div className="flex items-center gap-3">
               <History size={18} />
               <span>Xem lại theo ngày</span>
             </div>
             {tab === 'playback' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
-          </button>
+          </NavLink>
 
-          <button
-            onClick={() => handleTabChange('about')}
-            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'about'
+          <NavLink
+            to="/about"
+            className={({ isActive }) => `w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${isActive
                 ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
                 : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
-              }`}
+              }`
+            }
           >
             <div className="flex items-center gap-3">
               <Info size={18} />
               <span>Về chúng tôi</span>
             </div>
             {tab === 'about' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
-          </button>
+          </NavLink>
 
           <div className="pt-4 pb-2 px-4">
             <div className="h-px bg-[var(--border-color)] opacity-50 mb-4" />
             <p className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em] opacity-40">Phân tích & Thống kê</p>
           </div>
 
-          <button
-            onClick={() => handleTabChange('players')}
-            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'players'
+          <NavLink
+            to="/players"
+            className={({ isActive }) => `w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${isActive
                 ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
                 : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
-              }`}
+              }`
+            }
           >
             <div className="flex items-center gap-3">
               <Users size={18} />
               <span>Cài đặt người chơi</span>
             </div>
             {tab === 'players' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
-          </button>
+          </NavLink>
 
-          <button
-            onClick={() => handleTabChange('analytics')}
-            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'analytics'
+          <NavLink
+            to="/analytics"
+            className={({ isActive }) => `w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${isActive
                 ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
                 : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
-              }`}
+              }`
+            }
           >
             <div className="flex items-center gap-3">
               <BarChart3 size={18} />
               <span>Phân tích thống kê</span>
             </div>
             {tab === 'analytics' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
-          </button>
+          </NavLink>
 
-          <button
-            onClick={() => handleTabChange('scores')}
-            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${tab === 'scores'
+          <NavLink
+            to="/scores"
+            className={({ isActive }) => `w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${isActive
                 ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
                 : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
-              }`}
+              }`
+            }
           >
             <div className="flex items-center gap-3">
               <Monitor size={18} />
               <span>Bảng tỷ số</span>
             </div>
             {tab === 'scores' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
-          </button>
+          </NavLink>
         </nav>
 
         <div className={`p-4 space-y-4 mb-4 md:mb-0 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
@@ -242,12 +264,16 @@ function App() {
           </button>
         )}
         <div className="min-h-full p-6 md:p-12 pb-24 md:pb-12">
-          {tab === 'live' && <LiveView />}
-          {tab === 'playback' && <PlaybackView />}
-          {tab === 'players' && <PlayerManagementView />}
-          {tab === 'scores' && <ScoreboardView />}
-          {tab === 'analytics' && <AnalyticsView />}
-          {tab === 'about' && <AboutUs />}
+          <Routes>
+            <Route path="/live" element={<LiveView />} />
+            <Route path="/playback" element={<PlaybackView />} />
+            <Route path="/players" element={<PlayerManagementView />} />
+            <Route path="/scores" element={<ScoreboardView />} />
+            <Route path="/analytics" element={<AnalyticsView />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/" element={<Navigate to="/live" replace />} />
+            <Route path="*" element={<Navigate to="/live" replace />} />
+          </Routes>
         </div>
       </main>
 

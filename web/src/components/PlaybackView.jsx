@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import VideoPlayer from './VideoPlayer';
-import { Calendar, Play, Clock, Monitor, Archive, Filter, ChevronRight, HardDrive, AlertCircle, Trash2 } from 'lucide-react';
+import { Calendar, Play, Clock, Monitor, Archive, Filter, ChevronRight, HardDrive, AlertCircle, Trash2, Edit2, Check, X } from 'lucide-react';
+import PasswordModal from './PasswordModal';
 
 const PlaybackView = () => {
     const [replays, setReplays] = useState({});
     const [playerNames, setPlayerNames] = useState({});
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedStream, setSelectedStream] = useState(null);
+    const [allPlayers, setAllPlayers] = useState([]);
+    const [editingStreamId, setEditingStreamId] = useState(null);
+    const [tempPlayerName, setTempPlayerName] = useState('');
+    
+    // Auth Modal State
+    const [authModal, setAuthModal] = useState({
+        isOpen: false,
+        title: '',
+        description: '',
+        onConfirm: () => {}
+    });
 
     const fetchMetadata = () => {
         fetch('/api/v1/metadata')
@@ -47,28 +59,33 @@ const PlaybackView = () => {
 
     const handleDelete = (date, streamId = null) => {
         const type = streamId ? `máy ${playerNames[streamId] || streamId}` : `toàn bộ dữ liệu ngày ${date}`;
-        const password = window.prompt(`Xác nhận xoá ${type}?\nNhập password để xác nhận:`);
-
-        if (password === null) return; // Cancelled
-
-        fetch('/api/v1/delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password, date, stream: streamId })
-        })
-            .then(async res => {
-                const data = await res.json();
-                if (res.ok) {
-                    alert('Xoá thành công!');
-                    fetchMetadata();
-                } else {
-                    alert(`Lỗi: ${data.error || 'Không thể xoá'}`);
-                }
-            })
-            .catch(err => {
-                console.error('Delete error:', err);
-                alert('Lỗi kết nối server');
-            });
+        
+        setAuthModal({
+            isOpen: true,
+            title: 'Xác nhận xóa dữ liệu',
+            description: `Bạn đang yêu cầu xóa ${type}. Hành động này không thể hoàn tác. Vui lòng nhập mật khẩu để xác thực quyền quản trị.`,
+            onConfirm: (password) => {
+                fetch('/api/v1/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, date, stream: streamId })
+                })
+                    .then(async res => {
+                        const data = await res.json();
+                        if (res.ok) {
+                            alert('Xoá thành công!');
+                            setAuthModal(prev => ({ ...prev, isOpen: false }));
+                            fetchMetadata();
+                        } else {
+                            alert(`Lỗi: ${data.error || 'Không thể xoá'}`);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Delete error:', err);
+                        alert('Lỗi kết nối server');
+                    });
+            }
+        });
     };
 
     useEffect(() => {
@@ -78,7 +95,29 @@ const PlaybackView = () => {
             .then(res => res.json())
             .then(data => setPlayerNames(data))
             .catch(err => console.error('Error fetching player names:', err));
+
+        fetch('/api/v1/players-db')
+            .then(res => res.json())
+            .then(data => setAllPlayers(data))
+            .catch(err => console.error('Error fetching all players:', err));
     }, []);
+
+    const handleSavePlayerName = (streamId, newName) => {
+        if (!newName) return;
+        const updatedNames = { ...playerNames, [streamId]: newName };
+        setPlayerNames(updatedNames);
+        setEditingStreamId(null);
+
+        fetch('/api/v1/players', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedNames)
+        })
+        .then(res => {
+            if (!res.ok) alert('Lỗi khi lưu tên người chơi');
+        })
+        .catch(err => console.error('Error saving player name:', err));
+    };
 
     // New: Polling effect for processing status
     useEffect(() => {
@@ -209,26 +248,45 @@ const PlaybackView = () => {
                                         <div className=" mb-4 grid grid-cols-2 gap-2">
                                             <button
                                                 onClick={() => {
-                                                    fetch(`/api/v1/merge/${date}`, { method: 'POST' });
-                                                    alert('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...');
-                                                    setReplays(prev => ({
-                                                        ...prev,
-                                                        [date]: { ...prev[date], status: 'processing', progress_percent: 5, progress_text: 'Đang bắt đầu...' }
-                                                    }));
-
+                                                    setAuthModal({
+                                                        isOpen: true,
+                                                        title: 'Tổng hợp dữ liệu video',
+                                                        description: 'Để tránh spam nhiều lần và tối ưu tài nguyên máy chủ, vui lòng nhập mật khẩu để bắt đầu quá trình tổng hợp file MP4/HLS.',
+                                                        onConfirm: (password) => {
+                                                            if (password !== '1234567890') {
+                                                                alert('Mật khẩu không đúng!');
+                                                                return;
+                                                            }
+                                                            fetch(`/api/v1/merge/${date}`, { method: 'POST' });
+                                                            alert('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...');
+                                                            setReplays(prev => ({
+                                                                ...prev,
+                                                                [date]: { ...prev[date], status: 'processing', progress_percent: 5, progress_text: 'Đang bắt đầu...' }
+                                                            }));
+                                                            setAuthModal(prev => ({ ...prev, isOpen: false }));
+                                                        }
+                                                    });
                                                 }}
                                                 disabled={meta.status === 'processing'}
-                                                className={`w-full py-3 text-[10px] mb-0 font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn cursor-pointer ${meta.status === 'processing'
-                                                    ? 'bg-[#f1812e] hover:bg-[#f1812e] text-[#fff] border-[#f1812e] cursor-not-allowed'
-                                                    : 'bg-[#f1812e] hover:bg-[#f1812e] text-[#fff] border-[#f1812e]'
+                                                className={`w-full py-3 text-[10px] mb-4 font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn cursor-pointer ${meta.status === 'processing'
+                                                    ? 'bg-[#f1812e] text-[#fff] border-[#f1812e] cursor-not-allowed'
+                                                    : 'bg-[#f1812e] text-[#fff] border-[#f1812e]'
                                                     }`}
                                             >
                                                 <HardDrive size={12} className={`${meta.status === 'processing' ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
                                                 {meta.status === 'completed' ? 'Tổng Hợp Dữ Liệu' : 'Tổng Hợp File'}
                                             </button>
 
+                                            <button
+                                                onClick={() => handleDelete(date)}
+                                                className="w-full py-2.5 text-[9px] mb-4 font-bold rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500/70 hover:text-red-500 transition-all uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
+                                            >
+                                                <Trash2 size={12} />
+                                                Xoá Toàn Bộ Ngày
+                                            </button>
+
                                             {meta.status === 'processing' && (
-                                                <div className="space-y-2 animate-in fade-in duration-500">
+                                                <div className="col-span-2 space-y-2 animate-in fade-in duration-500">
                                                     <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-tighter text-[#f1812e]">
                                                         <span>{meta.progress_text || 'Đang xử lý...'}</span>
                                                         <span>{meta.progress_percent || 0}%</span>
@@ -241,14 +299,6 @@ const PlaybackView = () => {
                                                     </div>
                                                 </div>
                                             )}
-
-                                            <button
-                                                onClick={() => handleDelete(date)}
-                                                className="w-full py-2.5 text-[9px] font-bold rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500/70 hover:text-red-500 transition-all uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
-                                            >
-                                                <Trash2 size={12} />
-                                                Xoá Toàn Bộ Ngày
-                                            </button>
                                         </div>
                                     )}
                                 </div>
@@ -276,10 +326,58 @@ const PlaybackView = () => {
                                             }`}
                                     >
                                         <div className="flex justify-between items-center w-full mb-2">
-                                            <span className={`font-black font-outfit uppercase tracking-tight text-sm ${selectedStream === s_id ? 'text-[#fff]' : 'text-[var(--text-primary)]'}`}>
-                                                {playerNames[s_id] || s_id}
-                                            </span>
-                                            <span className={`text-[9px] font-black font-mono uppercase tracking-tighter ${selectedStream === s_id ? 'text-[#fff]/40' : 'text-[var(--text-secondary)] opacity-50'}`}>{s_id}</span>
+                                            {editingStreamId === s_id ? (
+                                                <div className="flex items-center gap-2 flex-1" onClick={e => e.stopPropagation()}>
+                                                    <select
+                                                        value={tempPlayerName}
+                                                        onChange={(e) => setTempPlayerName(e.target.value)}
+                                                        className="flex-1 bg-[var(--bg-main)] border border-[#fff]/20 rounded-lg py-1 px-2 text-xs font-bold text-[var(--text-primary)] focus:outline-none"
+                                                        autoFocus
+                                                    >
+                                                        <option value="">Chọn người chơi...</option>
+                                                        {allPlayers.map(p => (
+                                                            <option key={p.id} value={p.name}>{p.name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleSavePlayerName(s_id, tempPlayerName);
+                                                        }}
+                                                        className="p-1 hover:bg-white/10 rounded"
+                                                    >
+                                                        <Check size={14} className="text-emerald-400" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setEditingStreamId(null);
+                                                        }}
+                                                        className="p-1 hover:bg-white/10 rounded"
+                                                    >
+                                                        <X size={14} className="text-red-400" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`font-black font-outfit uppercase tracking-tight text-sm ${selectedStream === s_id ? 'text-[#fff]' : 'text-[var(--text-primary)]'}`}>
+                                                            {playerNames[s_id] || s_id}
+                                                        </span>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setEditingStreamId(s_id);
+                                                                setTempPlayerName(playerNames[s_id] || '');
+                                                            }}
+                                                            className={`p-1 rounded opacity-30 hover:opacity-100 transition-opacity ${selectedStream === s_id ? 'hover:bg-black/20' : 'hover:bg-white/10'}`}
+                                                        >
+                                                            <Edit2 size={12} />
+                                                        </button>
+                                                    </div>
+                                                    <span className={`text-[9px] font-black font-mono uppercase tracking-tighter ${selectedStream === s_id ? 'text-[#fff]/40' : 'text-[var(--text-secondary)] opacity-50'}`}>{s_id}</span>
+                                                </>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-2.5">
                                             <div className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest ${selectedStream === s_id ? 'text-[#fff]/70' : 'text-[var(--text-secondary)] opacity-70'}`}>
@@ -313,6 +411,15 @@ const PlaybackView = () => {
                     )}
                 </div>
             </div>
+            
+            {/* Auth Modal */}
+            <PasswordModal 
+                isOpen={authModal.isOpen}
+                title={authModal.title}
+                description={authModal.description}
+                onClose={() => setAuthModal(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={authModal.onConfirm}
+            />
         </div>
     );
 };

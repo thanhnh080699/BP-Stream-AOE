@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Users, X, Calendar, Trophy, Save, Loader2, LayoutTemplate } from 'lucide-react';
+import PasswordModal from './PasswordModal';
 
 const ScoreboardView = () => {
   const [scores, setScores] = useState({});
@@ -7,6 +8,14 @@ const ScoreboardView = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [playersList, setPlayersList] = useState([]);
   const [error, setError] = useState(null);
+  
+  // Auth Modal State
+  const [authModal, setAuthModal] = useState({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {}
+  });
   
   // Form state
   const [formData, setFormData] = useState({
@@ -95,19 +104,26 @@ const ScoreboardView = () => {
   };
 
   const handleDelete = async (id) => {
-    const password = window.prompt('Nhập mật khẩu để xóa kết quả này:');
-    if (password !== '1234567890') {
-      if (password !== null) alert('Mật khẩu không đúng!');
-      return;
-    }
+    setAuthModal({
+      isOpen: true,
+      title: 'Xác nhận xóa kết quả',
+      description: 'Hành động này sẽ xóa vĩnh viễn dữ liệu trận đấu. Vui lòng nhập mật khẩu để xác nhận tính công bằng và minh bạch.',
+      onConfirm: async (password) => {
+        if (password !== '1234567890') {
+          alert('Mật khẩu không đúng!');
+          return;
+        }
 
-    try {
-      const response = await fetch(`/api/v1/scores/${id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Lỗi khi xóa');
-      fetchScores();
-    } catch (err) {
-      alert(err.message);
-    }
+        try {
+          const response = await fetch(`/api/v1/scores/${id}`, { method: 'DELETE' });
+          if (!response.ok) throw new Error('Lỗi khi xóa');
+          setAuthModal(prev => ({ ...prev, isOpen: false }));
+          fetchScores();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+    });
   };
 
   const getSelected = (teamKey) => formData[teamKey] ? formData[teamKey].split(',').map(s => s.trim()).filter(s => s) : [];
@@ -189,7 +205,25 @@ const ScoreboardView = () => {
         </div>
         
         <button
-          onClick={() => setIsAdding(!isAdding)}
+          onClick={() => {
+            if (isAdding) {
+              setIsAdding(false);
+              return;
+            }
+            setAuthModal({
+              isOpen: true,
+              title: 'Thêm kết quả thi đấu',
+              description: 'Để đảm bảo dữ liệu giải đấu được chính xác và công bằng, vui lòng nhập mật khẩu quản trị để mở form nhập kết quả.',
+              onConfirm: (password) => {
+                if (password === '1234567890') {
+                  setAuthModal(prev => ({ ...prev, isOpen: false }));
+                  setIsAdding(true);
+                } else {
+                  alert('Mật khẩu không đúng!');
+                }
+              }
+            });
+          }}
           className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl hover:scale-105 active:scale-95 ${
             isAdding ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-color)]' : 'bg-[#f1812e] text-white'
           }`}
@@ -377,6 +411,14 @@ const ScoreboardView = () => {
           </div>
         </div>
       )}
+      {/* Auth Modal */}
+      <PasswordModal 
+        isOpen={authModal.isOpen}
+        title={authModal.title}
+        description={authModal.description}
+        onClose={() => setAuthModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={authModal.onConfirm}
+      />
     </div>
   );
 };

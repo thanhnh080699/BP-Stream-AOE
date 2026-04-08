@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Trash2, UserPlus, Loader2, AlertCircle, Search } from 'lucide-react';
+import { Users, Plus, Trash2, UserPlus, Loader2, AlertCircle, Search, Edit2, Check, X as CloseIcon } from 'lucide-react';
+import PasswordModal from './PasswordModal';
 
 const PlayerManagementView = () => {
   const [players, setPlayers] = useState([]);
@@ -7,6 +8,16 @@ const PlayerManagementView = () => {
   const [name, setName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editingName, setEditingName] = useState('');
+  
+  // Auth Modal State
+  const [authModal, setAuthModal] = useState({
+      isOpen: false,
+      title: '',
+      description: '',
+      onConfirm: () => {}
+  });
 
   const fetchPlayers = async () => {
     try {
@@ -53,17 +64,59 @@ const PlayerManagementView = () => {
   };
 
   const handleDeletePlayer = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa người chơi này?')) return;
+    setAuthModal({
+      isOpen: true,
+      title: 'Xóa thành viên thi đấu',
+      description: 'Hành động này sẽ xóa người chơi khỏi cơ sở dữ liệu. Vui lòng nhập mật khẩu xác thực để thực hiện.',
+      onConfirm: async (password) => {
+        if (password !== '1234567890') {
+          alert('Mật khẩu không đúng!');
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/v1/players-db/${id}`, {
+            method: 'DELETE'
+          });
+          if (!response.ok) throw new Error('Lỗi khi xóa');
+          setAuthModal(prev => ({ ...prev, isOpen: false }));
+          fetchPlayers();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+    });
+  };
+
+  const handleUpdatePlayer = async (id, newName) => {
+    if (!newName.trim()) return;
     
-    try {
-      const response = await fetch(`/api/v1/players-db/${id}`, {
-        method: 'DELETE'
-      });
-      if (!response.ok) throw new Error('Lỗi khi xóa');
-      fetchPlayers();
-    } catch (err) {
-      alert(err.message);
-    }
+    setAuthModal({
+      isOpen: true,
+      title: 'Cập nhật tên thành viên',
+      description: `Bạn đang đổi tên thành viên thành "${newName}". Vui lòng nhập mật khẩu xác thực.`,
+      onConfirm: async (password) => {
+        if (password !== '1234567890') {
+          alert('Mật khẩu không đúng!');
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/v1/players-db/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName.trim() })
+          });
+          
+          if (!response.ok) throw new Error('Lỗi khi cập nhật');
+          setEditingId(null);
+          setAuthModal(prev => ({ ...prev, isOpen: false }));
+          fetchPlayers();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+    });
   };
 
   const filteredPlayers = players.filter(p => 
@@ -165,19 +218,54 @@ const PlayerManagementView = () => {
                             <div className="w-8 h-8 rounded-lg bg-[#f1812e]/10 border border-[#f1812e]/20 flex items-center justify-center text-[#f1812e] text-xs font-black">
                               {player.name.charAt(0).toUpperCase()}
                             </div>
-                            {player.name}
+                            {editingId === player.id ? (
+                              <div className="flex items-center gap-2 flex-1 animate-in slide-in-from-left-2 duration-200">
+                                <input
+                                  autoFocus
+                                  type="text"
+                                  value={editingName}
+                                  onChange={(e) => setEditingName(e.target.value)}
+                                  className="flex-1 bg-[var(--bg-main)] border border-[#f1812e]/30 rounded-lg py-1 px-3 text-sm font-bold focus:outline-none focus:ring-1 focus:ring-[#f1812e]"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleUpdatePlayer(player.id, editingName);
+                                    if (e.key === 'Escape') setEditingId(null);
+                                  }}
+                                />
+                                <button onClick={() => handleUpdatePlayer(player.id, editingName)} className="p-1.5 text-emerald-500 hover:bg-emerald-500/10 rounded-md transition-colors">
+                                  <Check size={16} />
+                                </button>
+                                <button onClick={() => setEditingId(null)} className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-md transition-colors">
+                                  <CloseIcon size={16} />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-[var(--text-primary)]">{player.name}</span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-xs opacity-50">
                           {new Date(player.created_at).toLocaleDateString('vi-VN')}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => handleDeletePlayer(player.id)}
-                            className="p-2 rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <div className="flex items-center justify-end gap-1">
+                            {editingId !== player.id && (
+                              <button
+                                onClick={() => {
+                                  setEditingId(player.id);
+                                  setEditingName(player.name);
+                                }}
+                                className="p-2 rounded-lg text-[var(--text-secondary)] hover:bg-[#f1812e]/10 hover:text-[#f1812e] transition-all opacity-0 group-hover:opacity-100"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeletePlayer(player.id)}
+                              className="p-2 rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -188,6 +276,14 @@ const PlayerManagementView = () => {
           </div>
         </div>
       </div>
+      {/* Auth Modal */}
+      <PasswordModal 
+          isOpen={authModal.isOpen}
+          title={authModal.title}
+          description={authModal.description}
+          onClose={() => setAuthModal(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={authModal.onConfirm}
+      />
     </div>
   );
 };

@@ -6,21 +6,21 @@ const AboutUs = () => {
     <div className="max-w-6xl mx-auto space-y-8 md:space-y-16 pb-24 px-4 font-sans translate-y-0">
       {/* Hero Section */}
       <section className="relative rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl group h-[350px] md:h-[500px]">
-        <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-main)] via-[var(--bg-main)]/20 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10" />
         <img
           src="/aoe_banner_final.png"
           alt="BestPrice AOE Tournament"
           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
         />
         <div className="absolute bottom-6 left-6 md:bottom-12 md:left-12 right-6 md:right-12 z-20">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-[#fff] border border-[#f1812e]/30 mb-4 md:mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 mb-4 md:mb-6">
             <Shield size={14} className="text-[#f1812e] md:w-4 md:h-4" />
-            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-[#f1812e]">Hệ thống VAR nội bộ</span>
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-white">Hệ thống VAR nội bộ</span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-black font-outfit text-white mb-4 md:mb-6 drop-shadow-2xl uppercase tracking-tighter leading-none">
+          <h2 className="text-2xl md:text-3xl font-black font-outfit text-white mb-3 md:mb-5 drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] uppercase tracking-tighter leading-none">
             BestPrice <span className="text-[#f1812e]">Tech Hub</span>
           </h2>
-          <p className="text-sm md:text-lg lg:text-xl text-white/80 max-w-3xl font-medium leading-relaxed drop-shadow-lg line-clamp-3 md:line-clamp-none">
+          <p className="text-sm md:text-lg lg:text-xl text-white max-w-3xl font-bold leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] line-clamp-3 md:line-clamp-none">
             Tiên phong ứng dụng công nghệ truyền tải hình ảnh và phân tích dữ liệu thời gian thực cho các hoạt động văn hóa - thể thao nội bộ tại Công ty CP Công nghệ Du lịch Best Price.
           </p>
         </div>
