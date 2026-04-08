@@ -545,6 +545,25 @@ def delete_player_db(player_id):
     finally:
         conn.close()
 
+@app.route('/api/v1/players-db/<int:player_id>', methods=['PUT'])
+def update_player_db(player_id):
+    data = request.json
+    name = data.get('name')
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE players SET name = %s WHERE id = %s", (name, player_id))
+        conn.commit()
+        return jsonify({"status": "Player updated"}), 200
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
 # ── Core merge workers ────────────────────────────────────────────────────────
 
 def process_one_segment(args):
@@ -569,7 +588,6 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
     ts_dir     = os.path.join(replay_dir, 'ts_tmp')
     os.makedirs(ts_dir, exist_ok=True)
 
-    mp4_output = os.path.join(replay_dir, 'summary.mp4')
     hls_output = os.path.join(replay_dir, 'index.m3u8')
 
     try:
@@ -614,13 +632,15 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
                 )
 
         ts_files = [r[1] for r in results if r is not None]
+        total_duration = sum(r[2] for r in results if r is not None)
+
         if not ts_files:
             raise RuntimeError("Không convert được bất kỳ segment nào sang TS")
 
         print(f"[{s_id}] Convert xong: {len(ts_files)}/{len(valid_files)} segments hợp lệ")
 
         update_meta_field(meta, meta_file, date_str,
-            progress_text=f"[{s_id}] Nối {len(ts_files)} segments → MP4...",
+            progress_text=f"[{s_id}] Tạo HLS...",
             progress_percent=machine_progress_start + int(machine_progress_step * 0.70)
         )
 
@@ -633,27 +653,6 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
             'ffmpeg', '-y',
             '-f', 'concat', '-safe', '0', '-i', list_file,
             '-c', 'copy',
-            '-movflags', '+faststart',
-            '-max_muxing_queue_size', '9999',
-            mp4_output
-        ])
-        if not success:
-            raise RuntimeError(f"Concat TS → MP4 thất bại:\n{stderr[-500:]}")
-
-        total_duration = get_duration(mp4_output)
-        print(f"[{s_id}] ✓ MP4: {total_duration:.1f}s ({total_duration/60:.2f} phút)")
-
-        update_meta_field(meta, meta_file, date_str,
-            progress_text=f"[{s_id}] Tạo HLS...",
-            progress_percent=machine_progress_start + int(machine_progress_step * 0.85)
-        )
-
-        success, stderr = run_ffmpeg([
-            'ffmpeg', '-y',
-            '-i', mp4_output,
-            '-c:v', 'copy',
-            '-c:a', 'copy',
-            '-bsf:v', 'h264_mp4toannexb',
             '-hls_time', '5',
             '-hls_list_size', '0',
             '-hls_flags', 'independent_segments',
@@ -662,6 +661,8 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
         ])
         if not success:
             raise RuntimeError(f"Tạo HLS thất bại:\n{stderr[-500:]}")
+
+        print(f"[{s_id}] ✓ HLS: {total_duration:.1f}s ({total_duration/60:.2f} phút)")
 
         for ts_path in ts_files:
             if os.path.exists(ts_path):
@@ -676,7 +677,6 @@ def process_one_stream(s_id, files, date_str, meta, meta_file,
 
         with meta_lock:
             meta[date_str]["streams"][s_id] = {
-                "mp4":              f"replays/{date_str}/{s_id}/summary.mp4",
                 "hls":              f"replays/{date_str}/{s_id}/index.m3u8",
                 "duration_minutes": round(total_duration / 60, 2),
                 "file":             f"replays/{date_str}/{s_id}/index.m3u8"
