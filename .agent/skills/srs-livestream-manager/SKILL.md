@@ -37,6 +37,7 @@ The system is a multi-container Docker environment:
 - **Dynamic Categories**: Support asymmetrical matches (e.g., 3-4, 1-2). Categories are named dynamically based on team sizes.
 - **Professional Styling**: Maintain high-contrast, premium dark-mode visuals using `var(--accent-secondary)` and `f1812e` orange themes.
 - **UI Consistency & UX Patterns**:
+    - **Responsiveness**: All pages and components MUST be fully responsive, prioritizing mobile usability without compromising desktop aesthetics. Use appropriate grid and flex layouts (`grid-cols-1 md:grid-cols-2`, etc.) to ensure readability on small screens.
     - **Modals**: Always implement `Escape` key and "Click Outside" handlers for closing modals/popups. 
     - **Formatting**: Avoid forced `uppercase` for names to preserve original casing. Use high-contrast colors (80-90% opacity) for primary text.
     - **Win/Loss States**: Use standard Green (Win) and Red (Loss) themes with subtle background tints (`/5` or `/10`) and solid borders (`/20`).

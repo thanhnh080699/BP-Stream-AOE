@@ -171,7 +171,7 @@ const ScoreboardView = () => {
         <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest block mb-1 opacity-60">
           Chọn thành viên thi đấu
         </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1 scrollbar-hide">
+        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1 scrollbar-hide">
           {playersList.length === 0 ? (
             <p className="col-span-full text-[10px] italic opacity-40 py-2">Chưa có người chơi nào trong DB</p>
           ) : (
@@ -185,14 +185,14 @@ const ScoreboardView = () => {
                     key={player.id}
                     type="button"
                     onClick={() => togglePlayer(teamKey, name)}
-                    className={`text-[10px] font-bold px-2 py-2 rounded-lg border transition-all truncate text-left flex items-center gap-1.5 ${
+                    className={`text-[10px] font-bold px-2 py-2.5 rounded-lg border transition-all truncate text-left flex items-center gap-1.5 ${
                       isSelected 
                         ? `${colorClass} border-transparent shadow-sm scale-95` 
-                        : 'bg-[var(--bg-main)] border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[#f1812e]/50'
+                        : 'bg-[var(--bg-main)] border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[#f1812e]/50 text-opacity-70'
                     }`}
                   >
-                    <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-gray-400 opacity-30'}`} />
-                    {name}
+                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-white' : 'bg-gray-400 opacity-30'}`} />
+                    <span className="truncate">{name}</span>
                   </button>
                 );
               })
@@ -238,16 +238,16 @@ const ScoreboardView = () => {
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] px-5 py-3 rounded-2xl flex items-center gap-4 shadow-xl hover:border-[#f1812e]/30 transition-all group">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-[#f1812e] group-hover:scale-110 transition-transform">
-              <Trophy size={20} />
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl flex items-center gap-3 sm:gap-4 shadow-xl hover:border-[#f1812e]/30 transition-all group">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-[#f1812e] group-hover:scale-110 transition-transform">
+              <Trophy size={16} className="sm:w-[20px] sm:h-[20px]" />
             </div>
             <div>
-               <div className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-1.5">Tổng số trận</div>
-               <div className="text-2xl font-black font-outfit leading-none flex items-baseline gap-1">
+               <div className="text-[9px] sm:text-[10px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-1 sm:mb-1.5">Tổng số trận</div>
+               <div className="text-xl sm:text-2xl font-black font-outfit leading-none flex items-baseline gap-1">
                  {Object.values(scores).flat().length}
-                 <span className="text-xs opacity-20">TRẬN</span>
+                 <span className="text-[10px] opacity-20">TRẬN</span>
                </div>
             </div>
           </div>
@@ -272,11 +272,11 @@ const ScoreboardView = () => {
                 }
               });
             }}
-            className={`flex items-center gap-2 py-4 px-6 rounded-2xl font-bold transition-all shadow-xl group ${isAdding ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}
+            className={`flex items-center gap-2 py-3 sm:py-4 px-4 sm:px-6 rounded-2xl font-bold transition-all shadow-xl group flex-1 sm:flex-initial justify-center ${isAdding ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}
           >
-            {isAdding ? <X size={20} /> : <Plus size={20} className="group-hover:rotate-90 transition-transform" />}
-            <span className="uppercase tracking-tight text-sm">
-              {isAdding ? 'Hủy bỏ' : 'Thêm / Sửa kết quả'}
+            {isAdding ? <X size={18} /> : <Plus size={18} className="group-hover:rotate-90 transition-transform" />}
+            <span className="uppercase tracking-tight text-xs sm:text-sm">
+              {isAdding ? 'Hủy bỏ' : 'Thêm kết quả'}
             </span>
           </button>
         </div>
@@ -408,21 +408,20 @@ const ScoreboardView = () => {
               
               <div className="p-6 space-y-6 max-h-[600px] overflow-y-auto scrollbar-thin">
                 {[...scores[date]].sort((a, b) => b.id - a.id).map((match, idx) => (
-                  <div key={match.id} className="relative bg-[var(--bg-main)]/40 rounded-[24px] p-4 md:p-5 border border-[var(--border-color)]/30 group hover:border-[#f1812e]/40 transition-all flex items-center min-h-[100px]">
-                    <div className="w-full flex items-center justify-between gap-6 md:gap-16">
+                  <div key={match.id} className="relative bg-[var(--bg-main)]/40 rounded-[28px] md:rounded-[24px] p-5 md:p-5 border border-[var(--border-color)]/30 group hover:border-[#f1812e]/40 transition-all flex items-center min-h-[100px]">
+                    <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4 md:gap-16">
                       {/* Team A Players */}
-                      <div className="flex-1 text-right">
-                        <div className="flex flex-nowrap justify-end gap-1.5 mb-3 overflow-x-hidden">
+                      <div className="flex-1 w-full md:text-right">
+                        <div className="flex flex-wrap justify-center md:justify-end gap-1.5 mb-0 md:mb-3">
                           {match.team_a_players.split(',').map((p, i) => (
-                            <span key={i} className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-orange-500/10 whitespace-nowrap">{p.trim()}</span>
+                            <span key={i} className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-xs md:text-sm font-bold shadow-lg shadow-orange-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
                         </div>
-                        {/* TEAM A labels removed */}
                       </div>
 
                       {/* Score Badge */}
-                      <div className="flex flex-col items-center justify-center min-w-[100px] bg-[var(--bg-card)] rounded-[20px] py-3 px-3 border border-[var(--border-color)] shadow-xl relative z-10">
-                        <div className="text-2xl font-black font-outfit tracking-tighter flex items-center gap-3">
+                      <div className="flex flex-row md:flex-col items-center justify-center min-w-[120px] md:min-w-[100px] bg-[var(--bg-card)] rounded-2xl md:rounded-[20px] py-2 md:py-3 px-4 md:px-3 border border-[var(--border-color)] shadow-xl relative z-10">
+                        <div className="text-xl md:text-2xl font-black font-outfit tracking-tighter flex items-center gap-3">
                           <span className={match.score_a > match.score_b ? 'text-orange-500' : 'text-[var(--text-primary)] opacity-40'}>{match.score_a}</span>
                           <span className="opacity-10">:</span>
                           <span className={match.score_b > match.score_a ? 'text-blue-500' : 'text-[var(--text-primary)] opacity-40'}>{match.score_b}</span>
@@ -430,13 +429,12 @@ const ScoreboardView = () => {
                       </div>
 
                       {/* Team B Players */}
-                      <div className="flex-1 text-left">
-                        <div className="flex flex-nowrap justify-start gap-1.5 mb-3 overflow-x-hidden">
+                      <div className="flex-1 w-full text-left">
+                        <div className="flex flex-wrap justify-center md:justify-start gap-1.5 mb-0 md:mb-3">
                           {match.team_b_players.split(',').map((p, i) => (
-                            <span key={i} className="px-2.5 py-1 bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/10 whitespace-nowrap">{p.trim()}</span>
+                            <span key={i} className="px-2.5 py-1 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-bold shadow-lg shadow-blue-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
                         </div>
-                        {/* TEAM B labels removed */}
                       </div>
                     </div>
                     

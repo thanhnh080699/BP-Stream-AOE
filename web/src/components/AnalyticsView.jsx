@@ -296,18 +296,18 @@ const AnalyticsView = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {['all', 'week', 'month', 'quarter', 'year', 'custom'].map(f => (
             <button
               key={f}
               onClick={() => setTimeFilter(f)}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              className={`px-3 sm:px-4 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all flex-1 sm:flex-initial text-center ${
                 timeFilter === f 
                 ? 'bg-[#f1812e] text-white shadow-lg shadow-orange-500/20' 
                 : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:border-[#f1812e]/50 text-opacity-50'
               }`}
             >
-              {f === 'all' ? 'Tất cả' : (f === 'week' ? 'Tuần' : (f === 'month' ? 'Tháng' : (f === 'quarter' ? 'Quý' : (f === 'year' ? 'Năm' : 'Tùy chọn'))))}
+              {f === 'all' ? 'Tất cả' : (f === 'week' ? 'Tuần' : (f === 'month' ? 'Tháng' : (f === 'quarter' ? 'Quý' : (f === 'year' ? 'Năm' : 'Lọc'))))}
             </button>
           ))}
         </div>
@@ -363,7 +363,7 @@ const AnalyticsView = () => {
               <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">Tần suất trận đấu theo ngày</span>
             </div>
           </div>
-          <div className="relative h-80 px-2 mt-4">
+          <div className="relative h-80 px-2 mt-4 overflow-x-auto scrollbar-hide">
             {/* Y Axis Grid & Labels */}
             <div className="absolute inset-x-2 top-0 bottom-10 flex flex-col justify-between pointer-events-none z-0">
               {[...Array(5)].map((_, i) => {
@@ -572,35 +572,35 @@ const AnalyticsView = () => {
                   </div>
 
                   {/* Main Win/Loss Stats with Radial Chart */}
-                  <div className="lg:col-span-4 flex items-center justify-between bg-[var(--bg-main)]/40 rounded-[32px] p-8 border border-[var(--border-color)]">
-                    <div className="space-y-6">
+                  <div className="lg:col-span-4 flex flex-col sm:flex-row items-center justify-between bg-[var(--bg-main)]/40 rounded-[32px] p-6 sm:p-8 border border-[var(--border-color)] gap-6 sm:gap-0">
+                    <div className="flex sm:flex-col gap-6 sm:space-y-6 w-full sm:w-auto justify-around sm:justify-start">
                       <div className="flex items-center gap-4">
                         <div className="w-1.5 h-10 bg-green-500 rounded-full" />
                         <div>
                           <p className="text-[10px] font-black opacity-30 uppercase tracking-widest">Thắng</p>
-                          <div className="text-2xl font-black text-green-500 tabular-nums">{player.wins}</div>
+                          <div className="text-xl sm:text-2xl font-black text-green-500 tabular-nums">{player.wins}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="w-1.5 h-10 bg-red-500 rounded-full" />
                         <div>
                           <p className="text-[10px] font-black opacity-30 uppercase tracking-widest">Thua</p>
-                          <div className="text-2xl font-black text-red-500 tabular-nums">{player.losses}</div>
+                          <div className="text-xl sm:text-2xl font-black text-red-500 tabular-nums">{player.losses}</div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="relative flex items-center justify-center scale-110">
-                      <svg className="w-32 h-32 transform -rotate-90">
-                        <circle cx="64" cy="64" r="54" fill="transparent" stroke="currentColor" strokeWidth="12" className="text-[var(--border-color)] opacity-20" />
+                    <div className="relative flex items-center justify-center scale-100 sm:scale-110">
+                      <svg className="w-24 h-24 sm:w-32 sm:h-32 transform -rotate-90">
+                        <circle cx="50%" cy="50%" r="40%" fill="transparent" stroke="currentColor" strokeWidth="12" className="text-[var(--border-color)] opacity-20" />
                         <circle 
-                          cx="64" cy="64" r="54" fill="transparent" stroke="url(#gradient-player-win)" strokeWidth="12" 
-                          strokeDasharray={339.29} strokeDashoffset={339.29 * (1 - winRate / 100)} strokeLinecap="round" className="transition-all duration-1000 ease-out" 
+                          cx="50%" cy="50%" r="40%" fill="transparent" stroke="url(#gradient-player-win)" strokeWidth="12" 
+                          strokeDasharray="251.2%" strokeDashoffset={251.2 * (1 - winRate / 100) + "%"} strokeLinecap="round" className="transition-all duration-1000 ease-out" 
                         />
                         <defs><linearGradient id="gradient-player-win" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#f1812e" /><stop offset="100%" stopColor="#ffaa45" /></linearGradient></defs>
                       </svg>
                       <div className="absolute text-center">
-                        <div className="text-xl font-black font-outfit leading-none mb-1 tabular-nums">{winRate}%</div>
+                        <div className="text-lg sm:text-xl font-black font-outfit leading-none mb-1 tabular-nums">{winRate}%</div>
                         <div className="text-[8px] font-black opacity-40 uppercase tracking-tighter">WINRATE</div>
                       </div>
                     </div>
@@ -615,7 +615,7 @@ const AnalyticsView = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 xs:grid-cols-4 gap-4 sm:gap-2">
                       {['1-1', '2-2', '3-3', '4-4'].map(cat => {
                         const data = player.categories[cat] || { wins: 0, losses: 0, total: 0 };
                         const rate = data.total > 0 ? (data.wins / data.total) * 100 : 0;

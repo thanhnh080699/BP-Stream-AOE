@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import VideoPlayer from './VideoPlayer';
-import { Calendar, Play, Clock, Monitor, Archive, Filter, ChevronRight, HardDrive, AlertCircle, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Calendar, Play, Clock, Monitor, Archive, Filter, ChevronRight, HardDrive, AlertCircle, Trash2, Edit2, Check, X, Trophy } from 'lucide-react';
 import PasswordModal from './PasswordModal';
+import PlaybackCalendar from './PlaybackCalendar';
 
 const PlaybackView = () => {
     const [replays, setReplays] = useState({});
@@ -9,6 +10,7 @@ const PlaybackView = () => {
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedStream, setSelectedStream] = useState(null);
     const [allPlayers, setAllPlayers] = useState([]);
+    const [scores, setScores] = useState({});
     const [editingStreamId, setEditingStreamId] = useState(null);
     const [tempPlayerName, setTempPlayerName] = useState('');
     
@@ -100,7 +102,56 @@ const PlaybackView = () => {
             .then(res => res.json())
             .then(data => setAllPlayers(data))
             .catch(err => console.error('Error fetching all players:', err));
+
+        fetch('/api/v1/scores')
+            .then(res => res.json())
+            .then(data => setScores(data || {}))
+            .catch(err => console.error('Error fetching scores:', err));
     }, []);
+
+    // Memoized current player stats
+    const playerStats = React.useMemo(() => {
+        if (!selectedStream) return null;
+        const playerName = replays[selectedDate]?.streams?.[selectedStream]?.display_name || playerNames[selectedStream] || selectedStream;
+        
+        let wins = 0;
+        let losses = 0;
+        let total = 0;
+        let gamesWon = 0;
+        let gamesLost = 0;
+
+        Object.values(scores).forEach(dayMatches => {
+            dayMatches.forEach(match => {
+                const teamA = match.team_a_players.split(',').map(s => s.trim().toLowerCase());
+                const teamB = match.team_b_players.split(',').map(s => s.trim().toLowerCase());
+                const lowerName = playerName.toLowerCase();
+                const scoreA = parseInt(match.score_a) || 0;
+                const scoreB = parseInt(match.score_b) || 0;
+
+                if (teamA.includes(lowerName)) {
+                    total++;
+                    gamesWon += scoreA;
+                    gamesLost += scoreB;
+                    if (scoreA > scoreB) wins++;
+                    else if (scoreA < scoreB) losses++;
+                } else if (teamB.includes(lowerName)) {
+                    total++;
+                    gamesWon += scoreB;
+                    gamesLost += scoreA;
+                    if (scoreB > scoreA) wins++;
+                    else if (scoreB < scoreA) losses++;
+                }
+            });
+        });
+
+        const winRate = total > 0 ? ((wins / total) * 100).toFixed(1) : "0.0";
+        return { wins, losses, total, winRate, name: playerName, gamesWon, gamesLost };
+    }, [selectedStream, selectedDate, replays, playerNames, scores]);
+
+    const currentPlayerInfo = React.useMemo(() => {
+        if (!playerStats) return null;
+        return allPlayers.find(p => p.name.toLowerCase() === playerStats.name.toLowerCase());
+    }, [allPlayers, playerStats]);
 
     const handleSavePlayerName = (date, streamId, newName) => {
         if (!newName || !date) return;
@@ -180,27 +231,150 @@ const PlaybackView = () => {
                     </div>
 
                     {currentVideo && (
-                        <div className="p-8 xs:p-2 bg-[var(--bg-card)] rounded-3xl border border-[var(--border-color)] shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                                <div className="flex items-center gap-5">
-                                    <div className="p-4 rounded-2xl bg-[#f1812e]/10 border border-[#f1812e]/20">
-                                        <Monitor size={32} className="text-[#f1812e]" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-3">
-                                            <h3 className="text-2xl xs:text-sm font-black font-outfit text-[var(--accent-secondary)] uppercase tracking-tight">
-                                                {replays[selectedDate]?.streams?.[selectedStream]?.display_name || playerNames[selectedStream] || selectedStream}
-                                            </h3>
-                                            <span className="px-2 py-0.5 text-[9px] font-black rounded uppercase tracking-tighter bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]">{selectedStream}</span>
+                        <div className="bg-[var(--bg-card)] rounded-[40px] border border-[var(--border-color)] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
+                            {/* Header / Banner area */}
+                            <div className="h-24 bg-gradient-to-r from-orange-500/10 via-[#f1812e]/5 to-transparent border-b border-[var(--border-color)] relative overflow-hidden hidden md:block">
+                                <div className="absolute inset-0 flex items-center px-10">
+                                    <h2 className="text-xl font-black uppercase tracking-widest text-[var(--accent-secondary)]">
+                                        Thông tin người chơi: <span className="text-[#f1812e]">{playerStats?.name}</span>
+                                    </h2>
+                                </div>
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-[#f1812e]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                            </div>
+
+                            <div className="p-8 md:p-10">
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                                    {/* Column 1: Match Info */}
+                                    <div className="lg:col-span-4 space-y-6">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-10 h-10 rounded-2xl bg-[#f1812e]/10 flex items-center justify-center text-[#f1812e]">
+                                                <Archive size={20} />
+                                            </div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Thông tin bản ghi</h4>
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            <p className="text-xs font-bold flex items-center gap-2 text-[var(--text-secondary)] uppercase tracking-widest">
-                                                <Calendar size={14} className="text-[#f1812e]/60" /> {selectedDate}
-                                            </p>
-                                            <div className="w-1 h-1 rounded-full bg-[var(--border-color)]" />
-                                            <p className="text-xs font-bold flex items-center gap-2 text-[var(--text-secondary)] uppercase tracking-widest">
-                                                <Clock size={14} className="text-[#f1812e]/60" /> {currentVideo.duration_minutes} PHÚT
-                                            </p>
+
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-4 group">
+                                                <div className="w-8 h-8 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-secondary)] group-hover:text-[#f1812e] transition-colors">
+                                                    <Calendar size={14} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[9px] font-black opacity-30 uppercase tracking-tighter">Ngày thi đấu</p>
+                                                    <p className="text-xs font-bold text-[var(--accent-secondary)]">{selectedDate}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-4 group">
+                                                <div className="w-8 h-8 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-secondary)] group-hover:text-[#f1812e] transition-colors">
+                                                    <Clock size={14} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[9px] font-black opacity-30 uppercase tracking-tighter">Thời lượng</p>
+                                                    <p className="text-xs font-bold text-[var(--accent-secondary)]">{currentVideo.duration_minutes} PHÚT</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-4 group">
+                                                <div className="w-8 h-8 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-secondary)] group-hover:text-[#f1812e] transition-colors">
+                                                    <HardDrive size={14} />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[9px] font-black opacity-30 uppercase tracking-tighter">Nguồn dữ liệu</p>
+                                                    <p className="text-xs font-bold text-[var(--accent-secondary)] truncate opacity-70" title={currentVideo.hls || currentVideo.file}>{currentVideo.hls || currentVideo.file}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2">
+                                                <span className="px-3 py-1 bg-green-500/10 text-green-500 border border-green-500/20 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                                    Dữ liệu đã sẵn sàng
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Column 2: Player Info */}
+                                    <div className="lg:col-span-4 space-y-6">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                                <Monitor size={20} />
+                                            </div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Tên người chơi</h4>
+                                        </div>
+
+                                        <div className="flex flex-col items-center md:items-start gap-4">
+                                            <div className="relative group/avatar">
+                                                <div className="w-20 h-20 rounded-[30px] bg-gradient-to-br from-[#f1812e] to-[#ff8c37] flex items-center justify-center text-white text-3xl font-black shadow-2xl shadow-orange-500/20 group-hover:scale-105 transition-transform duration-500">
+                                                    {playerStats?.name.charAt(0).toUpperCase()}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-black font-outfit text-[var(--accent-secondary)]">{playerStats?.name}</h3>
+                                                {currentPlayerInfo && (
+                                                    <p className="text-[9px] font-bold text-[var(--text-secondary)] opacity-40 mt-2 uppercase">
+                                                        Tham gia từ: {new Date(currentPlayerInfo.created_at).toLocaleDateString('vi-VN')}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Column 3: Stats */}
+                                    <div className="lg:col-span-4 space-y-6">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                                <Trophy size={20} />
+                                            </div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Thành tích tổng quát</h4>
+                                        </div>
+
+                                        <div className="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-3xl p-6 relative overflow-hidden group">
+                                            <div className="space-y-6 relative z-10">
+                                                {/* Match Stats */}
+                                                <div>
+                                                    <p className="text-[10px] font-black opacity-30 uppercase tracking-widest mb-3">Thống kê kèo đấu (Series)</p>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="text-center p-3 rounded-2xl bg-green-500/5 border border-green-500/10">
+                                                            <p className="text-[9px] font-black text-green-500 uppercase tracking-tighter mb-1">Thắng Kèo</p>
+                                                            <p className="text-2xl font-black font-outfit tabular-nums text-green-500">{playerStats?.wins}</p>
+                                                        </div>
+                                                        <div className="text-center p-3 rounded-2xl bg-red-500/5 border border-red-500/10">
+                                                            <p className="text-[9px] font-black text-red-500 uppercase tracking-tighter mb-1">Thua Kèo</p>
+                                                            <p className="text-2xl font-black font-outfit tabular-nums text-red-500">{playerStats?.losses}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Game/Map Stats */}
+                                                <div>
+                                                    <p className="text-[10px] font-black opacity-30 uppercase tracking-widest mb-3">Thống kê số trận)</p>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)]">
+                                                            <span className="text-[9px] font-black opacity-40 uppercase">Thắng</span>
+                                                            <span className="text-lg font-black font-outfit text-green-500">{playerStats?.gamesWon}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)]">
+                                                            <span className="text-[9px] font-black opacity-40 uppercase">Thua</span>
+                                                            <span className="text-lg font-black font-outfit text-red-500">{playerStats?.gamesLost}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="space-y-3">
+                                                    <div className="flex justify-between items-end px-1">
+                                                        <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">Hiệu suất thắng kèo</span>
+                                                        <span className="text-lg font-black font-outfit text-[#f1812e]">{playerStats?.winRate}%</span>
+                                                    </div>
+                                                    <div className="h-2 w-full bg-[var(--bg-main)] rounded-full overflow-hidden border border-[var(--border-color)]">
+                                                        <div 
+                                                            className="h-full bg-gradient-to-r from-orange-400 to-orange-600 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(241,129,46,0.5)]"
+                                                            style={{ width: `${playerStats?.winRate}%` }}
+                                                        />
+                                                    </div>
+                                                    <p className="text-[9px] font-bold text-center opacity-30 uppercase tracking-tighter">
+                                                        Dựa trên {playerStats?.total} kèo đấu toàn thời gian
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -210,7 +384,7 @@ const PlaybackView = () => {
                 </div>
 
                 {/* Right Area: Control Panel */}
-                <div className="w-full xl:w-96 space-y-8">
+                <div className="w-full xl:w-[420px] space-y-8">
                     {/* Date Selection */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between px-1">
@@ -219,94 +393,84 @@ const PlaybackView = () => {
                             </h2>
                             <span className="text-[10px] font-bold text-[var(--text-secondary)]">{Object.keys(replays).length} NGÀY</span>
                         </div>
-                        <div className="flex flex-col gap-2.5 max-h-[35vh] overflow-y-auto pr-3 scrollbar-thin">
-                            {Object.entries(replays).sort((a, b) => b[0].localeCompare(a[0])).map(([date, meta]) => (
-                                <div key={date} className="flex flex-col gap-2">
-                                    <button
-                                        onClick={() => handleDateChange(date)}
-                                        className={`group relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 border cursor-pointer ${selectedDate === date
-                                            ? 'bg-[#f1812e] text-[#fff] border-transparent shadow-xl'
-                                            : 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[#f1812e]/30 text-[var(--text-secondary)]'
-                                            }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg transition-colors ${selectedDate === date ? 'bg-[var(--bg-main)]/10' : 'bg-[var(--bg-main)]/5'}`}>
-                                                <Calendar size={14} />
-                                            </div>
-                                            <span className="font-bold text-sm tracking-tight">{date}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {meta.status === 'processing' && (
-                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-yellow-500/20 text-yellow-500 rounded-md border border-yellow-500/20">
-                                                    <span className="text-[8px] font-black uppercase tracking-tighter">Đang gộp</span>
-                                                    <div className="w-1 h-1 bg-yellow-500 rounded-full animate-pulse" />
-                                                </div>
-                                            )}
-                                            <ChevronRight size={16} className={`transition-transform duration-300 ${selectedDate === date ? 'rotate-90' : 'opacity-20 group-hover:opacity-100'}`} />
-                                        </div>
-                                    </button>
-
-                                    {selectedDate === date && (
-                                        <div className=" mb-4 grid grid-cols-2 gap-2">
-                                            <button
-                                                onClick={() => {
-                                                    setAuthModal({
-                                                        isOpen: true,
-                                                        title: 'Tổng hợp dữ liệu video',
-                                                        description: 'Để tránh spam nhiều lần và tối ưu tài nguyên máy chủ, vui lòng nhập mật khẩu để bắt đầu quá trình tổng hợp file MP4/HLS.',
-                                                        onConfirm: (password) => {
-                                                            if (password !== '1234567890') {
-                                                                alert('Mật khẩu không đúng!');
-                                                                return;
-                                                            }
-                                                            fetch(`/api/v1/merge/${date}`, { method: 'POST' });
-                                                            alert('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...');
-                                                            setReplays(prev => ({
-                                                                ...prev,
-                                                                [date]: { ...prev[date], status: 'processing', progress_percent: 5, progress_text: 'Đang bắt đầu...' }
-                                                            }));
-                                                            setAuthModal(prev => ({ ...prev, isOpen: false }));
-                                                        }
-                                                    });
-                                                }}
-                                                disabled={meta.status === 'processing'}
-                                                className={`w-full py-3 text-[10px] mb-4 font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn cursor-pointer ${meta.status === 'processing'
-                                                    ? 'bg-[#f1812e] text-[#fff] border-[#f1812e] cursor-not-allowed'
-                                                    : 'bg-[#f1812e] text-[#fff] border-[#f1812e]'
-                                                    }`}
-                                            >
-                                                <HardDrive size={12} className={`${meta.status === 'processing' ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
-                                                {meta.status === 'completed' ? 'Tổng Hợp Dữ Liệu' : 'Tổng Hợp File'}
-                                            </button>
-
-                                            <button
-                                                onClick={() => handleDelete(date)}
-                                                className="w-full py-2.5 text-[9px] mb-4 font-bold rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500/70 hover:text-red-500 transition-all uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
-                                            >
-                                                <Trash2 size={12} />
-                                                Xoá Toàn Bộ Ngày
-                                            </button>
-
-                                            {meta.status === 'processing' && (
-                                                <div className="col-span-2 space-y-2 animate-in fade-in duration-500">
-                                                    <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-tighter text-[#f1812e]">
-                                                        <span>{meta.progress_text || 'Đang xử lý...'}</span>
-                                                        <span>{meta.progress_percent || 0}%</span>
-                                                    </div>
-                                                    <div className="h-1.5 w-full bg-[var(--bg-main)] rounded-full overflow-hidden border border-[var(--border-color)]">
-                                                        <div
-                                                            className="h-full bg-[#f1812e] transition-all duration-500 shadow-[0_0_10px_rgba(201,160,80,0.5)]"
-                                                            style={{ width: `${meta.progress_percent || 0}%` }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                        
+                        <PlaybackCalendar 
+                            replays={replays}
+                            selectedDate={selectedDate}
+                            onSelectDate={handleDateChange}
+                        />
                     </div>
+
+                    {/* Action Card for Selected Date */}
+                    {selectedDate && replays[selectedDate] && (
+                        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-5 shadow-sm animate-in fade-in slide-in-from-right-2 duration-300">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-[11px] sm:text-xs font-black text-[var(--accent-secondary)] truncate">Quản lý dữ liệu ngày {selectedDate}</h3>
+                                {replays[selectedDate].status === 'processing' && (
+                                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-yellow-500/20 text-yellow-500 rounded-md border border-yellow-500/20">
+                                        <span className="text-[8px] font-black uppercase tracking-tighter">Đang xử lý</span>
+                                        <div className="w-1 h-1 bg-yellow-500 rounded-full animate-pulse" />
+                                    </div>
+                                )}
+                            </div>
+
+                            {replays[selectedDate].status === 'processing' && (
+                                <div className="mb-5 space-y-2">
+                                    <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-tighter text-[#f1812e]">
+                                        <span>{replays[selectedDate].progress_text || 'Đang xử lý...'}</span>
+                                        <span>{replays[selectedDate].progress_percent || 0}%</span>
+                                    </div>
+                                    <div className="h-2 w-full bg-[var(--bg-main)] rounded-full overflow-hidden border border-[var(--border-color)]">
+                                        <div
+                                            className="h-full bg-[#f1812e] transition-all duration-500 shadow-[0_0_10px_rgba(201,160,80,0.5)]"
+                                            style={{ width: `${replays[selectedDate].progress_percent || 0}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => {
+                                        setAuthModal({
+                                            isOpen: true,
+                                            title: 'Tổng hợp dữ liệu video',
+                                            description: 'Để tránh spam nhiều lần và tối ưu tài nguyên máy chủ, vui lòng nhập mật khẩu để bắt đầu quá trình tổng hợp file MP4/HLS.',
+                                            onConfirm: (password) => {
+                                                if (password !== '1234567890') {
+                                                    alert('Mật khẩu không đúng!');
+                                                    return;
+                                                }
+                                                fetch(`/api/v1/merge/${selectedDate}`, { method: 'POST' });
+                                                alert('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...');
+                                                setReplays(prev => ({
+                                                    ...prev,
+                                                    [selectedDate]: { ...prev[selectedDate], status: 'processing', progress_percent: 5, progress_text: 'Đang bắt đầu...' }
+                                                }));
+                                                setAuthModal(prev => ({ ...prev, isOpen: false }));
+                                            }
+                                        });
+                                    }}
+                                    disabled={replays[selectedDate].status === 'processing'}
+                                    className={`w-full py-3 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn cursor-pointer ${replays[selectedDate].status === 'processing'
+                                        ? 'bg-[#f1812e] text-[#fff] border-[#f1812e] cursor-not-allowed'
+                                        : 'bg-[#f1812e] text-[#fff] border-[#f1812e]'
+                                        }`}
+                                >
+                                    <HardDrive size={14} className={`${replays[selectedDate].status === 'processing' ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
+                                    {replays[selectedDate].status === 'completed' ? 'Dữ Liệu Đã Gộp' : 'Tổng Hợp File'}
+                                </button>
+
+                                <button
+                                    onClick={() => handleDelete(selectedDate)}
+                                    className="w-full py-3 text-[10px] font-bold rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-500/70 hover:text-red-500 transition-all uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    <Trash2 size={14} />
+                                    Xoá Ngày Này
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Machine Selection */}
                     {selectedDate && (

@@ -202,75 +202,79 @@ const PlayerManagementView = () => {
                   <p className="text-xs font-bold uppercase tracking-widest">Không tìm thấy ai</p>
                 </div>
               ) : (
-                <table className="w-full text-left">
-                  <thead className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] border-b border-[var(--border-color)]">
-                    <tr>
-                      <th className="px-6 py-4">Tên người chơi</th>
-                      <th className="px-6 py-4">Ngày thêm</th>
-                      <th className="px-6 py-4 text-right">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm font-bold divide-y divide-[var(--border-color)]">
-                    {filteredPlayers.map((player) => (
-                      <tr key={player.id} className="hover:bg-[var(--bg-main)]/50 transition-colors group">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-[#f1812e]/10 border border-[#f1812e]/20 flex items-center justify-center text-[#f1812e] text-xs font-black">
-                              {player.name.charAt(0).toUpperCase()}
-                            </div>
-                            {editingId === player.id ? (
-                              <div className="flex items-center gap-2 flex-1 animate-in slide-in-from-left-2 duration-200">
-                                <input
-                                  autoFocus
-                                  type="text"
-                                  value={editingName}
-                                  onChange={(e) => setEditingName(e.target.value)}
-                                  className="flex-1 bg-[var(--bg-main)] border border-[#f1812e]/30 rounded-lg py-1 px-3 text-sm font-bold focus:outline-none focus:ring-1 focus:ring-[#f1812e]"
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleUpdatePlayer(player.id, editingName);
-                                    if (e.key === 'Escape') setEditingId(null);
-                                  }}
-                                />
-                                <button onClick={() => handleUpdatePlayer(player.id, editingName)} className="p-1.5 text-emerald-500 hover:bg-emerald-500/10 rounded-md transition-colors">
-                                  <Check size={16} />
-                                </button>
-                                <button onClick={() => setEditingId(null)} className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-md transition-colors">
-                                  <CloseIcon size={16} />
-                                </button>
-                              </div>
-                            ) : (
-                              <span className="text-[var(--text-primary)]">{player.name}</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-xs opacity-50">
-                          {new Date(player.created_at).toLocaleDateString('vi-VN')}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {editingId !== player.id && (
-                              <button
-                                onClick={() => {
-                                  setEditingId(player.id);
-                                  setEditingName(player.name);
-                                }}
-                                className="p-2 rounded-lg text-[var(--text-secondary)] hover:bg-[#f1812e]/10 hover:text-[#f1812e] transition-all opacity-0 group-hover:opacity-100"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDeletePlayer(player.id)}
-                              className="p-2 rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                            >
-                              <Trash2 size={16} />
+                <div className="divide-y divide-[var(--border-color)]">
+                  {/* Desktop Table Header - only visible on md+ */}
+                  <div className="hidden md:grid grid-cols-12 text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] border-b border-[var(--border-color)] bg-[var(--bg-main)]/10">
+                    <div className="col-span-6 px-6 py-4">Tên người chơi</div>
+                    <div className="col-span-3 px-6 py-4">Ngày thêm</div>
+                    <div className="col-span-3 px-6 py-4 text-right">Thao tác</div>
+                  </div>
+
+                  {filteredPlayers.map((player) => (
+                    <div key={player.id} className="grid grid-cols-1 md:grid-cols-12 items-center hover:bg-[var(--bg-main)]/50 transition-colors group p-4 md:p-0">
+                      {/* Name Section */}
+                      <div className="col-span-full md:col-span-6 md:px-6 md:py-4 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-[#f1812e]/10 border border-[#f1812e]/20 flex items-center justify-center text-[#f1812e] text-xs font-black shrink-0">
+                          {player.name.charAt(0).toUpperCase()}
+                        </div>
+                        {editingId === player.id ? (
+                          <div className="flex items-center gap-2 flex-1 animate-in slide-in-from-left-1 duration-200">
+                            <input
+                              autoFocus
+                              type="text"
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              className="flex-1 bg-[var(--bg-main)] border border-[#f1812e]/50 rounded-lg py-1.5 px-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#f1812e]/30"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleUpdatePlayer(player.id, editingName);
+                                if (e.key === 'Escape') setEditingId(null);
+                              }}
+                            />
+                            <button onClick={() => handleUpdatePlayer(player.id, editingName)} className="p-2 text-emerald-500 hover:bg-emerald-500/10 rounded-md transition-colors">
+                              <Check size={18} />
+                            </button>
+                            <button onClick={() => setEditingId(null)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-md transition-colors">
+                              <CloseIcon size={18} />
                             </button>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        ) : (
+                          <span className="text-[var(--text-primary)] font-bold text-base md:text-sm">{player.name}</span>
+                        )}
+                      </div>
+
+                      {/* Date Section - hidden or moved on mobile */}
+                      <div className="col-span-full md:col-span-3 md:px-6 md:py-4 text-[10px] md:text-xs opacity-50 mt-1 md:mt-0 pl-11 md:pl-6">
+                        <span className="md:hidden">Thêm ngày: </span>
+                        {new Date(player.created_at).toLocaleDateString('vi-VN')}
+                      </div>
+
+                      {/* Actions Section */}
+                      <div className="col-span-full md:col-span-3 md:px-6 md:py-4 text-right mt-3 md:mt-0">
+                        <div className="flex items-center justify-end gap-2">
+                          {editingId !== player.id && (
+                            <button
+                              onClick={() => {
+                                setEditingId(player.id);
+                                setEditingName(player.name);
+                              }}
+                              className="p-2.5 md:p-2 rounded-xl border border-[var(--border-color)] md:border-transparent md:bg-transparent bg-[var(--bg-main)] text-[var(--text-secondary)] hover:bg-[#f1812e]/10 hover:text-[#f1812e] transition-all md:opacity-0 md:group-hover:opacity-100 flex items-center gap-2 text-xs font-bold"
+                            >
+                              <Edit2 size={16} />
+                              <span className="md:hidden uppercase tracking-tight">Sửa</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeletePlayer(player.id)}
+                            className="p-2.5 md:p-2 rounded-xl border border-[var(--border-color)] md:border-transparent md:bg-transparent bg-red-500/5 text-red-500 hover:bg-red-500 hover:text-white transition-all md:opacity-0 md:group-hover:opacity-100 flex items-center gap-2 text-xs font-bold"
+                          >
+                            <Trash2 size={16} />
+                            <span className="md:hidden uppercase tracking-tight">Xóa</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
