@@ -423,20 +423,22 @@ const ScoreboardView = () => {
                       </div>
                     </div>
                     
-                    <div className="absolute -top-2 -right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                      <button
-                        onClick={() => handleEdit(match)}
-                        className="p-2 bg-blue-500 text-white rounded-xl shadow-xl hover:scale-110 active:scale-90"
-                      >
-                        <Edit3 size={13} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(match.id)}
-                        className="p-2 bg-red-500 text-white rounded-xl shadow-xl hover:scale-110 active:scale-90"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
+                    {isAdding && (
+                      <div className="absolute -top-2 -right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          onClick={() => handleEdit(match)}
+                          className="p-2 bg-blue-500 text-white rounded-xl shadow-xl hover:scale-110 active:scale-90"
+                        >
+                          <Edit3 size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(match.id)}
+                          className="p-2 bg-red-500 text-white rounded-xl shadow-xl hover:scale-110 active:scale-90"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
