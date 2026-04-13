@@ -391,7 +391,7 @@ const ScoreboardView = () => {
               
               <div className="p-6 space-y-6 max-h-[600px] overflow-y-auto scrollbar-thin">
                 {[...scores[date]].sort((a, b) => b.id - a.id).map((match, idx) => (
-                  <div key={match.id} className="relative bg-[var(--bg-main)]/40 rounded-[24px] p-6 md:p-8 border border-[var(--border-color)]/30 group hover:border-[#f1812e]/40 transition-all flex items-center min-h-[160px]">
+                  <div key={match.id} className="relative bg-[var(--bg-main)]/40 rounded-[24px] p-4 md:p-5 border border-[var(--border-color)]/30 group hover:border-[#f1812e]/40 transition-all flex items-center min-h-[100px]">
                     <div className="w-full flex items-center justify-between gap-6 md:gap-16">
                       {/* Team A Players */}
                       <div className="flex-1 text-right">
@@ -404,7 +404,7 @@ const ScoreboardView = () => {
                       </div>
 
                       {/* Score Badge */}
-                      <div className="flex flex-col items-center justify-center min-w-[120px] bg-[var(--bg-card)] rounded-[20px] py-4 px-4 border border-[var(--border-color)] shadow-xl relative z-10">
+                      <div className="flex flex-col items-center justify-center min-w-[100px] bg-[var(--bg-card)] rounded-[20px] py-3 px-3 border border-[var(--border-color)] shadow-xl relative z-10">
                         <div className="text-2xl font-black font-outfit tracking-tighter flex items-center gap-3">
                           <span className={match.score_a > match.score_b ? 'text-orange-500' : 'text-[var(--text-primary)] opacity-40'}>{match.score_a}</span>
                           <span className="opacity-10">:</span>
