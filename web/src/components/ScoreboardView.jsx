@@ -292,7 +292,6 @@ const ScoreboardView = () => {
               <div className="bg-[var(--bg-main)]/50 p-6 rounded-2xl border border-[var(--border-color)] space-y-6">
                 <div className="flex items-center gap-3 text-orange-500">
                   <Users size={20} />
-                  <h3 className="font-black font-outfit uppercase tracking-tight">Team A</h3>
                 </div>
                 <PlayerPicker teamKey="team_a_players" colorClass="bg-orange-500 text-white" />
                 <div className="pt-4 border-t border-[var(--border-color)]">
@@ -311,7 +310,6 @@ const ScoreboardView = () => {
               <div className="bg-[var(--bg-main)]/50 p-6 rounded-2xl border border-[var(--border-color)] space-y-6">
                 <div className="flex items-center gap-3 text-blue-500">
                   <Users size={20} />
-                  <h3 className="font-black font-outfit uppercase tracking-tight">Team B</h3>
                 </div>
                 <PlayerPicker teamKey="team_b_players" colorClass="bg-blue-500 text-white" />
                 <div className="pt-4 border-t border-[var(--border-color)]">
@@ -402,7 +400,7 @@ const ScoreboardView = () => {
                             <span key={i} className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-orange-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
                         </div>
-                        <div className="text-[10px] font-black text-orange-500/50 uppercase tracking-[0.3em]">TEAM A</div>
+                        {/* TEAM A labels removed */}
                       </div>
 
                       {/* Score Badge */}
@@ -421,7 +419,7 @@ const ScoreboardView = () => {
                             <span key={i} className="px-2.5 py-1 bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
                         </div>
-                        <div className="text-[10px] font-black text-blue-500/50 uppercase tracking-[0.3em]">TEAM B</div>
+                        {/* TEAM B labels removed */}
                       </div>
                     </div>
                     
