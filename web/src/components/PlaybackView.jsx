@@ -209,8 +209,8 @@ const PlaybackView = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-                {/* 1. Video Player (Order 1) */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+                {/* 1. Video Player Container (Order 1) */}
                 <div className="xl:col-span-8 order-1 space-y-6">
                     <div className="relative aspect-video rounded-3xl overflow-hidden bg-black border border-[var(--border-color)] shadow-2xl">
                         {currentVideo ? (
@@ -231,8 +231,10 @@ const PlaybackView = () => {
                     </div>
                 </div>
 
-                {/* 2. Bảng lịch (Order 2, Sidebar on Desktop) */}
-                <div className="xl:col-span-4 order-2 space-y-4">
+                {/* 2. Sidebar Container (Calendar + Machines + Actions) (Order 2 on Mobile, Right side on Desktop) */}
+                {/* We use xl:row-span-2 to let it take the full height on the right while Metadata stacks on the left */}
+                <div className="xl:col-span-4 xl:row-span-2 order-2 space-y-8">
+                    {/* Bảng lịch */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between px-1">
                             <h2 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 text-[var(--text-secondary)]">
@@ -240,17 +242,14 @@ const PlaybackView = () => {
                             </h2>
                             <span className="text-[10px] font-bold text-[var(--text-secondary)]">{Object.keys(replays).length} NGÀY</span>
                         </div>
-                        
                         <PlaybackCalendar 
                             replays={replays}
                             selectedDate={selectedDate}
                             onSelectDate={handleDateChange}
                         />
                     </div>
-                </div>
 
-                {/* 3. Các máy thi đấu (Order 3, Sidebar on Desktop) */}
-                <div className="xl:col-span-4 xl:col-start-9 order-3 space-y-4">
+                    {/* Các máy thi đấu */}
                     {selectedDate && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-6 duration-500">
                             <div className="flex items-center justify-between px-1">
@@ -259,7 +258,7 @@ const PlaybackView = () => {
                                 </h2>
                                 <span className="text-[10px] font-bold text-[var(--text-secondary)]">{Object.keys(replays[selectedDate].streams || {}).length} MÁY</span>
                             </div>
-                            <div className="grid grid-cols-1 gap-2.5 max-h-[45vh] overflow-y-auto pr-3 scrollbar-thin">
+                            <div className="grid grid-cols-1 gap-2.5 max-h-[45vh] overflow-y-auto pr-2 scrollbar-thin">
                                 {Object.entries(replays[selectedDate].streams || {}).map(([s_id, meta]) => (
                                     <div
                                         key={s_id}
@@ -353,10 +352,8 @@ const PlaybackView = () => {
                             </div>
                         </div>
                     )}
-                </div>
 
-                {/* 4. Quản lý dữ liệu (Order 4, Sidebar on Desktop) */}
-                <div className="xl:col-span-4 xl:col-start-9 order-4 space-y-4">
+                    {/* Quản lý dữ liệu (Action Card) */}
                     {selectedDate && replays[selectedDate] && (
                         <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-5 shadow-sm animate-in fade-in slide-in-from-right-2 duration-300">
                             <div className="flex justify-between items-center mb-4">
@@ -428,8 +425,8 @@ const PlaybackView = () => {
                     )}
                 </div>
 
-                {/* 5. Thông tin người chơi (Order 5, Main on Desktop) */}
-                <div className="xl:col-span-8 xl:col-start-1 order-5 space-y-6">
+                {/* 3. Player Information (Metadata Card) (Order 3 on Mobile, Below video on Desktop) */}
+                <div className="xl:col-span-8 order-3 space-y-6">
                     {currentVideo && (
                         <div className="bg-[var(--bg-card)] rounded-[40px] border border-[var(--border-color)] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
                             {/* Header / Banner area */}
