@@ -363,9 +363,9 @@ const AnalyticsView = () => {
               <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">Tần suất trận đấu theo ngày</span>
             </div>
           </div>
-          <div className="relative h-80 px-2 mt-4 overflow-x-auto scrollbar-hide">
+          <div className="relative h-[400px] px-2 mt-4 overflow-x-auto scrollbar-hide group/chart">
             {/* Y Axis Grid & Labels */}
-            <div className="absolute inset-x-2 top-0 bottom-10 flex flex-col justify-between pointer-events-none z-0">
+            <div className="absolute inset-x-2 top-16 bottom-10 flex flex-col justify-between pointer-events-none z-0">
               {[...Array(5)].map((_, i) => {
                 const maxVal = Math.max(...Object.values(globalStats.dailyActivity).map(a => Object.values(a).reduce((sum, v) => sum + v, 0)), 1);
                 const val = Math.round((maxVal / 4) * (4 - i));
@@ -378,7 +378,7 @@ const AnalyticsView = () => {
               })}
             </div>
 
-            <div className="absolute inset-x-10 top-0 bottom-10 flex items-end justify-between gap-px pb-2 overflow-x-auto overflow-y-hidden z-10">
+            <div className="absolute inset-x-10 top-16 bottom-10 flex items-end justify-between gap-px pb-2 z-10">
               {[...Array(15)].map((_, i) => {
                 const date = new Date();
                 date.setDate(date.getDate() - (14 - i));
@@ -388,7 +388,7 @@ const AnalyticsView = () => {
                 const dayTotal = Object.values(activity).reduce((a, b) => a + b, 0);
                 
                 const maxPossibleDayTotal = Math.max(...Object.values(globalStats.dailyActivity).map(a => Object.values(a).reduce((sum, v) => sum + v, 0)), 1);
-                const pxPerMatch = Math.min(240 / maxPossibleDayTotal, 60); 
+                const pxPerMatch = Math.min(200 / maxPossibleDayTotal, 50); 
                 
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-3 group/bar min-w-[32px] h-full justify-end">
@@ -551,29 +551,29 @@ const AnalyticsView = () => {
             const totalGames = player.wins + player.losses;
             const winRate = totalGames > 0 ? ((player.wins / totalGames) * 100).toFixed(1) : "0.0";
             return (
-              <div key={player.name} className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[40px] p-8 md:p-12 shadow-2xl hover:shadow-[#f1812e]/5 transition-all group overflow-hidden relative mb-4">
+              <div key={player.name} className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-5 md:p-6 shadow-xl hover:shadow-[#f1812e]/5 transition-all group overflow-hidden relative mb-4">
                 <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-gradient-to-br from-orange-500/5 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-                  <div className="lg:col-span-3 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center relative z-10">
+                  <div className="lg:col-span-3 flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
                     <div className="relative">
-                      <div className="w-20 h-20 rounded-[28px] bg-gradient-to-br from-[#f1812e] to-[#ffaa45] flex items-center justify-center text-white shadow-2xl shadow-orange-500/30 transition-transform">
-                        <span className="text-3xl font-black">{player.name.charAt(0).toUpperCase()}</span>
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#f1812e] to-[#ffaa45] flex items-center justify-center text-white shadow-xl shadow-orange-500/30 transition-transform">
+                        <span className="text-2xl font-black">{player.name.charAt(0).toUpperCase()}</span>
                       </div>
-                      <div className="absolute -top-3 -left-3 w-10 h-10 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] flex items-center justify-center shadow-lg font-black italic text-[#f1812e] text-lg">#{idx + 1}</div>
-                      {idx < 3 && <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-yellow-500 rounded-2xl border-4 border-[var(--bg-card)] flex items-center justify-center shadow-lg animate-bounce"><Medal size={18} className="text-white" /></div>}
+                      <div className="absolute -top-2 -left-2 w-8 h-8 bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] flex items-center justify-center shadow-lg font-black italic text-[#f1812e] text-base">#{idx + 1}</div>
+                      {idx < 3 && <div className="absolute -bottom-1.5 -right-1.5 w-8 h-8 bg-yellow-500 rounded-xl border-4 border-[var(--bg-card)] flex items-center justify-center shadow-lg animate-bounce"><Medal size={14} className="text-white" /></div>}
                     </div>
                     <div>
-                      <h3 className="text-2xl font-black tracking-tight mb-2">{player.name}</h3>
-                      <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                        <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest bg-orange-500/10 px-3 py-1 rounded-full">Pro Player</span>
-                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-full">{player.totalSeries} KÈO</span>
+                      <h3 className="text-xl font-black tracking-tight mb-1">{player.name}</h3>
+                      <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
+                        <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest bg-orange-500/10 px-2 py-0.5 rounded-full">Pro Player</span>
+                        <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-2 py-0.5 rounded-full">{player.totalSeries} KÈO</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Main Win/Loss Stats with Radial Chart */}
-                  <div className="lg:col-span-4 flex flex-col sm:flex-row items-center justify-between bg-[var(--bg-main)]/40 rounded-[32px] p-6 sm:p-8 border border-[var(--border-color)] gap-6 sm:gap-0">
-                    <div className="flex sm:flex-col gap-6 sm:space-y-6 w-full sm:w-auto justify-around sm:justify-start">
+                  <div className="lg:col-span-4 flex flex-col sm:flex-row items-center justify-around bg-[var(--bg-main)]/40 rounded-[20px] p-3 sm:p-4 border border-[var(--border-color)] gap-4 sm:gap-2">
+                    <div className="flex sm:flex-col gap-4 sm:space-y-4 w-full sm:w-auto justify-around sm:justify-start">
                       <div className="flex items-center gap-4">
                         <div className="w-1.5 h-10 bg-green-500 rounded-full" />
                         <div>
@@ -590,8 +590,8 @@ const AnalyticsView = () => {
                       </div>
                     </div>
 
-                    <div className="relative flex items-center justify-center scale-100 sm:scale-110">
-                      <svg className="w-24 h-24 sm:w-32 sm:h-32 transform -rotate-90">
+                    <div className="relative flex items-center justify-center">
+                      <svg className="w-16 h-16 sm:w-20 sm:h-20 transform -rotate-90">
                         <circle cx="50%" cy="50%" r="40%" fill="transparent" stroke="currentColor" strokeWidth="12" className="text-[var(--border-color)] opacity-20" />
                         <circle 
                           cx="50%" cy="50%" r="40%" fill="transparent" stroke="url(#gradient-player-win)" strokeWidth="12" 
@@ -600,22 +600,22 @@ const AnalyticsView = () => {
                         <defs><linearGradient id="gradient-player-win" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#f1812e" /><stop offset="100%" stopColor="#ffaa45" /></linearGradient></defs>
                       </svg>
                       <div className="absolute text-center">
-                        <div className="text-lg sm:text-xl font-black font-outfit leading-none mb-1 tabular-nums">{winRate}%</div>
-                        <div className="text-[8px] font-black opacity-40 uppercase tracking-tighter">WINRATE</div>
+                        <div className="text-sm sm:text-base font-black font-outfit leading-none mb-0.5 tabular-nums">{winRate}%</div>
+                        <div className="text-[6px] font-black opacity-40 uppercase tracking-tighter">WINRATE</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Team Categories Breakdown - Professional Radial Charts */}
                   <div className="lg:col-span-5">
-                    <div className="flex justify-between items-end mb-6">
+                    <div className="flex justify-between items-end mb-4">
                       <div>
-                        <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] mb-1">Hiệu suất theo thể thức</p>
-                        <h4 className="text-xs font-black text-[#f1812e] uppercase tracking-widest">Tỷ lệ thắng từng kèo</h4>
+                        <p className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-1">Hiệu suất theo thể thức</p>
+                        <h4 className="text-[10px] font-black text-[#f1812e] uppercase tracking-widest">Tỷ lệ thắng từng kèo</h4>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 xs:grid-cols-4 gap-4 sm:gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                       {['1-1', '2-2', '3-3', '4-4'].map(cat => {
                         const data = player.categories[cat] || { wins: 0, losses: 0, total: 0 };
                         const rate = data.total > 0 ? (data.wins / data.total) * 100 : 0;
@@ -642,7 +642,7 @@ const AnalyticsView = () => {
                               }).sort((a, b) => new Date(b.date) - new Date(a.date));
                               setSelectedMatchHistory({ player: player.name, category: cat, matches: filtered });
                             }}
-                            className="flex flex-col items-center gap-4 group/bar transition-transform hover:scale-110 duration-300 cursor-pointer"
+                            className="flex flex-col items-center gap-2 group/bar transition-transform hover:scale-110 duration-300 cursor-pointer"
                           >
                             <div className="relative flex items-center justify-center">
                               {/* Tooltip */}
@@ -651,7 +651,7 @@ const AnalyticsView = () => {
                                 <p className="text-[8px] opacity-40 uppercase tracking-tighter">Click để xem chi tiết</p>
                               </div>
 
-                              <svg className="w-20 h-20 transform -rotate-90">
+                              <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 80 80">
                                 <circle cx="40" cy="40" r={radius} fill="transparent" stroke="currentColor" strokeWidth="6" className="text-[var(--border-color)] opacity-20" />
                                 <circle 
                                   cx="40" cy="40" r={radius} fill="transparent" stroke={color} strokeWidth="6" 
@@ -662,7 +662,7 @@ const AnalyticsView = () => {
                               </svg>
                               
                               <div className="absolute inset-0 flex flex-col items-center justify-center transition-all duration-300 group-hover/bar:opacity-0">
-                                <p className="text-[14px] font-black font-outfit leading-none tabular-nums">{rate.toFixed(0)}%</p>
+                                <p className="text-[10px] font-black font-outfit leading-none tabular-nums">{rate.toFixed(0)}%</p>
                               </div>
 
                               <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover/bar:opacity-100 transition-all duration-300">
