@@ -233,9 +233,9 @@ const ScoreboardView = () => {
           <h2 className="text-3xl font-black font-outfit text-[var(--accent-secondary)] tracking-tight uppercase leading-none mb-3">
             Bảng tỷ số
           </h2>
-          <p className="text-[var(--text-secondary)] text-sm font-medium opacity-70">
+          <div className="text-[var(--text-secondary)] text-sm font-medium opacity-70">
             Thống kê kết quả thi đấu AOE nội bộ
-          </p>
+          </div>
         </div>
         
         <button
@@ -302,7 +302,7 @@ const ScoreboardView = () => {
                     name="score_a"
                     value={formData.score_a}
                     onChange={handleInputChange}
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl py-4 text-3xl font-black text-center focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl py-4 text-2xl font-black text-center focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                   />
                 </div>
               </div>
@@ -348,7 +348,7 @@ const ScoreboardView = () => {
         {Object.keys(scores).length === 0 ? (
           <div className="py-20 text-center opacity-30 bg-[var(--bg-card)] rounded-[32px] border border-dashed border-[var(--border-color)]">
             <Trophy size={64} className="mx-auto mb-6 opacity-10" />
-            <p className="font-black uppercase tracking-[0.3em] text-xs">Chưa có dữ liệu thống kê</p>
+            <div className="font-black uppercase tracking-[0.3em] text-sm">Chưa có dữ liệu thống kê</div>
           </div>
         ) : (
           Object.keys(scores).sort((a, b) => new Date(b) - new Date(a)).map(date => (
@@ -399,7 +399,7 @@ const ScoreboardView = () => {
                       <div className="flex-1 text-right">
                         <div className="flex flex-wrap justify-end gap-2 mb-3">
                           {match.team_a_players.split(',').map((p, i) => (
-                            <span key={i} className="px-4 py-1.5 bg-orange-500 text-white rounded-lg text-sm font-black shadow-lg shadow-orange-500/10 whitespace-nowrap">{p.trim()}</span>
+                            <span key={i} className="px-3 py-1 bg-orange-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-orange-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
                         </div>
                         <div className="text-[10px] font-black text-orange-500/50 uppercase tracking-[0.3em]">TEAM A</div>
@@ -407,10 +407,10 @@ const ScoreboardView = () => {
 
                       {/* Score Badge */}
                       <div className="flex flex-col items-center justify-center min-w-[120px] bg-[var(--bg-card)] rounded-[20px] py-4 px-4 border border-[var(--border-color)] shadow-xl relative z-10">
-                        <div className="text-4xl font-black font-outfit tracking-tighter flex items-center gap-3">
-                          <span className={match.score_a > match.score_b ? 'text-orange-500' : 'text-[var(--text-primary)] opacity-20'}>{match.score_a}</span>
+                        <div className="text-2xl font-black font-outfit tracking-tighter flex items-center gap-3">
+                          <span className={match.score_a > match.score_b ? 'text-orange-500' : 'text-[var(--text-primary)] opacity-40'}>{match.score_a}</span>
                           <span className="opacity-10">:</span>
-                          <span className={match.score_b > match.score_a ? 'text-blue-500' : 'text-[var(--text-primary)] opacity-20'}>{match.score_b}</span>
+                          <span className={match.score_b > match.score_a ? 'text-blue-500' : 'text-[var(--text-primary)] opacity-40'}>{match.score_b}</span>
                         </div>
                       </div>
 
@@ -418,7 +418,7 @@ const ScoreboardView = () => {
                       <div className="flex-1 text-left">
                         <div className="flex flex-wrap justify-start gap-2 mb-3">
                           {match.team_b_players.split(',').map((p, i) => (
-                            <span key={i} className="px-4 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-black shadow-lg shadow-blue-500/10 whitespace-nowrap">{p.trim()}</span>
+                            <span key={i} className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
                         </div>
                         <div className="text-[10px] font-black text-blue-500/50 uppercase tracking-[0.3em]">TEAM B</div>
@@ -454,20 +454,20 @@ const ScoreboardView = () => {
             <div className="flex items-center gap-3">
               <Trophy className="text-yellow-500" size={20} />
               <div>
-                <p className="text-[8px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">Tổng số trận</p>
-                <p className="text-xl font-black font-outfit leading-none">
+                <div className="text-[10px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">Tổng số trận</div>
+                <div className="text-sm font-black font-outfit leading-none">
                   {Object.values(scores).flat().length}
-                </p>
+                </div>
               </div>
             </div>
             <div className="w-px h-8 bg-[var(--border-color)] opacity-50" />
             <div className="flex items-center gap-3 text-[#f1812e]">
               <Users size={20} />
               <div>
-                <p className="text-[8px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">Cập nhật lúc</p>
-                <p className="text-xs font-black font-outfit leading-none">
+                <div className="text-[10px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">Cập nhật lúc</div>
+                <div className="text-sm font-black font-outfit leading-none">
                   {new Date().toLocaleTimeString('vi-VN')}
-                </p>
+                </div>
               </div>
             </div>
           </div>

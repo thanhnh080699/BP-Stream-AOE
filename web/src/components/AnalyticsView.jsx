@@ -48,7 +48,7 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
               <History size={20} className="text-[#f1812e]" />
               <h3 className="text-2xl font-black uppercase tracking-tight">Lịch sử {category}</h3>
             </div>
-            <p className="text-xs font-black opacity-40 uppercase tracking-widest">Người chơi: <span className="text-[#f1812e]">{player}</span></p>
+            <div className="text-[10px] font-black opacity-40 uppercase tracking-widest">Người chơi: <span className="text-[#f1812e]">{player}</span></div>
           </div>
           <button onClick={onClose} className="w-12 h-12 rounded-2xl bg-[var(--bg-main)] flex items-center justify-center hover:bg-red-500 hover:text-white transition-all group">
             <X size={24} className="group-hover:rotate-90 transition-transform" />
@@ -59,7 +59,7 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
           {matches.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center opacity-30 italic py-20">
               <History size={48} className="mb-4" />
-              <p className="font-bold">Chưa có dữ liệu thi đấu cho kèo này</p>
+              <div className="font-bold">Chưa có dữ liệu thi đấu cho kèo này</div>
             </div>
           ) : (
             matches.map((match, i) => {
@@ -89,8 +89,8 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
                 <div key={i} className={`flex items-center justify-between p-6 rounded-3xl border transition-all ${isWin ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'} hover:scale-[1.02]`}>
                   <div className="flex items-center gap-6 flex-1 min-w-0">
                     <div className="text-center min-w-[60px]">
-                      <p className="text-[10px] font-black opacity-30 uppercase">{date.toLocaleDateString('vi-VN', { month: 'numeric', day: 'numeric' })}</p>
-                      <p className="text-lg font-black">{date.getFullYear()}</p>
+                      <div className="text-[10px] font-black opacity-30 uppercase">{date.toLocaleDateString('vi-VN', { month: 'numeric', day: 'numeric' })}</div>
+                      <div className="text-sm font-black">{date.getFullYear()}</div>
                     </div>
                     <div className="w-px h-10 bg-[var(--border-color)] opacity-20" />
                     <div className="flex-1 min-w-0">
@@ -102,7 +102,7 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
                           <span className="text-sm font-black opacity-60 italic">{match.match_type}</span>
                         )}
                       </div>
-                      <p className="text-xs font-bold text-[var(--text-secondary)] opacity-90 tracking-wide leading-relaxed break-words">
+                      <div className="text-sm font-medium text-[var(--text-secondary)] opacity-90 tracking-wide leading-relaxed break-words">
                         <span className={isTeamA ? "bg-green-500/10 px-1 rounded" : ""}>
                           {renderPlayers(match.team_a_players, player)}
                         </span>
@@ -110,7 +110,7 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
                         <span className={!isTeamA ? "bg-green-500/10 px-1 rounded" : ""}>
                           {renderPlayers(match.team_b_players, player)}
                         </span>
-                      </p>
+                      </div>
                     </div>
                   </div>
                   <div className="text-3xl font-black font-outfit tracking-tighter tabular-nums italic shrink-0 ml-4">
@@ -124,8 +124,8 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
           )}
         </div>
         
-        <div className="p-8 border-t border-[var(--border-color)] bg-[var(--bg-main)]/50">
-          <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] text-center italic">Dữ liệu được cập nhật tự động theo thời gian thực</p>
+        <div className="p-8 border-t border-[var(--border-color)] bg-[var(--bg-main)]/50 text-center">
+          <div className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] italic">Dữ liệu được cập nhật tự động theo thời gian thực</div>
         </div>
       </div>
     </div>
@@ -276,7 +276,7 @@ const AnalyticsView = () => {
     return (
       <div className="flex flex-col items-center justify-center h-96">
         <Loader2 className="animate-spin text-[#f1812e] mb-4" size={48} />
-        <p className="font-black uppercase tracking-widest text-[#f1812e]">Đang phân tích dữ liệu...</p>
+        <div className="font-black uppercase tracking-widest text-[#f1812e] text-sm">Đang phân tích dữ liệu...</div>
       </div>
     );
   }
@@ -291,9 +291,9 @@ const AnalyticsView = () => {
           <h2 className="text-3xl font-black font-outfit text-[var(--accent-secondary)] tracking-tight uppercase leading-none mb-3">
             Phân tích thống kê
           </h2>
-          <p className="text-[var(--text-secondary)] text-sm font-medium opacity-70">
+          <div className="text-[var(--text-secondary)] text-sm font-medium opacity-70">
             Dữ liệu hiệu suất thi đấu của các chiến binh
-          </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -351,8 +351,8 @@ const AnalyticsView = () => {
             <Activity size={24} />
           </div>
           <div>
-            <p className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] mb-1">Tổng số kèo</p>
-            <p className="text-4xl font-black font-outfit">{globalStats.seriesTotal}</p>
+            <div className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] mb-1">Tổng số kèo</div>
+            <div className="text-3xl font-black font-outfit">{globalStats.seriesTotal}</div>
           </div>
         </div>
 
@@ -526,7 +526,7 @@ const AnalyticsView = () => {
                       {idx < 3 && <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-yellow-500 rounded-2xl border-4 border-[var(--bg-card)] flex items-center justify-center shadow-lg animate-bounce"><Medal size={18} className="text-white" /></div>}
                     </div>
                     <div>
-                      <h3 className="text-4xl font-black tracking-tight mb-2">{player.name}</h3>
+                      <h3 className="text-2xl font-black tracking-tight mb-2">{player.name}</h3>
                       <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                         <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest bg-orange-500/10 px-3 py-1 rounded-full">Pro Player</span>
                         <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-full">{player.totalSeries} KÈO</span>
@@ -541,14 +541,14 @@ const AnalyticsView = () => {
                         <div className="w-1.5 h-10 bg-green-500 rounded-full" />
                         <div>
                           <p className="text-[10px] font-black opacity-30 uppercase tracking-widest">Thắng</p>
-                          <p className="text-3xl font-black text-green-500 tabular-nums">{player.wins}</p>
+                          <div className="text-2xl font-black text-green-500 tabular-nums">{player.wins}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="w-1.5 h-10 bg-red-500 rounded-full" />
                         <div>
                           <p className="text-[10px] font-black opacity-30 uppercase tracking-widest">Thua</p>
-                          <p className="text-3xl font-black text-red-500 tabular-nums">{player.losses}</p>
+                          <div className="text-2xl font-black text-red-500 tabular-nums">{player.losses}</div>
                         </div>
                       </div>
                     </div>
@@ -563,8 +563,8 @@ const AnalyticsView = () => {
                         <defs><linearGradient id="gradient-player-win" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#f1812e" /><stop offset="100%" stopColor="#ffaa45" /></linearGradient></defs>
                       </svg>
                       <div className="absolute text-center">
-                        <p className="text-2xl font-black font-outfit leading-none mb-1 tabular-nums">{winRate}%</p>
-                        <p className="text-[8px] font-black opacity-40 uppercase tracking-tighter">WINRATE</p>
+                        <div className="text-xl font-black font-outfit leading-none mb-1 tabular-nums">{winRate}%</div>
+                        <div className="text-[8px] font-black opacity-40 uppercase tracking-tighter">WINRATE</div>
                       </div>
                     </div>
                   </div>
