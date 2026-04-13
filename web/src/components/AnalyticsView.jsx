@@ -363,50 +363,65 @@ const AnalyticsView = () => {
               <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">Tần suất trận đấu theo ngày</span>
             </div>
           </div>
-          
-          <div className="h-64 flex items-end justify-between gap-px px-2 border-b border-[var(--border-color)] pb-2 overflow-x-auto overflow-y-hidden">
-            {[...Array(15)].map((_, i) => {
-              const date = new Date();
-              date.setDate(date.getDate() - (14 - i));
-              const dStr = date.toISOString().split('T')[0];
-              const shortDate = dStr.split('-').slice(1).reverse().join('/');
-              const activity = globalStats.dailyActivity[dStr] || {};
-              const dayTotal = Object.values(activity).reduce((a, b) => a + b, 0);
-              
-              // Dynamic scale calculation: Max height 200px
-              const maxPossibleDayTotal = Math.max(...Object.values(globalStats.dailyActivity).map(a => Object.values(a).reduce((sum, v) => sum + v, 0)), 1);
-              const pxPerMatch = Math.min(200 / maxPossibleDayTotal, 40); // Cap at 40px/match for small sets
-              
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2 group/bar min-w-[32px]">
-                  <div className="w-full relative flex flex-col-reverse items-stretch justify-start min-h-[4px]">
-                    <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-2 rounded-xl text-[10px] font-black whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-all shadow-2xl z-50 pointer-events-none text-center transform -translate-y-2 group-hover/bar:translate-y-0">
-                      <p className="text-[9px] opacity-40 mb-0.5 font-bold uppercase tracking-widest">{dStr}</p>
-                      <p className="text-[#f1812e] text-xs mb-1">{dayTotal} Trận</p>
-                      <div className="space-y-0.5">
-                        {Object.entries(activity).map(([cat, count], idx) => {
-                           const colors = ['text-orange-500', 'text-blue-500', 'text-green-500', 'text-purple-500', 'text-slate-500'];
-                           return <p key={cat} className={`${colors[idx % colors.length]} text-[8px] uppercase tracking-tighter`}>{cat}: {count}</p>
-                        })}
-                      </div>
-                    </div>
-                    
-                    {Object.keys(activity).map((cat, idx) => {
-                      const count = activity[cat];
-                      const colors = ['bg-orange-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-slate-500'];
-                      return (
-                        <div 
-                          key={cat} 
-                          className={`w-full ${colors[idx % colors.length]} transition-all duration-700 hover:brightness-125 first:rounded-b-md last:rounded-t-md`}
-                          style={{ height: `${count * pxPerMatch}px` }}
-                        />
-                      );
-                    })}
+          <div className="relative h-80 px-2 mt-4">
+            {/* Y Axis Grid & Labels */}
+            <div className="absolute inset-x-2 top-0 bottom-10 flex flex-col justify-between pointer-events-none z-0">
+              {[...Array(5)].map((_, i) => {
+                const maxVal = Math.max(...Object.values(globalStats.dailyActivity).map(a => Object.values(a).reduce((sum, v) => sum + v, 0)), 1);
+                const val = Math.round((maxVal / 4) * (4 - i));
+                return (
+                  <div key={i} className="flex items-center gap-3 w-full">
+                    <span className="text-[9px] font-black opacity-40 w-4 text-right tabular-nums">{val}</span>
+                    <div className="flex-1 h-px bg-[var(--border-color)] opacity-20" />
                   </div>
-                  <span className="text-[8px] font-black opacity-30 uppercase tracking-tighter whitespace-nowrap">{dayTotal > 0 ? shortDate : '-'}</span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            <div className="absolute inset-x-10 top-0 bottom-10 flex items-end justify-between gap-px pb-2 overflow-x-auto overflow-y-hidden z-10">
+              {[...Array(15)].map((_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - (14 - i));
+                const dStr = date.toISOString().split('T')[0];
+                const shortDate = dStr.split('-').slice(1).reverse().join('/');
+                const activity = globalStats.dailyActivity[dStr] || {};
+                const dayTotal = Object.values(activity).reduce((a, b) => a + b, 0);
+                
+                const maxPossibleDayTotal = Math.max(...Object.values(globalStats.dailyActivity).map(a => Object.values(a).reduce((sum, v) => sum + v, 0)), 1);
+                const pxPerMatch = Math.min(240 / maxPossibleDayTotal, 60); 
+                
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-3 group/bar min-w-[32px] h-full justify-end">
+                    <div className="w-full relative flex flex-col-reverse items-stretch justify-start min-h-[4px]">
+                      <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-2 rounded-xl text-[10px] font-black whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-all shadow-2xl z-50 pointer-events-none text-center transform -translate-y-2 group-hover/bar:translate-y-0">
+                        <div className="text-[9px] opacity-40 mb-0.5 font-bold uppercase tracking-widest">{dStr}</div>
+                        <div className="text-[#f1812e] text-xs mb-1">{dayTotal} Trận</div>
+                        <div className="space-y-0.5">
+                          {Object.entries(activity).map(([cat, count], idx) => {
+                             const colors = ['text-orange-500', 'text-blue-500', 'text-green-500', 'text-purple-500', 'text-slate-500'];
+                             return <div key={cat} className={`${colors[idx % colors.length]} text-[8px] uppercase tracking-tighter`}>{cat}: {count}</div>
+                          })}
+                        </div>
+                      </div>
+                      
+                      {Object.keys(activity).map((cat, idx) => {
+                        const count = activity[cat];
+                        const colors = ['bg-orange-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-slate-500'];
+                        return (
+                          <div 
+                            key={cat} 
+                            className={`w-full ${colors[idx % colors.length]} transition-all duration-700 hover:brightness-125 first:rounded-b-md last:rounded-t-md`}
+                            style={{ height: `${count * pxPerMatch}px` }}
+                          />
+                        );
+                      })}
+                    </div>
+                    <div className="h-px w-full bg-[var(--border-color)] opacity-50" />
+                    <span className="text-[9px] font-black opacity-60 uppercase tracking-tighter whitespace-nowrap">{dayTotal > 0 ? shortDate : '-'}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
