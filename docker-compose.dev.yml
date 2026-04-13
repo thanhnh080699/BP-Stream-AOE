@@ -17,7 +17,7 @@ services:
     container_name: srs-db-dev
     restart: on-failure
     ports:
-      - "3307:3306" # Expose DB port for local backend access
+      - "3306:3306" # Expose DB port for local backend access
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: aoe_scoreboard

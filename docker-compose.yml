@@ -9,7 +9,7 @@ services:
     volumes:
       - ./srs.conf:/usr/local/srs/conf/srs.conf
       - srs_data:/usr/local/srs/objs/nginx/html/dvr
-    command: ["./objs/srs", "-c", "conf/srs.conf"]
+    command: [ "./objs/srs", "-c", "conf/srs.conf" ]
     restart: always
     networks:
       - srs-network
@@ -18,6 +18,8 @@ services:
     image: mariadb:latest
     container_name: srs-db
     restart: always
+    ports:
+      - "3306:3306"
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: aoe_scoreboard
