@@ -397,9 +397,9 @@ const ScoreboardView = () => {
                     <div className="w-full flex items-center justify-between gap-6 md:gap-16">
                       {/* Team A Players */}
                       <div className="flex-1 text-right">
-                        <div className="flex flex-wrap justify-end gap-2 mb-3">
+                        <div className="flex flex-nowrap justify-end gap-1.5 mb-3 overflow-x-hidden">
                           {match.team_a_players.split(',').map((p, i) => (
-                            <span key={i} className="px-3 py-1 bg-orange-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-orange-500/10 whitespace-nowrap">{p.trim()}</span>
+                            <span key={i} className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-orange-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
                         </div>
                         <div className="text-[10px] font-black text-orange-500/50 uppercase tracking-[0.3em]">TEAM A</div>
@@ -416,9 +416,9 @@ const ScoreboardView = () => {
 
                       {/* Team B Players */}
                       <div className="flex-1 text-left">
-                        <div className="flex flex-wrap justify-start gap-2 mb-3">
+                        <div className="flex flex-nowrap justify-start gap-1.5 mb-3 overflow-x-hidden">
                           {match.team_b_players.split(',').map((p, i) => (
-                            <span key={i} className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/10 whitespace-nowrap">{p.trim()}</span>
+                            <span key={i} className="px-2.5 py-1 bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
                         </div>
                         <div className="text-[10px] font-black text-blue-500/50 uppercase tracking-[0.3em]">TEAM B</div>
