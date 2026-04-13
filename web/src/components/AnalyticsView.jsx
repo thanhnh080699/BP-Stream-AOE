@@ -476,35 +476,51 @@ const AnalyticsView = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-8 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[40px] p-8 shadow-2xl relative overflow-hidden">
+        <div className="lg:col-span-8 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[40px] p-6 shadow-2xl relative overflow-hidden flex flex-col">
           <h3 className="text-lg font-black uppercase tracking-widest mb-8 flex items-center gap-3">
             <TrendingUp size={20} className="text-green-500" />
             Tổng số trận theo thể thức
           </h3>
-          <div className="h-64 flex items-end justify-between gap-4 px-4 border-b border-[var(--border-color)] mb-8">
-            {Object.keys(globalStats.categories).sort().map((cat, i) => {
-              const data = globalStats.categories[cat];
-              const maxCount = Math.max(...Object.values(globalStats.categories).map(d => d.count), 1);
-              const height = (data.count / maxCount) * 200;
-              const colors = ['from-orange-500 to-orange-400', 'from-blue-500 to-blue-400', 'from-green-500 to-green-400', 'from-purple-500 to-purple-400', 'from-slate-500 to-slate-400'];
-              return (
-                <div key={cat} className="flex-1 flex flex-col items-center gap-4 group">
-                  <div className="w-full relative flex flex-col items-center h-full justify-end">
-                    <div className="absolute -top-8 bg-[var(--bg-main)] border border-[var(--border-color)] px-2 py-1 rounded text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                      {data.wins} THẮNG / {data.losses} THUA
-                    </div>
-                    <div 
-                      className={`w-full max-w-[48px] bg-gradient-to-t ${colors[i % colors.length]} rounded-t-xl transition-all duration-1000 ease-out cursor-pointer hover:brightness-110 shadow-lg relative group flex flex-col justify-end pb-2`}
-                      style={{ height: `${height}px`, minHeight: '28px' }}
-                    >
-                      {/* Total number at bottom of bar as requested */}
-                      <span className="text-[12px] font-black text-white/90 drop-shadow-md text-center leading-none">{data.count}</span>
-                    </div>
+          <div className="flex-1 relative mt-4 min-h-[260px]">
+            {/* Y Axis Grid */}
+            <div className="absolute inset-x-0 top-0 bottom-8 flex flex-col justify-between pointer-events-none">
+              {[...Array(5)].map((_, i) => {
+                const maxVal = Math.max(...Object.values(globalStats.categories).map(d => d.count), 1);
+                const val = Math.round((maxVal / 4) * (4 - i));
+                return (
+                  <div key={i} className="flex items-center gap-3 w-full">
+                    <span className="text-[9px] font-black opacity-30 w-4 text-right">{val}</span>
+                    <div className="flex-1 h-px bg-[var(--border-color)] opacity-10" />
                   </div>
-                  <span className="text-[10px] font-black opacity-60 uppercase tracking-widest">{cat}</span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            <div className="absolute inset-x-8 top-0 bottom-0 flex items-end justify-between gap-4 px-4 z-10">
+              {Object.keys(globalStats.categories).sort().map((cat, i) => {
+                const data = globalStats.categories[cat];
+                const maxCount = Math.max(...Object.values(globalStats.categories).map(d => d.count), 1);
+                const height = (data.count / maxCount) * 200;
+                const colors = ['from-orange-500 to-orange-400', 'from-blue-500 to-blue-400', 'from-green-500 to-green-400', 'from-purple-500 to-purple-400', 'from-slate-500 to-slate-400'];
+                return (
+                  <div key={cat} className="flex-1 flex flex-col items-center gap-3 group h-full justify-end">
+                    <div className="w-full relative flex flex-col items-center h-full justify-end">
+                      <div className="absolute -top-8 bg-[var(--bg-main)] border border-[var(--border-color)] px-2 py-1 rounded text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                        {data.wins} THẮNG / {data.losses} THUA
+                      </div>
+                      <div 
+                        className={`w-full max-w-[48px] bg-gradient-to-t ${colors[i % colors.length]} rounded-t-xl transition-all duration-1000 ease-out cursor-pointer hover:brightness-110 shadow-lg relative group flex flex-col justify-end pb-2`}
+                        style={{ height: `${height}px`, minHeight: '28px' }}
+                      >
+                        <span className="text-[12px] font-black text-white/90 drop-shadow-md text-center leading-none">{data.count}</span>
+                      </div>
+                    </div>
+                    <div className="h-px w-full bg-[var(--border-color)] opacity-20" />
+                    <span className="text-[10px] font-black opacity-60 uppercase tracking-widest">{cat}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
