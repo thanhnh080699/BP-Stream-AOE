@@ -392,19 +392,23 @@ const AnalyticsView = () => {
                 
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-3 group/bar min-w-[32px] h-full justify-end">
-                    <div className="w-full relative flex flex-col-reverse items-stretch justify-start min-h-[4px]">
-                      <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-2 rounded-xl text-[10px] font-black whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-all shadow-2xl z-50 pointer-events-none text-center transform -translate-y-2 group-hover/bar:translate-y-0">
-                        <div className="text-[9px] opacity-40 mb-0.5 font-bold uppercase tracking-widest">{dStr}</div>
-                        <div className="text-[#f1812e] text-xs mb-1">{dayTotal} Trận</div>
-                        <div className="space-y-0.5">
-                          {Object.entries(activity).map(([cat, count], idx) => {
-                             const colors = ['text-orange-500', 'text-blue-500', 'text-green-500', 'text-purple-500', 'text-slate-500'];
-                             return <div key={cat} className={`${colors[idx % colors.length]} text-[8px] uppercase tracking-tighter`}>{cat}: {count}</div>
-                          })}
+                      <div 
+                        className="w-full relative flex flex-col-reverse items-stretch justify-start min-h-[4px]"
+                      >
+                        {/* Tooltip moved inside the relative bar container */}
+                        <div className="absolute left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-2 rounded-xl text-[10px] font-black whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-all shadow-2xl z-50 pointer-events-none text-center transform -translate-y-2 group-hover/bar:translate-y-0"
+                             style={{ bottom: `calc(${dayTotal * pxPerMatch}px + 10px)` }}>
+                          <div className="text-[9px] opacity-40 mb-0.5 font-bold uppercase tracking-widest">{dStr}</div>
+                          <div className="text-[#f1812e] text-xs mb-1">{dayTotal} Trận</div>
+                          <div className="space-y-0.5">
+                            {Object.entries(activity).map(([cat, count], idx) => {
+                               const colors = ['text-orange-500', 'text-blue-500', 'text-green-500', 'text-purple-500', 'text-slate-500'];
+                               return <div key={cat} className={`${colors[idx % colors.length]} text-[8px] uppercase tracking-tighter`}>{cat}: {count}</div>
+                            })}
+                          </div>
                         </div>
-                      </div>
-                      
-                      {Object.keys(activity).map((cat, idx) => {
+                        
+                        {Object.keys(activity).map((cat, idx) => {
                         const count = activity[cat];
                         const colors = ['bg-orange-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-slate-500'];
                         return (
@@ -505,7 +509,9 @@ const AnalyticsView = () => {
                 return (
                   <div key={cat} className="flex-1 flex flex-col items-center gap-3 group h-full justify-end">
                     <div className="w-full relative flex flex-col items-center h-full justify-end">
-                      <div className="absolute -top-8 bg-[var(--bg-main)] border border-[var(--border-color)] px-2 py-1 rounded text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                      {/* Tooltip moved inside the relative bar container */}
+                      <div className="absolute left-1/2 -translate-x-1/2 bg-[var(--bg-main)] border border-[var(--border-color)] px-2 py-1 rounded text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none"
+                           style={{ bottom: `calc(${height}px + 10px)` }}>
                         {data.wins} THẮNG / {data.losses} THUA
                       </div>
                       <div 
