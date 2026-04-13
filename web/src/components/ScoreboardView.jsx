@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Users, X, Calendar, Trophy, Save, Loader2, LayoutTemplate } from 'lucide-react';
+import { Plus, Trash2, Users, X, Calendar, Trophy, Save, Loader2, LayoutTemplate, Edit3, Check } from 'lucide-react';
 import PasswordModal from './PasswordModal';
 
 const ScoreboardView = () => {
@@ -8,6 +8,8 @@ const ScoreboardView = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [playersList, setPlayersList] = useState([]);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editingDateGroup, setEditingDateGroup] = useState(null); // { old_date, new_date }
   
   // Auth Modal State
   const [authModal, setAuthModal] = useState({
@@ -80,8 +82,12 @@ const ScoreboardView = () => {
     if (!formData.team_a_players || !formData.team_b_players) return;
     
     try {
-      const response = await fetch('/api/v1/scores', {
-        method: 'POST',
+      const isEditing = editingId !== null;
+      const url = isEditing ? `/api/v1/scores/${editingId}` : '/api/v1/scores';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
@@ -89,6 +95,7 @@ const ScoreboardView = () => {
       if (!response.ok) throw new Error('Lỗi khi lưu tỷ số');
       
       setIsAdding(false);
+      setEditingId(null);
       setFormData({
         match_date: new Date().toISOString().split('T')[0],
         match_type: 'Kèo đấu',
@@ -103,27 +110,54 @@ const ScoreboardView = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    setAuthModal({
-      isOpen: true,
-      title: 'Xác nhận xóa kết quả',
-      description: 'Hành động này sẽ xóa vĩnh viễn dữ liệu trận đấu. Vui lòng nhập mật khẩu để xác nhận tính công bằng và minh bạch.',
-      onConfirm: async (password) => {
-        if (password !== '1234567890') {
-          alert('Mật khẩu không đúng!');
-          return;
-        }
+  const handleBulkDateUpdate = async () => {
+    if (!editingDateGroup || !editingDateGroup.new_date) return;
+    
+    try {
+      const response = await fetch('/api/v1/scores/bulk-update-date', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          old_date: editingDateGroup.old_date,
+          new_date: editingDateGroup.new_date
+        })
+      });
+      
+      if (!response.ok) throw new Error('Lỗi khi cập nhật ngày');
+      
+      setEditingDateGroup(null);
+      fetchScores();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
-        try {
-          const response = await fetch(`/api/v1/scores/${id}`, { method: 'DELETE' });
-          if (!response.ok) throw new Error('Lỗi khi xóa');
-          setAuthModal(prev => ({ ...prev, isOpen: false }));
-          fetchScores();
-        } catch (err) {
-          alert(err.message);
-        }
-      }
+  const handleEdit = (match) => {
+    setFormData({
+      match_date: match.match_date,
+      match_type: match.match_type,
+      team_a_players: match.team_a_players,
+      team_b_players: match.team_b_players,
+      score_a: match.score_a,
+      score_b: match.score_b
     });
+    setEditingId(match.id);
+    setIsAdding(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa kết quả trận đấu này?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/v1/scores/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Lỗi khi xóa');
+      fetchScores();
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   const getSelected = (teamKey) => formData[teamKey] ? formData[teamKey].split(',').map(s => s.trim()).filter(s => s) : [];
@@ -229,7 +263,7 @@ const ScoreboardView = () => {
           }`}
         >
           {isAdding ? <X size={20} /> : <Plus size={20} />}
-          <span>{isAdding ? 'Đóng' : 'Thêm kết quả'}</span>
+          <span>{isAdding ? (editingId ? 'Hủy sửa' : 'Đóng') : 'Thêm / Sửa kết quả'}</span>
         </button>
       </div>
 
@@ -303,7 +337,7 @@ const ScoreboardView = () => {
               }`}
             >
               <Save size={18} />
-              LƯU KẾT QUẢ THI ĐẤU
+              {editingId ? 'CẬP NHẬT KẾT QUẢ' : 'LƯU KẾT QUẢ THI ĐẤU'}
             </button>
           </form>
         </div>
@@ -321,12 +355,34 @@ const ScoreboardView = () => {
             <div key={date} className="flex flex-col bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] overflow-hidden shadow-xl hover:shadow-2xl transition-all h-fit animate-in fade-in slide-in-from-bottom-2">
               <div className="p-6 bg-[var(--bg-main)]/50 border-b border-[var(--border-color)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#f1812e]/10 rounded-lg">
+                  <div 
+                    className="p-2 bg-[#f1812e]/10 rounded-lg cursor-pointer hover:bg-[#f1812e]/20 transition-colors"
+                    onClick={() => setEditingDateGroup({ old_date: date, new_date: date })}
+                    title="Đổi ngày cho tất cả các trận này"
+                  >
                     <Calendar className="text-[#f1812e]" size={16} />
                   </div>
-                  <span className="font-black text-sm uppercase tracking-tight">
-                    {new Date(date).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  </span>
+                  {editingDateGroup?.old_date === date ? (
+                    <div className="flex items-center gap-2 animate-in slide-in-from-left-2">
+                      <input 
+                        type="date" 
+                        className="bg-[var(--bg-card)] border border-[#f1812e]/50 rounded-lg px-2 py-1 text-xs font-black focus:outline-none focus:ring-2 focus:ring-[#f1812e]/30"
+                        value={editingDateGroup.new_date}
+                        onChange={(e) => setEditingDateGroup(prev => ({ ...prev, new_date: e.target.value }))}
+                        autoFocus
+                      />
+                      <button onClick={handleBulkDateUpdate} className="p-1 text-green-500 hover:bg-green-500/10 rounded-md transition-all">
+                        <Check size={18} />
+                      </button>
+                      <button onClick={() => setEditingDateGroup(null)} className="p-1 text-red-500 hover:bg-red-500/10 rounded-md transition-all">
+                        <X size={18} />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="font-black text-sm uppercase tracking-tight">
+                      {new Date(date).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="px-2.5 py-1 bg-[#f1812e]/10 rounded-full text-[#f1812e] text-[9px] font-black uppercase tracking-tighter">
@@ -369,14 +425,20 @@ const ScoreboardView = () => {
                       </div>
                     </div>
                     
-                    {isAdding && (
+                    <div className="absolute -top-2 -right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={() => handleEdit(match)}
+                        className="p-2 bg-blue-500 text-white rounded-xl shadow-xl hover:scale-110 active:scale-90"
+                      >
+                        <Edit3 size={13} />
+                      </button>
                       <button
                         onClick={() => handleDelete(match.id)}
-                        className="absolute -top-2 -right-2 p-2 bg-red-500 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-xl hover:scale-110 active:scale-90"
+                        className="p-2 bg-red-500 text-white rounded-xl shadow-xl hover:scale-110 active:scale-90"
                       >
                         <Trash2 size={13} />
                       </button>
-                    )}
+                    </div>
                   </div>
                 ))}
               </div>

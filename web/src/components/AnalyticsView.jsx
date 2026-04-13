@@ -10,14 +10,135 @@ import {
   Trophy,
   Activity,
   User,
-  Medal
+  Medal,
+  X,
+  History,
+  ArrowRight
 } from 'lucide-react';
+
+const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[var(--bg-card)] border border-[var(--border-color)] w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col h-[80vh] animate-in zoom-in-95 duration-300"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="p-8 border-b border-[var(--border-color)] flex justify-between items-center bg-gradient-to-r from-orange-500/10 to-transparent">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <History size={20} className="text-[#f1812e]" />
+              <h3 className="text-2xl font-black uppercase tracking-tight">Lịch sử {category}</h3>
+            </div>
+            <p className="text-xs font-black opacity-40 uppercase tracking-widest">Người chơi: <span className="text-[#f1812e]">{player}</span></p>
+          </div>
+          <button onClick={onClose} className="w-12 h-12 rounded-2xl bg-[var(--bg-main)] flex items-center justify-center hover:bg-red-500 hover:text-white transition-all group">
+            <X size={24} className="group-hover:rotate-90 transition-transform" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8 space-y-4">
+          {matches.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center opacity-30 italic py-20">
+              <History size={48} className="mb-4" />
+              <p className="font-bold">Chưa có dữ liệu thi đấu cho kèo này</p>
+            </div>
+          ) : (
+            matches.map((match, i) => {
+              const date = new Date(match.date);
+              const isTeamA = match.team_a_players.includes(player);
+              const pScore = isTeamA ? match.score_a : match.score_b;
+              const oScore = isTeamA ? match.score_b : match.score_a;
+              const isWin = parseInt(pScore) > parseInt(oScore);
+
+              const renderPlayers = (playersStr, currentPlayer) => {
+                const parts = playersStr.split(',');
+                return parts.map((p, idx) => {
+                  const trimmed = p.trim();
+                  const isCurrent = trimmed.toLowerCase() === currentPlayer.toLowerCase();
+                  return (
+                    <React.Fragment key={idx}>
+                      <span className={isCurrent ? "text-[#f1812e] font-black" : ""}>
+                        {trimmed}
+                      </span>
+                      {idx < parts.length - 1 ? ", " : ""}
+                    </React.Fragment>
+                  );
+                });
+              };
+
+              return (
+                <div key={i} className={`flex items-center justify-between p-6 rounded-3xl border transition-all ${isWin ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'} hover:scale-[1.02]`}>
+                  <div className="flex items-center gap-6 flex-1 min-w-0">
+                    <div className="text-center min-w-[60px]">
+                      <p className="text-[10px] font-black opacity-30 uppercase">{date.toLocaleDateString('vi-VN', { month: 'numeric', day: 'numeric' })}</p>
+                      <p className="text-lg font-black">{date.getFullYear()}</p>
+                    </div>
+                    <div className="w-px h-10 bg-[var(--border-color)] opacity-20" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${isWin ? 'bg-green-500 text-white shadow-sm' : 'bg-red-500 text-white shadow-sm'}`}>
+                          {isWin ? 'Thắng' : 'Thua'}
+                        </span>
+                        {match.match_type && match.match_type !== "Kèo đấu" && (
+                          <span className="text-sm font-black opacity-60 italic">{match.match_type}</span>
+                        )}
+                      </div>
+                      <p className="text-xs font-bold text-[var(--text-secondary)] opacity-90 tracking-wide leading-relaxed break-words">
+                        <span className={isTeamA ? "bg-green-500/10 px-1 rounded" : ""}>
+                          {renderPlayers(match.team_a_players, player)}
+                        </span>
+                        <span className="mx-2 opacity-20 font-black">VS</span>
+                        <span className={!isTeamA ? "bg-green-500/10 px-1 rounded" : ""}>
+                          {renderPlayers(match.team_b_players, player)}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-3xl font-black font-outfit tracking-tighter tabular-nums italic shrink-0 ml-4">
+                    <span className={isWin ? 'text-green-500' : 'text-red-500'}>{pScore}</span>
+                    <span className="opacity-20 mx-1">-</span>
+                    <span className="opacity-40">{oScore}</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+        
+        <div className="p-8 border-t border-[var(--border-color)] bg-[var(--bg-main)]/50">
+          <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] text-center italic">Dữ liệu được cập nhật tự động theo thời gian thực</p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AnalyticsView = () => {
   const [scores, setScores] = useState({});
   const [loading, setLoading] = useState(true);
-  const [timeFilter, setTimeFilter] = useState('all'); // all, week, month, quarter, year
+  const [timeFilter, setTimeFilter] = useState('all'); // all, week, month, quarter, year, custom
   const [searchQuery, setSearchQuery] = useState('');
+  const [customRange, setCustomRange] = useState({ start: '', end: '' });
+  const [selectedMatchHistory, setSelectedMatchHistory] = useState(null); // { player, category, matches }
 
   const fetchScores = async () => {
     try {
@@ -61,6 +182,15 @@ const AnalyticsView = () => {
         const yearAgo = new Date();
         yearAgo.setFullYear(now.getFullYear() - 1);
         include = matchDate >= yearAgo;
+      } else if (timeFilter === 'custom') {
+        if (customRange.start) {
+          include = include && matchDate >= new Date(customRange.start);
+        }
+        if (customRange.end) {
+          const endDate = new Date(customRange.end);
+          endDate.setHours(23, 59, 59, 999);
+          include = include && matchDate <= endDate;
+        }
       }
       
       if (include) {
@@ -75,10 +205,12 @@ const AnalyticsView = () => {
       seriesTotal: 0,
       seriesCount: 0,
       dailyActivity: {},
-      categories: {} 
+      categories: {},
+      rawMatches: [] // Store for history popups
     };
 
     flatScores.forEach(match => {
+      globalStats.rawMatches.push(match);
       const teamA = match.team_a_players.split(',').map(s => s.trim()).filter(s => s);
       const teamB = match.team_b_players.split(',').map(s => s.trim()).filter(s => s);
       const scoreA = parseInt(match.score_a);
@@ -129,7 +261,7 @@ const AnalyticsView = () => {
       teamB.forEach(p => processPlayer(p, scoreB, scoreA));
     });
 
-    const finalPlayers = Object.values(players)
+      const finalPlayers = Object.values(players)
       .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
       .sort((a, b) => {
         const rateA = a.wins + a.losses > 0 ? a.wins / (a.wins + a.losses) : 0;
@@ -138,7 +270,7 @@ const AnalyticsView = () => {
       });
 
     return { players: finalPlayers, globalStats };
-  }, [scores, timeFilter, searchQuery]);
+  }, [scores, timeFilter, searchQuery, customRange]);
 
   if (loading) {
     return (
@@ -165,7 +297,7 @@ const AnalyticsView = () => {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          {['all', 'week', 'month', 'quarter', 'year'].map(f => (
+          {['all', 'week', 'month', 'quarter', 'year', 'custom'].map(f => (
             <button
               key={f}
               onClick={() => setTimeFilter(f)}
@@ -175,11 +307,43 @@ const AnalyticsView = () => {
                 : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:border-[#f1812e]/50 text-opacity-50'
               }`}
             >
-              {f === 'all' ? 'Tất cả' : (f === 'week' ? 'Tuần' : (f === 'month' ? 'Tháng' : (f === 'quarter' ? 'Quý' : 'Năm')))}
+              {f === 'all' ? 'Tất cả' : (f === 'week' ? 'Tuần' : (f === 'month' ? 'Tháng' : (f === 'quarter' ? 'Quý' : (f === 'year' ? 'Năm' : 'Tùy chọn'))))}
             </button>
           ))}
         </div>
       </div>
+
+      {timeFilter === 'custom' && (
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-3xl p-6 shadow-xl animate-in slide-in-from-top-4 duration-300">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-1 w-full space-y-2">
+              <label className="text-[10px] font-black opacity-40 uppercase tracking-widest ml-2">Từ ngày</label>
+              <input 
+                type="date" 
+                value={customRange.start} 
+                onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
+                className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] rounded-xl p-3 text-sm font-bold focus:outline-none focus:border-[#f1812e] transition-colors"
+              />
+            </div>
+            <ArrowRight size={20} className="text-[#f1812e] opacity-30 hidden md:block" />
+            <div className="flex-1 w-full space-y-2">
+              <label className="text-[10px] font-black opacity-40 uppercase tracking-widest ml-2">Đến ngày</label>
+              <input 
+                type="date" 
+                value={customRange.end} 
+                onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
+                className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] rounded-xl p-3 text-sm font-bold focus:outline-none focus:border-[#f1812e] transition-colors"
+              />
+            </div>
+            <button 
+              onClick={() => { setCustomRange({ start: '', end: '' }); setTimeFilter('all'); }}
+              className="px-6 py-3 rounded-xl bg-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all self-end"
+            >
+              Xóa lọc
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-6 shadow-xl flex items-center gap-6 group hover:-translate-y-1 transition-all duration-300">
@@ -200,7 +364,7 @@ const AnalyticsView = () => {
             </div>
           </div>
           
-          <div className="h-60 flex items-end justify-between gap-2 px-2 border-b border-[var(--border-color)] pb-2 overflow-x-auto">
+          <div className="h-64 flex items-end justify-between gap-px px-2 border-b border-[var(--border-color)] pb-2 overflow-x-auto overflow-y-hidden">
             {[...Array(15)].map((_, i) => {
               const date = new Date();
               date.setDate(date.getDate() - (14 - i));
@@ -209,12 +373,22 @@ const AnalyticsView = () => {
               const activity = globalStats.dailyActivity[dStr] || {};
               const dayTotal = Object.values(activity).reduce((a, b) => a + b, 0);
               
+              // Dynamic scale calculation: Max height 200px
+              const maxPossibleDayTotal = Math.max(...Object.values(globalStats.dailyActivity).map(a => Object.values(a).reduce((sum, v) => sum + v, 0)), 1);
+              const pxPerMatch = Math.min(200 / maxPossibleDayTotal, 40); // Cap at 40px/match for small sets
+              
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2 group/bar min-w-[30px]">
-                  <div className="w-full relative flex flex-col-reverse items-center justify-start min-h-[4px]">
-                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-1.5 rounded-lg text-[10px] font-black whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity shadow-2xl z-50 pointer-events-none text-center">
-                      <p className="text-[9px] opacity-40 mb-0.5 font-bold">{dStr}</p>
-                      <p className="text-orange-500">{dayTotal} Trận</p>
+                <div key={i} className="flex-1 flex flex-col items-center gap-2 group/bar min-w-[32px]">
+                  <div className="w-full relative flex flex-col-reverse items-stretch justify-start min-h-[4px]">
+                    <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-2 rounded-xl text-[10px] font-black whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-all shadow-2xl z-50 pointer-events-none text-center transform -translate-y-2 group-hover/bar:translate-y-0">
+                      <p className="text-[9px] opacity-40 mb-0.5 font-bold uppercase tracking-widest">{dStr}</p>
+                      <p className="text-[#f1812e] text-xs mb-1">{dayTotal} Trận</p>
+                      <div className="space-y-0.5">
+                        {Object.entries(activity).map(([cat, count], idx) => {
+                           const colors = ['text-orange-500', 'text-blue-500', 'text-green-500', 'text-purple-500', 'text-slate-500'];
+                           return <p key={cat} className={`${colors[idx % colors.length]} text-[8px] uppercase tracking-tighter`}>{cat}: {count}</p>
+                        })}
+                      </div>
                     </div>
                     
                     {Object.keys(activity).map((cat, idx) => {
@@ -223,13 +397,13 @@ const AnalyticsView = () => {
                       return (
                         <div 
                           key={cat} 
-                          className={`w-full max-w-[20px] ${colors[idx % colors.length]} transition-all duration-700 hover:brightness-125`}
-                          style={{ height: `${count * 15}px` }}
+                          className={`w-full ${colors[idx % colors.length]} transition-all duration-700 hover:brightness-125 first:rounded-b-md last:rounded-t-md`}
+                          style={{ height: `${count * pxPerMatch}px` }}
                         />
                       );
                     })}
                   </div>
-                  <span className="text-[8px] font-black opacity-30 uppercase tracking-tighter whitespace-nowrap">{shortDate}</span>
+                  <span className="text-[8px] font-black opacity-30 uppercase tracking-tighter whitespace-nowrap">{dayTotal > 0 ? shortDate : '-'}</span>
                 </div>
               );
             })}
@@ -300,16 +474,19 @@ const AnalyticsView = () => {
               const colors = ['from-orange-500 to-orange-400', 'from-blue-500 to-blue-400', 'from-green-500 to-green-400', 'from-purple-500 to-purple-400', 'from-slate-500 to-slate-400'];
               return (
                 <div key={cat} className="flex-1 flex flex-col items-center gap-4 group">
-                  <div className="w-full relative flex flex-col items-center">
+                  <div className="w-full relative flex flex-col items-center h-full justify-end">
                     <div className="absolute -top-8 bg-[var(--bg-main)] border border-[var(--border-color)] px-2 py-1 rounded text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                       {data.wins} THẮNG / {data.losses} THUA
                     </div>
                     <div 
-                      className={`w-full max-w-[40px] bg-gradient-to-t ${colors[i % colors.length]} rounded-t-xl transition-all duration-1000 ease-out cursor-pointer hover:brightness-110 shadow-lg`}
-                      style={{ height: `${height}px` }}
-                    />
+                      className={`w-full max-w-[48px] bg-gradient-to-t ${colors[i % colors.length]} rounded-t-xl transition-all duration-1000 ease-out cursor-pointer hover:brightness-110 shadow-lg relative group flex flex-col justify-end pb-2`}
+                      style={{ height: `${height}px`, minHeight: '28px' }}
+                    >
+                      {/* Total number at bottom of bar as requested */}
+                      <span className="text-[12px] font-black text-white/90 drop-shadow-md text-center leading-none">{data.count}</span>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">{cat}</span>
+                  <span className="text-[10px] font-black opacity-60 uppercase tracking-widest">{cat}</span>
                 </div>
               );
             })}
@@ -416,7 +593,20 @@ const AnalyticsView = () => {
                         const circum = 2 * Math.PI * radius;
                         
                         return (
-                          <div key={cat} className="flex flex-col items-center gap-4 group/bar transition-transform hover:scale-110 duration-300">
+                          <div 
+                            key={cat} 
+                            onClick={() => {
+                              const filtered = globalStats.rawMatches.filter(m => {
+                                const inMatch = m.team_a_players.includes(player.name) || m.team_b_players.includes(player.name);
+                                const currentCat = m.team_a_players.split(',').length === m.team_b_players.split(',').length 
+                                  ? `${m.team_a_players.split(',').length}-${m.team_a_players.split(',').length}` 
+                                  : `${m.team_a_players.split(',').length}-${m.team_b_players.split(',').length}`;
+                                return inMatch && currentCat === cat;
+                              }).sort((a, b) => new Date(b.date) - new Date(a.date));
+                              setSelectedMatchHistory({ player: player.name, category: cat, matches: filtered });
+                            }}
+                            className="flex flex-col items-center gap-4 group/bar transition-transform hover:scale-110 duration-300 cursor-pointer"
+                          >
                             <div className="relative flex items-center justify-center">
                               {/* Tooltip */}
                               <div className="absolute -top-14 bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-2 rounded-xl text-[10px] font-black opacity-0 group-hover/bar:opacity-100 transition-all duration-300 translate-y-2 group-hover/bar:translate-y-0 whitespace-nowrap z-20 shadow-2xl pointer-events-none text-center border-b-2" style={{ borderBottomColor: color }}>
@@ -461,6 +651,14 @@ const AnalyticsView = () => {
           })
         )}
       </div>
+
+      <MatchHistoryModal 
+        isOpen={!!selectedMatchHistory} 
+        onClose={() => setSelectedMatchHistory(null)}
+        player={selectedMatchHistory?.player}
+        category={selectedMatchHistory?.category}
+        matches={selectedMatchHistory?.matches || []}
+      />
     </div>
   );
 };
