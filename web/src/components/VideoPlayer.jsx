@@ -3,7 +3,11 @@ import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import Hls from 'hls.js';
 
-const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
+// Import plugins
+import 'videojs-mobile-ui';
+import 'videojs-mobile-ui/dist/videojs-mobile-ui.css';
+
+const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayback = false }) => {
   const videoRef = useRef(null);
   const playerRef = useRef(null);
   const hlsRef = useRef(null);
@@ -20,7 +24,24 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
         poster: poster,
         preload: 'auto',
         playbackRates: [0.5, 1, 1.25, 1.5, 2],
-        userActions: { hotkeys: true },
+        seekButtons: isPlayback ? {
+          forward: 10,
+          back: 10
+        } : false,
+        userActions: { 
+          hotkeys: function(event) {
+            // Add custom hotkey support for Left/Right arrows
+            // Arrow Left = 37, Arrow Right = 39
+            if (event.which === 37) {
+              this.currentTime(this.currentTime() - 10);
+            } else if (event.which === 39) {
+              this.currentTime(this.currentTime() + 10);
+            } else if (event.which === 32) { // Space
+              if (this.paused()) this.play();
+              else this.pause();
+            }
+          }
+        },
         controlBar: {
           children: [
             'playToggle',
@@ -35,19 +56,51 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
           ],
         },
       });
+
+      // 2. Initialize Plugins
+      if (isPlayback) {
+        // Mobile UI for double tap to seek
+        if (typeof player.mobileUi === 'function') {
+          player.mobileUi({
+            forceForDesktop: false,
+            touchControls: {
+              seekSeconds: 10,
+              tapTimeout: 300,
+              disableOnEnd: false
+            }
+          });
+        }
+      }
+
+      // 3. Handle Fullscreen Orientation
+      player.on('fullscreenchange', () => {
+        if (player.isFullscreen()) {
+          // Try to lock landscape on mobile
+          if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
+            window.screen.orientation.lock('landscape').catch(e => {
+              console.log("Could not lock orientation:", e);
+            });
+          }
+        } else {
+          // Unlock on exit
+          if (window.screen && window.screen.orientation && window.screen.orientation.unlock) {
+            window.screen.orientation.unlock();
+          }
+        }
+      });
     }
 
     const player = playerRef.current;
     if (!player) return;
 
-    // 2. Clear previous HLS instance if any
+    // 4. Clear previous HLS instance if any
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
 
-    // 3. Load NEW URL
-    console.log("VideoPlayer: Loading source:", url);
+    // 5. Load NEW URL
+    console.log("VideoPlayer: Loading source:", url, "isPlayback:", isPlayback);
 
     if (url.endsWith('.m3u8')) {
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -55,7 +108,7 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
       if (Hls.isSupported() && !isSafari) {
         const hls = new Hls({
           enableWorker: true,
-          lowLatencyMode: true,
+          lowLatencyMode: !isPlayback, // Low latency only for live
           backBufferLength: 30,
           manifestLoadingMaxRetry: 10,
           levelLoadingMaxRetry: 10,
@@ -93,7 +146,7 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
     player.muted(muted);
     if (poster) player.poster(poster);
 
-  }, [url, autoPlay, muted, poster]);
+  }, [url, autoPlay, muted, poster, isPlayback]);
 
   // Handle disposal only on UNMOUNT
   useEffect(() => {
@@ -109,11 +162,10 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
     };
   }, []);
 
-  // 4. Handle iOS orientation change / resize issues in fullscreen
+  // 6. Handle iOS orientation change / resize issues in fullscreen
   useEffect(() => {
     const handleResize = () => {
       if (playerRef.current) {
-        // Small delay to allow the browser to complete orientation change animation
         setTimeout(() => {
           if (playerRef.current) {
             playerRef.current.trigger('resize');
@@ -149,7 +201,7 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
           font-family: 'Roboto', sans-serif;
         }
         .custom-videojs-theme .vjs-big-play-button {
-          background-color: rgba(201, 160, 80, 0.8) !important;
+          background-color: rgba(241, 129, 46, 0.8) !important;
           border-color: #f1812e !important;
           border-radius: 50% !important;
           width: 2.2em !important;
@@ -175,6 +227,22 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
           backdrop-filter: blur(12px);
           height: 3.5em !important;
         }
+        /* Custom stylings for seek buttons */
+        .vjs-seek-button {
+            width: 2.5em !important;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .vjs-seek-button:hover {
+            color: #f1812e !important;
+        }
+        .vjs-seek-button.skip-back {
+            background-image: none !important;
+        }
+        .vjs-seek-button.skip-forward {
+            background-image: none !important;
+        }
+        
         .video-js.vjs-fluid {
             padding-top: 56.25% !important; /* 16:9 */
             height: 0 !important;
@@ -192,6 +260,15 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '' }) => {
         }
         .vjs-poster {
             background-size: cover !important;
+        }
+        /* Show time displays always */
+        .vjs-current-time, .vjs-duration, .vjs-time-divider {
+            display: flex !important;
+            align-items: center;
+        }
+        .vjs-current-time-display, .vjs-duration-display {
+            font-weight: 700 !important;
+            color: #fff !important;
         }
         .vjs-live-display {
             font-weight: 900 !important;

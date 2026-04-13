@@ -216,6 +216,7 @@ const PlaybackView = () => {
                         {currentVideo ? (
                             <VideoPlayer
                                 url={currentVideo.hls ? `/replays/${currentVideo.hls}` : `/replays/${currentVideo.file}`}
+                                isPlayback={true}
                             />
                         ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center gap-6 text-[var(--text-secondary)] bg-[var(--bg-card)]">
