@@ -44,10 +44,11 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-root}
       - DB_NAME=${DB_NAME:-aoe_scoreboard}
       - ENV=${ENV:-local}
+      - WORKER_PORT=${WORKER_PORT:-5001}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "5001:5001"
+      - "${WORKER_PORT:-5001}:${WORKER_PORT:-5001}"
     networks:
       - srs-network
     depends_on:

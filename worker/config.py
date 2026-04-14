@@ -9,6 +9,7 @@ elif os.path.exists('.env'):
 
 DATA_DIR = os.environ.get('DATA_DIR', '/data')
 LOG_FILE = os.path.join(DATA_DIR, 'recordings.json')
+WORKER_PORT = int(os.environ.get('WORKER_PORT', 5001))
 
 # Tuning cho HDD + 40 vCPU + 3GB RAM
 MAX_STREAM_WORKERS = int(os.environ.get('MAX_STREAM_WORKERS', 3))

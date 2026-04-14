@@ -4,6 +4,7 @@ try:
 except ImportError:
     CORS = None
 from database import init_db
+from config import WORKER_PORT
 
 # Import routes
 from routes.api_players import bp as players_bp
@@ -23,4 +24,4 @@ app.register_blueprint(scores_bp)
 app.register_blueprint(recordings_bp)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001)
+    app.run(host='0.0.0.0', port=WORKER_PORT)

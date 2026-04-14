@@ -211,14 +211,22 @@ const AboutUs = () => {
                 <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest opacity-60 text-white">Bước 2: Cấu hình Stream</span>
                 <ul className="space-y-2 text-xs md:text-sm">
                   <li className="flex flex-col sm:flex-row sm:gap-2">
+                    <span className="font-bold text-[#f1812e] min-w-[80px]">Service:</span>
+                    <code className="bg-black/20 px-2 py-0.5 rounded break-all">Custom...</code>
+                  </li>
+                  <li className="flex flex-col sm:flex-row sm:gap-2">
                     <span className="font-bold text-[#f1812e] min-w-[80px]">Server:</span>
-                    <code className="bg-black/20 px-2 py-0.5 rounded break-all">rtmp://192.168.9.233/live</code>
+                    <code className="bg-black/20 px-2 py-0.5 rounded break-all">rtmp://192.168.9.233:1935/live</code>
                   </li>
                   <li className="flex flex-col sm:flex-row sm:gap-2 pt-2 sm:pt-0">
                     <span className="font-bold text-[#f1812e] min-w-[80px]">Stream Key:</span>
-                    <code className="bg-black/20 px-2 py-0.5 rounded">[machine_id]</code>
+                    <code className="bg-black/20 px-2 py-0.5 rounded">team1-1 ... team2-4</code>
                   </li>
                 </ul>
+                <p className="text-[11px] md:text-xs text-white/70 leading-relaxed">
+                  Khong chon YouTube/Twitch trong OBS. He thong nay dung RTMP server noi bo, neu chon sai service OBS se bao loi
+                  &quot;Could not access the Specified Channel or stream key&quot;.
+                </p>
               </div>
             </div>
             <div className="bg-black/20 p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/10 shrink-0">
