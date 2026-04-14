@@ -383,36 +383,38 @@ const PlaybackView = () => {
                             )}
 
                             <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => {
-                                        setAuthModal({
-                                            isOpen: true,
-                                            title: 'Tổng hợp dữ liệu video',
-                                            description: 'Để tránh spam nhiều lần và tối ưu tài nguyên máy chủ, vui lòng nhập mật khẩu để bắt đầu quá trình tổng hợp file MP4/HLS.',
-                                            onConfirm: (password) => {
-                                                if (password !== '1234567890') {
-                                                    alert('Mật khẩu không đúng!');
-                                                    return;
+                                {replays[selectedDate].status !== 'completed' && (
+                                    <button
+                                        onClick={() => {
+                                            setAuthModal({
+                                                isOpen: true,
+                                                title: 'Tổng hợp dữ liệu video',
+                                                description: 'Để tránh spam nhiều lần và tối ưu tài nguyên máy chủ, vui lòng nhập mật khẩu để bắt đầu quá trình tổng hợp file MP4/HLS.',
+                                                onConfirm: (password) => {
+                                                    if (password !== '1234567890') {
+                                                        alert('Mật khẩu không đúng!');
+                                                        return;
+                                                    }
+                                                    fetch(`/api/v1/merge/${selectedDate}`, { method: 'POST' });
+                                                    alert('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...');
+                                                    setReplays(prev => ({
+                                                        ...prev,
+                                                        [selectedDate]: { ...prev[selectedDate], status: 'processing', progress_percent: 5, progress_text: 'Đang bắt đầu...' }
+                                                    }));
+                                                    setAuthModal(prev => ({ ...prev, isOpen: false }));
                                                 }
-                                                fetch(`/api/v1/merge/${selectedDate}`, { method: 'POST' });
-                                                alert('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...');
-                                                setReplays(prev => ({
-                                                    ...prev,
-                                                    [selectedDate]: { ...prev[selectedDate], status: 'processing', progress_percent: 5, progress_text: 'Đang bắt đầu...' }
-                                                }));
-                                                setAuthModal(prev => ({ ...prev, isOpen: false }));
-                                            }
-                                        });
-                                    }}
-                                    disabled={replays[selectedDate].status === 'processing'}
-                                    className={`w-full py-3 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn cursor-pointer ${replays[selectedDate].status === 'processing'
-                                        ? 'bg-[#f1812e] text-[#fff] border-[#f1812e] cursor-not-allowed'
-                                        : 'bg-[#f1812e] text-[#fff] border-[#f1812e]'
-                                        }`}
-                                >
-                                    <HardDrive size={14} className={`${replays[selectedDate].status === 'processing' ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
-                                    {replays[selectedDate].status === 'completed' ? 'Dữ Liệu Đã Gộp' : 'Tổng Hợp File'}
-                                </button>
+                                            });
+                                        }}
+                                        disabled={replays[selectedDate].status === 'processing'}
+                                        className={`w-full py-3 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn cursor-pointer ${replays[selectedDate].status === 'processing'
+                                            ? 'bg-[#f1812e] text-[#fff] border-[#f1812e] cursor-not-allowed'
+                                            : 'bg-[#f1812e] text-[#fff] border-[#f1812e]'
+                                            }`}
+                                    >
+                                        <HardDrive size={14} className={`${replays[selectedDate].status === 'processing' ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
+                                        {replays[selectedDate].status === 'processing' ? 'Đang Xử Lý...' : 'Tổng Hợp File'}
+                                    </button>
+                                )}
 
                                 <button
                                     onClick={() => handleDelete(selectedDate)}

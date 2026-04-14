@@ -108,14 +108,14 @@ def process_one_stream(s_id, files, date_str, meta, meta_file, machine_progress_
             if os.path.exists(ts_path):
                 os.remove(ts_path)
         
-        # Xóa các file FLV gốc để tiết kiệm dung lượng (theo yêu cầu Hướng 2)
-        print(f"[{s_id}] Đang giải phóng dung lượng: Xóa {len(valid_files)} file FLV gốc...")
-        for flv_path in valid_files:
-            if os.path.exists(flv_path):
-                try:
-                    os.remove(flv_path)
-                except Exception as e:
-                    print(f"[{s_id}] Lỗi khi xóa file gốc {flv_path}: {e}")
+        # NOTE: Giữ lại file FLV gốc để xoá sau (theo quy trình mới: chỉ xoá sau 4 ngày)
+        # print(f"[{s_id}] Đang giải phóng dung lượng: Xóa {len(valid_files)} file FLV gốc...")
+        # for flv_path in valid_files:
+        #     if os.path.exists(flv_path):
+        #         try:
+        #             os.remove(flv_path)
+        #         except Exception as e:
+        #             print(f"[{s_id}] Lỗi khi xóa file gốc {flv_path}: {e}")
 
         concat_txt = os.path.join(ts_dir, 'concat.txt')
         if os.path.exists(concat_txt):
@@ -208,10 +208,57 @@ def do_merge(date_str):
         progress_text="Đã hoàn thành tổng hợp toàn bộ."
     )
 
-    # Dọn dẹp recordings.json cho ngày này vì các file gốc đã bị xóa (An toàn luồng)
-    from utils import delete_recordings_by_date
-    delete_recordings_by_date(date_str)
+    # Thay đổi: Không xoá ngay recordings của ngày vừa gộp.
+    # Thay vào đó, chạy cleanup để xoá các ngày cũ hơn 4 ngày (bao gồm cả file vật lý)
+    cleanup_old_recordings(keep_days=4)
 
-    print(f"\n{'='*60}")
-    print(f"=== Merge hoàn tất cho ngày {date_str} ===")
-    print(f"{'='*60}\n")
+def cleanup_old_recordings(keep_days=4):
+    """
+    Xoá các bản ghi live (FLV) và metadata trong recordings.json 
+    nếu cũ hơn keep_days ngày (bao gồm cả hôm nay).
+    Ví dụ keep_days=4 thì giữ lại: Hôm nay, Hôm qua, Hôm kia, Hôm kìa.
+    """
+    from datetime import datetime, timedelta
+    from utils import get_recordings, save_recordings, recordings_lock
+    
+    print(f"\n--- Bắt đầu dọn dẹp recordings cũ (giữ lại {keep_days} ngày gần nhất) ---")
+    
+    recordings = get_recordings()
+    if not recordings:
+        return
+
+    # Lấy danh sách các ngày, format YYYY-MM-DD
+    dates = sorted(recordings.keys(), reverse=True)
+    if len(dates) <= keep_days:
+        print(f"Số lượng ngày ghi ({len(dates)}) <= {keep_days}, không cần xoá.")
+        return
+
+    # Các ngày cần xoá là các ngày từ index keep_days trở đi
+    dates_to_delete = dates[keep_days:]
+    
+    with recordings_lock:
+        # Load lại để đảm bảo an toàn luồng
+        current_recs = get_recordings()
+        deleted_count = 0
+        
+        for d_str in dates_to_delete:
+            if d_str in current_recs:
+                print(f"  -> Đang xoá dữ liệu live ngày: {d_str}")
+                # Xoá file vật lý
+                for item in current_recs[d_str]:
+                    f_path = item.get('file')
+                    if f_path and os.path.exists(f_path):
+                        try:
+                            os.remove(f_path)
+                        except Exception as e:
+                            print(f"     ! Lỗi xoá file {f_path}: {e}")
+                
+                # Xoá khỏi dict
+                del current_recs[d_str]
+                deleted_count += 1
+        
+        if deleted_count > 0:
+            save_recordings(current_recs)
+            print(f"--- Hoàn tất dọn dẹp: Đã xoá {deleted_count} ngày cũ. ---")
+        else:
+            print("--- Không có gì để xoá. ---")
