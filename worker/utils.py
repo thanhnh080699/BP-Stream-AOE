@@ -4,8 +4,8 @@ import threading
 import subprocess
 from config import LOG_FILE
 
-meta_lock = threading.Lock()
-recordings_lock = threading.Lock()
+meta_lock = threading.RLock()
+recordings_lock = threading.RLock()
 
 def get_recordings():
     if os.path.exists(LOG_FILE):
@@ -17,10 +17,24 @@ def get_recordings():
                 return {}
     return {}
 
+def safe_save_json(file_path, data):
+    """Save JSON atomically using a temporary file and rename."""
+    temp_path = file_path + ".tmp"
+    try:
+        with open(temp_path, 'w') as f:
+            json.dump(data, f, indent=4)
+        os.replace(temp_path, file_path)
+    except Exception as e:
+        print(f"Error saving JSON to {file_path}: {e}")
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except:
+                pass
+
 def save_recordings(data):
     with recordings_lock:
-        with open(LOG_FILE, 'w') as f:
-            json.dump(data, f, indent=4)
+        safe_save_json(LOG_FILE, data)
 
 def delete_recordings_by_date(date_str):
     with recordings_lock:
@@ -30,25 +44,25 @@ def delete_recordings_by_date(date_str):
                     data = json.load(f)
                 if date_str in data:
                     del data[date_str]
-                    with open(LOG_FILE, 'w') as f:
-                        json.dump(data, f, indent=4)
+                    safe_save_json(LOG_FILE, data)
             except Exception as e:
                 print(f"Error cleaning up recordings for {date_str}: {e}")
 
 def save_meta(meta_file, meta):
     with meta_lock:
-        with open(meta_file, 'w') as f:
-            json.dump(meta, f, indent=4)
+        safe_save_json(meta_file, meta)
 
-def update_meta_field(meta_file, date_str, **kwargs):
+def update_meta_field(meta_file, date_str, meta=None, **kwargs):
+    """Update a field in metadata. If meta is provided, use it and SAVE it. Otherwise load, update, save."""
     with meta_lock:
-        meta = {}
-        if os.path.exists(meta_file):
-            try:
-                with open(meta_file, 'r') as f:
-                    meta = json.load(f)
-            except Exception:
-                pass
+        if meta is None:
+            meta = {}
+            if os.path.exists(meta_file):
+                try:
+                    with open(meta_file, 'r') as f:
+                        meta = json.load(f)
+                except Exception:
+                    pass
         
         if date_str not in meta:
             meta[date_str] = {"streams": {}, "status": "processing"}
@@ -56,18 +70,19 @@ def update_meta_field(meta_file, date_str, **kwargs):
         for k, v in kwargs.items():
             meta[date_str][k] = v
             
-        with open(meta_file, 'w') as f:
-            json.dump(meta, f, indent=4)
+        safe_save_json(meta_file, meta)
 
-def update_stream_meta(meta_file, date_str, s_id, stream_data):
+def update_stream_meta(meta_file, date_str, s_id, stream_data, meta=None):
+    """Update a stream in metadata. If meta is provided, use it and SAVE it. Otherwise load, update, save."""
     with meta_lock:
-        meta = {}
-        if os.path.exists(meta_file):
-            try:
-                with open(meta_file, 'r') as f:
-                    meta = json.load(f)
-            except Exception:
-                pass
+        if meta is None:
+            meta = {}
+            if os.path.exists(meta_file):
+                try:
+                    with open(meta_file, 'r') as f:
+                        meta = json.load(f)
+                except Exception:
+                    pass
                 
         if date_str not in meta:
             meta[date_str] = {"streams": {}, "status": "processing"}
@@ -76,8 +91,7 @@ def update_stream_meta(meta_file, date_str, s_id, stream_data):
             
         meta[date_str]["streams"][s_id] = stream_data
         
-        with open(meta_file, 'w') as f:
-            json.dump(meta, f, indent=4)
+        safe_save_json(meta_file, meta)
 
 def run_ffmpeg(cmd, timeout=3600):
     try:
