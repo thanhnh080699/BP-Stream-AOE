@@ -244,10 +244,12 @@ const ScoreboardView = () => {
               <Trophy size={16} className="sm:w-[20px] sm:h-[20px]" />
             </div>
             <div>
-               <div className="text-[9px] sm:text-[10px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-1 sm:mb-1.5">Tổng số trận</div>
+               <div className="text-[9px] sm:text-[10px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-1 sm:mb-1.5">Tổng</div>
                <div className="text-xl sm:text-2xl font-black font-outfit leading-none flex items-baseline gap-1">
                  {Object.values(scores).flat().length}
-                 <span className="text-[10px] opacity-20">TRẬN</span>
+                 <span className="text-[10px] opacity-40 mr-2">KÈO</span>
+                 {Object.values(scores).flat().reduce((sum, match) => sum + parseInt(match.score_a || 0) + parseInt(match.score_b || 0), 0)}
+                 <span className="text-[10px] opacity-40">TRẬN ĐẤU</span>
                </div>
             </div>
           </div>

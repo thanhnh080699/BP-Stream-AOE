@@ -29,8 +29,8 @@ const AboutUs = () => {
 
       {/* Action Buttons Section - Outline Style and Grid Aligned */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mx-4 md:mx-0">
-        <Link 
-          to="/live" 
+        <Link
+          to="/live"
           className="flex items-center justify-center gap-3 px-8 py-5 md:py-10 rounded-[1.5rem] md:rounded-[2.5rem] bg-transparent border-4 border-[#f1812e] text-[#f1812e] text-lg md:text-3xl font-black font-outfit uppercase tracking-wider hover:bg-[#f1812e] hover:text-white active:scale-95 transition-all animate-blink animate-glow-orange group shadow-lg"
         >
           <div className="relative">
@@ -39,8 +39,8 @@ const AboutUs = () => {
           </div>
           Xem trực tiếp ngay
         </Link>
-        <Link 
-          to="/playback" 
+        <Link
+          to="/playback"
           className="flex items-center justify-center gap-3 px-8 py-5 md:py-10 rounded-[1.5rem] md:rounded-[2.5rem] bg-transparent border-4 border-[var(--text-secondary)] text-[var(--text-secondary)] text-lg md:text-3xl font-black font-outfit uppercase tracking-wider hover:bg-[var(--text-secondary)] hover:text-white active:scale-95 transition-all group shadow-lg"
         >
           <History size={32} className="md:w-12 md:h-12 group-hover:rotate-[-30deg] transition-transform" />
@@ -216,7 +216,7 @@ const AboutUs = () => {
                   </li>
                   <li className="flex flex-col sm:flex-row sm:gap-2">
                     <span className="font-bold text-[#f1812e] min-w-[80px]">Server:</span>
-                    <code className="bg-black/20 px-2 py-0.5 rounded break-all">rtmp://192.168.9.233:1935/live</code>
+                    <code className="bg-black/20 px-2 py-0.5 rounded break-all">rtmp://192.168.9.233/live</code>
                   </li>
                   <li className="flex flex-col sm:flex-row sm:gap-2 pt-2 sm:pt-0">
                     <span className="font-bold text-[#f1812e] min-w-[80px]">Stream Key:</span>
