@@ -37,9 +37,9 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
           forward: 10,
           back: 10
         } : false,
-        // Disable native fullscreen on iOS to keep inline + CSS fullscreen
-        // This prevents WebKit from hijacking video into its own fullscreen player
-        ...(isIOS ? { preferFullWindow: true } : {}),
+        // Allow mobile browsers to use their native fullscreen implementation 
+        // (this allows iOS to enter the native video player on fullscreen)
+        preferFullWindow: false,
         userActions: { 
           hotkeys: function(event) {
             // Add custom hotkey support for Left/Right arrows
