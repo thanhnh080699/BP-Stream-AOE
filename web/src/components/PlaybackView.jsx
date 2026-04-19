@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import VideoPlayer from './VideoPlayer';
-import NativeVideoPlayer from './NativeVideoPlayer';
 import { Calendar, Play, Clock, Monitor, Archive, Filter, ChevronRight, HardDrive, AlertCircle, Trash2, Edit2, Check, X, Trophy } from 'lucide-react';
 import PasswordModal from './PasswordModal';
 import PlaybackCalendar from './PlaybackCalendar';
@@ -215,8 +214,9 @@ const PlaybackView = () => {
                 <div className="xl:col-span-8 order-1 space-y-6">
                     <div className="relative aspect-video rounded-3xl overflow-hidden bg-black border border-[var(--border-color)] shadow-2xl">
                         {currentVideo ? (
-                            <NativeVideoPlayer
+                            <VideoPlayer
                                 url={currentVideo.hls ? `/replays/${currentVideo.hls}` : `/replays/${currentVideo.file}`}
+                                isPlayback={true}
                                 autoPlay={true}
                             />
                         ) : (
