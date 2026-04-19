@@ -38,21 +38,16 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
           forward: 10,
           back: 10
         } : false,
-        // FIX 1: iOS dùng preferFullWindow: true
-        // Thay vì gọi webkitEnterFullscreen() khiến iOS bứng video ra native player
-        // (gây shrink → expand, đơ, không tua được), video.js sẽ fill toàn viewport
-        // mà không mất quyền kiểm soát DOM → không conflict, không CPU spike.
-        // Android và desktop giữ false để dùng Fullscreen API bình thường.
-        preferFullWindow: isIOS,
+        // iOS: để false - fullscreen sẽ được xử lý thủ công qua webkitEnterFullscreen()
+        // giống YouTube (xem phần "iOS Fullscreen Override" bên dưới)
+        preferFullWindow: false,
         userActions: {
           hotkeys: function(event) {
-            // Add custom hotkey support for Left/Right arrows
-            // Arrow Left = 37, Arrow Right = 39
             if (event.which === 37) {
               this.currentTime(this.currentTime() - 10);
             } else if (event.which === 39) {
               this.currentTime(this.currentTime() + 10);
-            } else if (event.which === 32) { // Space
+            } else if (event.which === 32) {
               if (this.paused()) this.play();
               else this.pause();
             }
@@ -75,7 +70,6 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
 
       // 2. Initialize Plugins
       if (isPlayback) {
-        // Mobile UI for double tap to seek
         if (typeof player.mobileUi === 'function') {
           player.mobileUi({
             forceForDesktop: false,
@@ -88,21 +82,62 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
         }
       }
 
-      // 3. Handle Fullscreen Orientation
-      // iOS dùng preferFullWindow nên không cần lock orientation - browser tự xử lý.
-      // Chỉ lock orientation cho Android (có hỗ trợ screen.orientation API).
+      // 3. iOS Fullscreen Override - YouTube approach
+      // -----------------------------------------------
+      // Vấn đề gốc: video.js gọi webkitEnterFullscreen() nhưng đồng thời vẫn
+      // cố quản lý fullscreen state (trigger resize, update UI...) → conflict với
+      // native iOS player → shrink/expand, đơ, không tua được.
+      //
+      // Giải pháp: giống YouTube - bypass hoàn toàn video.js fullscreen logic,
+      // chỉ gọi thẳng webkitEnterFullscreen() trên thẻ <video> gốc.
+      // Native iOS player sẽ tự quản lý mọi thứ (controls, seek, exit...).
+      if (isIOS) {
+        player.ready(() => {
+          const fullscreenToggle = player.controlBar?.fullscreenToggle;
+          if (fullscreenToggle) {
+            // Xóa handler mặc định của video.js
+            fullscreenToggle.off('tap');
+            fullscreenToggle.off('click');
+
+            // Gắn handler mới: gọi thẳng native API như YouTube
+            fullscreenToggle.on(['tap', 'click'], () => {
+              // Lấy thẻ <video> gốc qua video.js tech layer
+              const techEl = player.tech(true)?.el();
+              if (!techEl) return;
+
+              if (techEl.webkitDisplayingFullscreen) {
+                // Đang fullscreen → thoát
+                techEl.webkitExitFullscreen?.();
+              } else if (techEl.webkitEnterFullscreen) {
+                // Vào fullscreen native - iOS sẽ handle toàn bộ
+                // (controls, seeking, exit button) giống YouTube
+                techEl.webkitEnterFullscreen();
+              }
+            });
+          }
+
+          // Sync class vjs-fullscreen để icon button đúng trạng thái
+          const techEl = player.tech(true)?.el();
+          if (techEl) {
+            techEl.addEventListener('webkitbeginfullscreen', () => {
+              player.addClass('vjs-fullscreen');
+            });
+            techEl.addEventListener('webkitendfullscreen', () => {
+              player.removeClass('vjs-fullscreen');
+            });
+          }
+        });
+      }
+
+      // 4. Android: Lock orientation khi fullscreen
       if (!isIOS) {
         player.on('fullscreenchange', () => {
           if (player.isFullscreen()) {
-            if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
-              window.screen.orientation.lock('landscape').catch(e => {
-                console.log("Could not lock orientation:", e);
-              });
-            }
+            window.screen?.orientation?.lock?.('landscape').catch(e => {
+              console.log("Could not lock orientation:", e);
+            });
           } else {
-            if (window.screen && window.screen.orientation && window.screen.orientation.unlock) {
-              window.screen.orientation.unlock();
-            }
+            window.screen?.orientation?.unlock?.();
           }
         });
       }
@@ -111,20 +146,19 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
     const player = playerRef.current;
     if (!player) return;
 
-    // 4. Clear previous HLS instance if any
+    // 5. Clear previous HLS instance if any
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
 
-    // 5. Load NEW URL
+    // 6. Load NEW URL
     console.log("VideoPlayer: Loading source:", url, "isPlayback:", isPlayback, "useNativeHLS:", useNativeHLS);
 
     if (url.endsWith('.m3u8')) {
       if (!useNativeHLS && Hls.isSupported()) {
         // Non-iOS: use hls.js (desktop Chrome, Firefox, Android, etc.)
         const hls = new Hls({
-          // Disable worker on mobile to reduce memory pressure during orientation changes
           enableWorker: !isMobile,
           lowLatencyMode: !isPlayback,
           backBufferLength: isMobile ? 15 : 30,
@@ -154,7 +188,7 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
           }
         });
       } else {
-        // iOS (all browsers) or Safari: use native HLS which WebKit handles natively
+        // iOS: use native HLS
         player.src({ src: url, type: 'application/x-mpegURL' });
         if (autoPlay) player.play().catch(e => console.log("Native HLS Autoplay blocked", e));
       }
@@ -163,7 +197,6 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
       if (autoPlay) player.play().catch(e => console.log("MP4 Autoplay blocked", e));
     }
 
-    // Update settings if they changed
     player.muted(muted);
     if (poster) player.poster(poster);
 
@@ -172,7 +205,6 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
   // Handle disposal only on UNMOUNT
   useEffect(() => {
     return () => {
-      // Clear any pending resize timer
       if (resizeTimerRef.current) {
         clearTimeout(resizeTimerRef.current);
         resizeTimerRef.current = null;
@@ -188,10 +220,9 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
     };
   }, []);
 
-  // 6. Handle orientation change / resize with DEBOUNCE to prevent CPU spike
+  // 7. Handle orientation change / resize with DEBOUNCE
   useEffect(() => {
     const handleResize = () => {
-      // Clear any existing timer to debounce
       if (resizeTimerRef.current) {
         clearTimeout(resizeTimerRef.current);
       }
@@ -200,21 +231,18 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
         const player = playerRef.current;
         if (!player) return;
 
-        // FIX 2: Bỏ qua trigger resize khi đang trong fullscreen hoặc full-window.
-        // Trên iOS, orientationchange và resize đều fire liên tục trong lúc
-        // animate fullscreen transition → gọi player.trigger('resize') lúc này
-        // gây layout thrashing → CPU spike → nóng máy.
-        // isFullWindow() bắt trường hợp preferFullWindow: true trên iOS.
-        if (!player.isFullscreen() && !player.isFullWindow()) {
+        // Không trigger resize khi iOS đang trong native fullscreen
+        const techEl = player.tech(true)?.el();
+        const isNativeFullscreen = isIOS && techEl?.webkitDisplayingFullscreen;
+
+        if (!player.isFullscreen() && !player.isFullWindow() && !isNativeFullscreen) {
           player.trigger('resize');
         }
 
         resizeTimerRef.current = null;
-      }, 500); // 500ms debounce - iOS fires many events during rotation animation
+      }, 500);
     };
 
-    // Use 'orientationchange' for legacy iOS, 'resize' as fallback
-    // Only listen to orientationchange on mobile to avoid unnecessary desktop events
     if (isMobile) {
       window.addEventListener('orientationchange', handleResize);
     }
@@ -277,7 +305,6 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
           backdrop-filter: blur(12px);
           height: 3.5em !important;
         }
-        /* Custom stylings for seek buttons */
         .vjs-seek-button {
             width: 2.5em !important;
             cursor: pointer;
@@ -292,17 +319,13 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
         .vjs-seek-button.skip-forward {
             background-image: none !important;
         }
-
-        /* Prevent iOS rubber-banding / overscroll during video interaction */
         .custom-videojs-theme .video-js {
           -webkit-overflow-scrolling: auto;
           touch-action: manipulation;
         }
-
         .vjs-poster {
             background-size: cover !important;
         }
-        /* Show time displays always */
         .vjs-current-time, .vjs-duration, .vjs-time-divider {
             display: flex !important;
             align-items: center;
