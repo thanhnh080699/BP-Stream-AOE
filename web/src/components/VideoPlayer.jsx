@@ -27,7 +27,8 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
         autoplay: autoPlay,
         controls: true,
         responsive: true,
-        fluid: true,
+        fill: true,
+        fluid: false,
         muted: muted,
         poster: poster,
         // On mobile use 'metadata' to avoid heavy preloading that causes CPU spikes on resize
@@ -280,45 +281,7 @@ const VideoPlayer = ({ url, muted = true, autoPlay = true, poster = '', isPlayba
             background-image: none !important;
         }
         
-        .video-js.vjs-fluid {
-            padding-top: 56.25% !important; /* 16:9 */
-            height: 0 !important;
-        }
 
-        /* Fix iOS black screen on fullscreen rotation */
-        .video-js.vjs-fullscreen,
-        .video-js.vjs-full-window {
-            padding-top: 0 !important;
-            height: 100% !important;
-            width: 100% !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            z-index: 9999 !important;
-        }
-        .vjs-fullscreen .vjs-tech,
-        .vjs-full-window .vjs-tech {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: contain;
-        }
-
-        /* Fix landscape rotation WITHOUT fullscreen on iOS */
-        @media screen and (orientation: landscape) and (max-height: 500px) {
-          .custom-videojs-theme {
-            /* When phone is rotated, let video take more space */
-            position: relative;
-          }
-          .custom-videojs-theme .video-js.vjs-fluid {
-            /* Override padding-top with a landscape-friendly ratio */
-            padding-top: 0 !important;
-            height: 100% !important;
-            max-height: 100vh;
-          }
-          .custom-videojs-theme .video-js .vjs-tech {
-            object-fit: contain;
-          }
-        }
 
         /* Prevent iOS rubber-banding / overscroll during video interaction */
         .custom-videojs-theme .video-js {
