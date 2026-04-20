@@ -27,14 +27,11 @@ const PlaybackView = () => {
             .then(res => res.json())
             .then(data => {
                 setReplays(data);
-                // Only auto-select date/stream on first load
+                // Only auto-select date on first load
                 if (!selectedDate) {
                     const dates = Object.keys(data).sort((a, b) => b.localeCompare(a));
                     if (dates.length > 0) {
                         setSelectedDate(dates[0]);
-                        const streams = data[dates[0]].streams || {};
-                        const streamIds = Object.keys(streams);
-                        if (streamIds.length > 0) setSelectedStream(streamIds[0]);
                     }
                 } else if (!data[selectedDate]) {
                     // Current selected date was deleted

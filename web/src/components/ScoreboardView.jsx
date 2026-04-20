@@ -476,7 +476,7 @@ const ScoreboardView = () => {
               <div>
                 <div className="text-[10px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">Tổng số trận</div>
                 <div className="text-sm font-black font-outfit leading-none">
-                  {Object.values(scores).flat().length}
+                  {Object.values(scores).flat().reduce((sum, match) => sum + parseInt(match.score_a || 0) + parseInt(match.score_b || 0), 0)}
                 </div>
               </div>
             </div>
