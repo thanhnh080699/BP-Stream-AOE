@@ -32,15 +32,33 @@ def process_one_stream(s_id, files, date_str, meta_file, meta, machine_progress_
     hls_output = os.path.join(ssd_dir, 'index.m3u8')
 
     try:
-        valid_files = sorted([f for f in files if os.path.exists(f)])
-        skipped = len(files) - len(valid_files)
-        if skipped:
-            print(f"[{s_id}] WARNING: Bỏ qua {skipped} segment không có trên disk")
-        if not valid_files:
-            raise RuntimeError("Không tìm thấy segment nào trên disk")
+        # Cơ chế tìm file thông minh: Thử cả đường dẫn cũ (HDD) và mới (SSD)
+        valid_files = []
+        for f in files:
+            if os.path.exists(f):
+                valid_files.append(f)
+            else:
+                # Thử chuyển đổi đường dẫn từ HDD sang SSD
+                # Trường hợp 1: Map 1-1 (/data -> /live)
+                alt_f = f.replace(DATA_DIR, LIVE_DIR)
+                if os.path.exists(alt_f):
+                    valid_files.append(alt_f)
+                else:
+                    # Trường hợp 2: Map bỏ qua folder 'live' (/data/live -> /live)
+                    alt_f2 = f.replace(os.path.join(DATA_DIR, 'live'), LIVE_DIR)
+                    if os.path.exists(alt_f2):
+                        valid_files.append(alt_f2)
 
-        print(f"\n[{s_id}] Bắt đầu {len(valid_files)} segments "
-              f"(song song {MAX_SEG_WORKERS} file cùng lúc)...")
+        valid_files = sorted(valid_files)
+        skipped = len(files) - len(valid_files)
+        
+        if skipped > 0:
+            print(f"[{s_id}] WARNING: Bỏ qua {skipped} segment không tìm thấy trên cả HDD và SSD")
+        
+        if not valid_files:
+            raise RuntimeError("Không tìm thấy segment nào trên disk (Đã check cả /data và /live)")
+
+        print(f"\n[{s_id}] Bắt đầu {len(valid_files)} segments (song song {MAX_SEG_WORKERS})...")
 
         update_meta_field(meta_file, date_str, meta=meta,
             progress_text=f"[{s_id}] Convert {len(valid_files)} segments...",
