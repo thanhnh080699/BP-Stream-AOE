@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from config import DATA_DIR, MAX_STREAM_WORKERS, MAX_SEG_WORKERS
 from utils import (
@@ -199,11 +200,13 @@ def do_merge(date_str):
         progress_text="Đã hoàn thành tổng hợp toàn bộ."
     )
 
-    # Thay đổi: Không xoá ngay recordings của ngày vừa gộp.
-    # Thay vào đó, chạy cleanup để xoá các ngày cũ hơn 4 ngày (bao gồm cả file vật lý)
-    cleanup_old_recordings(keep_days=4)
+    # 1. Dọn dẹp FLV cũ (giữ 3 ngày theo yêu cầu)
+    cleanup_old_recordings(keep_days=3)
+    
+    # 2. Kiểm tra và dọn dẹp Replays nếu đầy ổ đĩa (Smart Protection)
+    check_disk_usage_and_cleanup(threshold_percent=90)
 
-def cleanup_old_recordings(keep_days=4):
+def cleanup_old_recordings(keep_days=3):
     """
     Xoá các bản ghi live (FLV) và metadata trong recordings.json 
     nếu cũ hơn keep_days ngày (bao gồm cả hôm nay).
@@ -253,3 +256,42 @@ def cleanup_old_recordings(keep_days=4):
             print(f"--- Hoàn tất dọn dẹp: Đã xoá {deleted_count} ngày cũ. ---")
         else:
             print("--- Không có gì để xoá. ---")
+
+def check_disk_usage_and_cleanup(threshold_percent=90):
+    """
+    Nếu dung lượng đĩa sử dụng vượt quá threshold_percent, 
+    xóa các thư mục replays cũ nhất cho đến khi hạ xuống dưới mức an toàn.
+    """
+    usage = shutil.disk_usage(DATA_DIR)
+    used_percent = (usage.used / usage.total) * 100
+    
+    if used_percent < threshold_percent:
+        return
+
+    print(f"\n[DANGEROUS] Dung lượng đĩa sắp đầy ({used_percent:.1f}%). Bắt đầu dọn dẹp Replays...")
+    
+    replays_base = os.path.join(DATA_DIR, 'replays')
+    if not os.path.exists(replays_base):
+        return
+
+    # Lấy danh sách các ngày trong thư mục replays (YYYY-MM-DD)
+    replay_dates = sorted([d for d in os.listdir(replays_base) 
+                          if os.path.isdir(os.path.join(replays_base, d))])
+    
+    if not replay_dates:
+        print("Không tìm thấy thư mục replay nào để xóa.")
+        return
+
+    # Xóa từng ngày cũ nhất cho đến khi xuống dưới ngưỡng threshold - 10%
+    target_percent = threshold_percent - 10
+    for d_str in replay_dates:
+        dir_to_delete = os.path.join(replays_base, d_str)
+        print(f"  -> Xoá replay cũ nhất để giải phóng không gian: {dir_to_delete}")
+        shutil.rmtree(dir_to_delete, ignore_errors=True)
+        
+        # Kiểm tra lại dung lượng
+        new_usage = shutil.disk_usage(DATA_DIR)
+        new_percent = (new_usage.used / new_usage.total) * 100
+        if new_percent < target_percent:
+            print(f"Đã giải phóng đủ không gian ({new_percent:.1f}%). Dừng dọn dẹp.")
+            break
