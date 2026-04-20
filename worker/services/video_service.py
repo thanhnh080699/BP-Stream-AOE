@@ -165,6 +165,12 @@ def process_one_stream(s_id, files, date_str, meta_file, meta, machine_progress_
 
 def do_merge(date_str):
     recordings = get_recordings()
+    print(f"\n[INTERNAL DEBUG] Gọi do_merge cho ngày: {date_str}")
+    print(f"[INTERNAL DEBUG] DATA_DIR: {DATA_DIR} | LIVE_DIR: {LIVE_DIR}")
+    print(f"[INTERNAL DEBUG] Tổng số ngày trong recordings.json: {len(recordings)}")
+    if recordings:
+        print(f"[INTERNAL DEBUG] Danh sách các ngày: {list(recordings.keys())}")
+
     if date_str not in recordings:
         print(f"No recordings found for date: {date_str}")
         return
@@ -192,15 +198,9 @@ def do_merge(date_str):
 
     print(f"\n{'='*60}")
     print(f"Merge {total_streams} streams — ngày {date_str}")
-    print(f"DATA_DIR: {DATA_DIR} | LIVE_DIR: {LIVE_DIR}")
     print(f"Parallel: {MAX_STREAM_WORKERS} stream × {MAX_SEG_WORKERS} seg "
           f"= tối đa {MAX_STREAM_WORKERS * MAX_SEG_WORKERS} FFmpeg processes")
     print(f"{'='*60}\n")
-
-    for i, (s_id, files) in enumerate(stream_list):
-        print(f"DEBUG: Stream {s_id} có {len(files)} file được ghi nhận.")
-        if files:
-            print(f"DEBUG: File đầu tiên: {files[0]} (Tồn tại: {os.path.exists(files[0])})")
 
     with ThreadPoolExecutor(max_workers=MAX_STREAM_WORKERS) as stream_pool:
         future_map = {}
