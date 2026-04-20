@@ -8,6 +8,7 @@ elif os.path.exists('.env'):
     load_dotenv('.env')
 
 DATA_DIR = os.environ.get('DATA_DIR', '/data')
+LIVE_DIR = os.environ.get('LIVE_DIR', '/live')
 LOG_FILE = os.path.join(DATA_DIR, 'recordings.json')
 WORKER_PORT = int(os.environ.get('WORKER_PORT', 5001))
 

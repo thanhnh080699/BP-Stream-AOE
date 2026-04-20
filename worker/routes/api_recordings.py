@@ -4,7 +4,7 @@ import shutil
 import threading
 from datetime import datetime
 from flask import Blueprint, request, jsonify
-from config import DATA_DIR
+from config import DATA_DIR, LIVE_DIR
 from utils import get_recordings, save_recordings, meta_lock, save_meta, safe_save_json
 from services.video_service import do_merge
 
@@ -39,9 +39,18 @@ def on_dvr():
     file_path = data.get('file')
     if not file_path:
         return "No file in payload", 400
+    
+    # Xử lý đường dẫn file
     if 'objs/nginx/html/dvr' in file_path:
         file_path = file_path.split('objs/nginx/html/dvr')[-1].lstrip('/')
         file_path = os.path.join(DATA_DIR, file_path)
+    elif file_path.startswith(LIVE_DIR):
+        # Giữ nguyên nếu đã nằm trong SSD /live
+        pass
+    elif not os.path.isabs(file_path):
+        # Nếu là tương đối thì mặc định ghép với DATA_DIR (HDD)
+        file_path = os.path.join(DATA_DIR, file_path)
+
     file_path = os.path.normpath(file_path)
     stream_id = data.get('stream')
     date_str = datetime.now().strftime('%Y-%m-%d')

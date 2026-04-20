@@ -9,6 +9,7 @@ services:
     volumes:
       - ./srs.conf:/usr/local/srs/conf/srs.conf
       - srs_data:/usr/local/srs/objs/nginx/html/dvr
+      - /live:/live
     command: [ "./objs/srs", "-c", "conf/srs.conf" ]
     restart: always
     networks:
@@ -36,8 +37,10 @@ services:
     restart: always
     volumes:
       - srs_data:/data
+      - /live:/live
     environment:
       - DATA_DIR=${DATA_DIR:-/data}
+      - LIVE_DIR=${LIVE_DIR:-/live}
       - DB_HOST=${DB_HOST:-db}
       - DB_PORT=${DB_PORT:-3306}
       - DB_USER=${DB_USER:-root}

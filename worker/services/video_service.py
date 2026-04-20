@@ -2,7 +2,7 @@ import os
 import json
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from config import DATA_DIR, MAX_STREAM_WORKERS, MAX_SEG_WORKERS
+from config import DATA_DIR, LIVE_DIR, MAX_STREAM_WORKERS, MAX_SEG_WORKERS
 from utils import (
     convert_flv_to_ts, get_duration, run_ffmpeg, 
     update_meta_field, update_stream_meta, save_meta, meta_lock, get_recordings
@@ -25,10 +25,11 @@ def process_one_segment(args):
 
 def process_one_stream(s_id, files, date_str, meta_file, meta, machine_progress_start, machine_progress_step):
     replay_dir = os.path.join(DATA_DIR, 'replays', date_str, s_id)
-    ts_dir     = os.path.join(replay_dir, 'ts_tmp')
+    ssd_dir    = os.path.join(LIVE_DIR, 'tmp_process', date_str, s_id)
+    ts_dir     = os.path.join(ssd_dir, 'ts_tmp')
     os.makedirs(ts_dir, exist_ok=True)
 
-    hls_output = os.path.join(replay_dir, 'index.m3u8')
+    hls_output = os.path.join(ssd_dir, 'index.m3u8')
 
     try:
         valid_files = sorted([f for f in files if os.path.exists(f)])
@@ -96,7 +97,7 @@ def process_one_stream(s_id, files, date_str, meta_file, meta, machine_progress_
             '-hls_time', '5',
             '-hls_list_size', '0',
             '-hls_flags', 'independent_segments',
-            '-hls_segment_filename', os.path.join(replay_dir, 'segment_%d.ts'),
+            '-hls_segment_filename', os.path.join(ssd_dir, 'segment_%d.ts'),
             hls_output
         ])
         if not success:
@@ -123,6 +124,24 @@ def process_one_stream(s_id, files, date_str, meta_file, meta, machine_progress_
             os.remove(concat_txt)
         try:
             os.rmdir(ts_dir)
+        except Exception:
+            pass
+
+        # Di chuyển kết quả HLS từ ổ SSD (tmp_process) sang HDD (DATA_DIR)
+        os.makedirs(replay_dir, exist_ok=True)
+        print(f"[{s_id}] Đang di chuyển kết quả sang HDD: {replay_dir} ...")
+        
+        for f in os.listdir(ssd_dir):
+            if f.endswith('.m3u8') or f.endswith('.ts'):
+                src_f = os.path.join(ssd_dir, f)
+                dst_f = os.path.join(replay_dir, f)
+                if os.path.exists(dst_f):
+                    os.remove(dst_f)
+                shutil.move(src_f, dst_f)
+
+        try:
+            # Gỡ bỏ thư mục tạm
+            os.rmdir(ssd_dir)
         except Exception:
             pass
 
