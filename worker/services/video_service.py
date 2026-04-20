@@ -192,9 +192,15 @@ def do_merge(date_str):
 
     print(f"\n{'='*60}")
     print(f"Merge {total_streams} streams — ngày {date_str}")
+    print(f"DATA_DIR: {DATA_DIR} | LIVE_DIR: {LIVE_DIR}")
     print(f"Parallel: {MAX_STREAM_WORKERS} stream × {MAX_SEG_WORKERS} seg "
           f"= tối đa {MAX_STREAM_WORKERS * MAX_SEG_WORKERS} FFmpeg processes")
     print(f"{'='*60}\n")
+
+    for i, (s_id, files) in enumerate(stream_list):
+        print(f"DEBUG: Stream {s_id} có {len(files)} file được ghi nhận.")
+        if files:
+            print(f"DEBUG: File đầu tiên: {files[0]} (Tồn tại: {os.path.exists(files[0])})")
 
     with ThreadPoolExecutor(max_workers=MAX_STREAM_WORKERS) as stream_pool:
         future_map = {}
