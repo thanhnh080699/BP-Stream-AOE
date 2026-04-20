@@ -159,3 +159,42 @@ def rename_metadata_stream():
                 return jsonify({"error": "Stream ID not found for this date"}), 404
         else:
             return jsonify({"error": "Date not found in metadata"}), 404
+@bp.route('/api/v1/system/status', methods=['GET'])
+def get_system_status():
+    recordings = get_recordings()
+    
+    # Storage info
+    total, used, free = shutil.disk_usage(DATA_DIR)
+    
+    # Days info
+    dates = list(recordings.keys())
+    meta_file = os.path.join(DATA_DIR, 'metadata.json')
+    if os.path.exists(meta_file):
+        try:
+            with open(meta_file, 'r') as f:
+                meta = json.load(f)
+                dates.extend(meta.keys())
+        except:
+            pass
+    
+    unique_dates = sorted(list(set(dates)))
+    days_recorded = len(unique_dates)
+    
+    days_since_start = 0
+    if unique_dates:
+        try:
+            earliest_date = datetime.strptime(unique_dates[0], '%Y-%m-%d')
+            days_since_start = (datetime.now() - earliest_date).days + 1
+        except:
+            pass
+            
+    return jsonify({
+        "storage": {
+            "total": total,
+            "used": used,
+            "free": free,
+            "percent": (used / total) * 100 if total > 0 else 0
+        },
+        "days_recorded": days_recorded,
+        "days_since_start": days_since_start
+    })

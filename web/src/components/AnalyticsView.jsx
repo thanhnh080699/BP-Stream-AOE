@@ -13,7 +13,10 @@ import {
   Medal,
   X,
   History,
-  ArrowRight
+  ArrowRight,
+  HardDrive,
+  Archive,
+  Clock
 } from 'lucide-react';
 
 const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
@@ -139,7 +142,11 @@ const AnalyticsView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [customRange, setCustomRange] = useState({ start: '', end: '' });
   const [selectedMatchHistory, setSelectedMatchHistory] = useState(null); // { player, category, matches }
+  const [systemStatus, setSystemStatus] = useState(null);
   const [hoveredCategory, setHoveredCategory] = useState(null);
+  const [playerSort, setPlayerSort] = useState('winrate'); // winrate, lossrate, attendance, form20, form50, form100
+
+  const CATEGORY_ORDER = ['1-1', '2-2', '3-3', '4-4', '3-4'];
 
   const fetchScores = async () => {
     try {
@@ -155,8 +162,21 @@ const AnalyticsView = () => {
     }
   };
 
+  const fetchSystemStatus = async () => {
+    try {
+      const response = await fetch('/api/v1/system/status');
+      if (response.ok) {
+        const data = await response.json();
+        setSystemStatus(data);
+      }
+    } catch (err) {
+      console.error('Lỗi tải system status:', err);
+    }
+  };
+
   useEffect(() => {
     fetchScores();
+    fetchSystemStatus();
   }, []);
 
   const processedData = useMemo(() => {
@@ -272,16 +292,75 @@ const AnalyticsView = () => {
 
     globalStats.totalPlayers = Object.keys(players).length;
 
-    const finalPlayers = Object.values(players)
+    // Pre-calculate form and other metrics for sorting
+    const playerList = Object.values(players).map(player => {
+      const totalGames = player.wins + player.losses;
+      const winRate = totalGames > 0 ? (player.wins / totalGames) : 0;
+      const lossRate = totalGames > 0 ? (player.losses / totalGames) : 0;
+      const attendance = globalStats.seriesCount > 0 ? (totalGames / globalStats.seriesCount) : 0;
+
+      const playerMatches = globalStats.rawMatches.filter(m =>
+        m.team_a_players.includes(player.name) || m.team_b_players.includes(player.name)
+      ).sort((a, b) => new Date(b.match_date) - new Date(a.match_date));
+
+      const calculateRecentWR = (matches, limit) => {
+        let gamesCount = 0;
+        let winsCount = 0;
+        for (const m of matches) {
+          if (gamesCount >= limit) break;
+          const isTeamA = m.team_a_players.includes(player.name);
+          const pWin = parseInt(isTeamA ? m.score_a : m.score_b);
+          const pLoss = parseInt(isTeamA ? m.score_b : m.score_a);
+
+          const remaining = limit - gamesCount;
+          const totalHere = pWin + pLoss;
+
+          if (totalHere <= remaining) {
+            winsCount += pWin;
+            gamesCount += totalHere;
+          } else {
+            const winRatio = totalHere > 0 ? (pWin / totalHere) : 0;
+            winsCount += winRatio * remaining;
+            gamesCount += remaining;
+          }
+        }
+        return gamesCount >= limit ? (winsCount / gamesCount) : null;
+      };
+
+      return {
+        ...player,
+        winRate,
+        lossRate,
+        attendance,
+        form20: calculateRecentWR(playerMatches, 20),
+        form50: calculateRecentWR(playerMatches, 50),
+        form100: calculateRecentWR(playerMatches, 100),
+        playerMatches // Pass for modal
+      };
+    });
+
+    const finalPlayers = playerList
       .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
       .sort((a, b) => {
-        const rateA = a.wins + a.losses > 0 ? a.wins / (a.wins + a.losses) : 0;
-        const rateB = b.wins + b.losses > 0 ? b.wins / (b.wins + b.losses) : 0;
-        return rateB - rateA;
+        switch (playerSort) {
+          case 'attendance':
+            return b.attendance - a.attendance;
+          case 'lossrate':
+            return b.lossRate - a.lossRate;
+          case 'form20':
+            return (b.form20 ?? -1) - (a.form20 ?? -1);
+          case 'form50':
+            return (b.form50 ?? -1) - (a.form50 ?? -1);
+          case 'form100':
+            return (b.form100 ?? -1) - (a.form100 ?? -1);
+          case 'winrate':
+          default:
+            return b.winRate - a.winRate;
+        }
       });
 
     return { players: finalPlayers, globalStats };
-  }, [scores, timeFilter, searchQuery, customRange]);
+  }, [scores, timeFilter, searchQuery, customRange, playerSort]);
 
   if (loading) {
     return (
@@ -359,34 +438,70 @@ const AnalyticsView = () => {
         <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-6 shadow-xl flex flex-col justify-center gap-4 group hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
           <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors" />
 
-          <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f1812e] to-orange-500 shadow-orange-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
-              <Activity size={18} />
-            </div>
-            <div>
-              <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Tổng số trận</div>
-              <div className="text-2xl font-black font-outfit leading-none">{globalStats.seriesCount}</div>
-            </div>
-          </div>
+          <p className="text-[10px] font-black opacity-60 text-[#f1812e] uppercase tracking-[0.2em] mb-1 px-1">Tổng quan hệ thống</p>
 
-          <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
-              <Users size={18} />
+          <div className="space-y-4">
+            <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f1812e] to-orange-500 shadow-orange-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
+                <Activity size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Tổng số trận</div>
+                <div className="text-xl font-black font-outfit leading-none">{globalStats.seriesCount}</div>
+              </div>
             </div>
-            <div>
-              <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Thành viên</div>
-              <div className="text-2xl font-black font-outfit leading-none">{globalStats.totalPlayers}</div>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-green-600 shadow-green-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
-              <Calendar size={18} />
+            <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
+                <Users size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Thành viên</div>
+                <div className="text-xl font-black font-outfit leading-none">{globalStats.totalPlayers}</div>
+              </div>
             </div>
-            <div>
-              <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Bắt đầu từ</div>
-              <div className="text-sm font-black font-outfit leading-none mt-1">
-                {globalStats.earliestDate ? globalStats.earliestDate.toLocaleDateString('vi-VN') : 'N/A'}
+
+            <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-green-600 shadow-green-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
+                <Calendar size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Ngày bắt đầu</div>
+                <div className="text-xs font-black font-outfit leading-none mt-1">
+                  {globalStats.earliestDate ? globalStats.earliestDate.toLocaleDateString('vi-VN') : 'N/A'}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-purple-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
+                <Clock size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Thời gian hoạt động</div>
+                <div className="text-xl font-black font-outfit leading-none">{systemStatus?.days_since_start || 0} Ngày</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-pink-600 shadow-pink-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
+                <Archive size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Tổng số ngày ghi</div>
+                <div className="text-xl font-black font-outfit leading-none">{systemStatus?.days_recorded || 0} Ngày</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-emerald-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
+                <HardDrive size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Dung lượng bộ nhớ</div>
+                <div className="text-[11px] font-black font-outfit leading-tight mt-1 opacity-80">
+                  {systemStatus ? `${(systemStatus.storage.free / 1024 / 1024 / 1024).toFixed(1)}GB Trống / ${(systemStatus.storage.total / 1024 / 1024 / 1024).toFixed(1)}GB` : 'N/A'}
+                </div>
               </div>
             </div>
           </div>
@@ -482,8 +597,8 @@ const AnalyticsView = () => {
             <div className="relative w-48 h-48 mb-6">
               <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
                 <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--border-color)" strokeWidth="12" className="opacity-10" />
-                {Object.keys(globalStats.categories)
-                  .sort((a, b) => globalStats.categories[b].count - globalStats.categories[a].count)
+                {CATEGORY_ORDER
+                  .filter(cat => globalStats.categories[cat])
                   .reduce((acc, cat) => {
                   const data = globalStats.categories[cat];
                   const percent = globalStats.seriesCount > 0 ? (data.count / globalStats.seriesCount) : 0;
@@ -518,8 +633,8 @@ const AnalyticsView = () => {
               </div>
             </div>
             <div className="w-full space-y-2">
-              {Object.keys(globalStats.categories)
-                .sort((a, b) => globalStats.categories[b].count - globalStats.categories[a].count)
+              {CATEGORY_ORDER
+                .filter(cat => globalStats.categories[cat])
                 .map((cat) => {
                 const bgColors = { '1-1': 'bg-[#f1812e]', '2-2': 'bg-blue-500', '3-3': 'bg-green-500', '4-4': 'bg-purple-500', '3-4': 'bg-pink-500' };
                 const bg = bgColors[cat] || 'bg-slate-500';
@@ -558,8 +673,8 @@ const AnalyticsView = () => {
             </div>
 
             <div className="absolute inset-x-8 top-0 bottom-0 flex items-end justify-between gap-4 px-4 z-10">
-              {Object.keys(globalStats.categories)
-                .sort((a, b) => globalStats.categories[b].count - globalStats.categories[a].count)
+              {CATEGORY_ORDER
+                .filter(cat => globalStats.categories[cat])
                 .map((cat, i) => {
                 const data = globalStats.categories[cat];
                 const maxCount = Math.max(...Object.values(globalStats.categories).map(d => d.count), 1);
@@ -606,6 +721,28 @@ const AnalyticsView = () => {
         />
       </div>
 
+      <div className="flex flex-wrap gap-2 px-2">
+        {[
+          { id: 'attendance', label: 'Chuyên cần cao nhất' },
+          { id: 'winrate', label: 'Tỷ lệ thắng tổng' },
+          { id: 'lossrate', label: 'Tỷ lệ thua cao nhất' },
+          { id: 'form20', label: 'Phong độ 20 trận' },
+          { id: 'form50', label: 'Phong độ 50 trận' },
+          { id: 'form100', label: 'Phong độ 100 trận' },
+        ].map(sortOption => (
+          <button
+            key={sortOption.id}
+            onClick={() => setPlayerSort(sortOption.id)}
+            className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${playerSort === sortOption.id
+              ? 'bg-[#f1812e]/10 border-[#f1812e] text-[#f1812e] shadow-sm'
+              : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] opacity-60 hover:opacity-100'
+              }`}
+          >
+            {sortOption.label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 gap-6">
         {players.length === 0 ? (
           <div className="bg-[var(--bg-card)] rounded-[32px] border border-dashed border-[var(--border-color)] py-20 text-center opacity-30">
@@ -614,41 +751,15 @@ const AnalyticsView = () => {
           </div>
         ) : (
           players.map((player, idx) => {
-            const totalGames = player.wins + player.losses;
-            const winRate = totalGames > 0 ? ((player.wins / totalGames) * 100).toFixed(1) : "0.0";
-            const attendance = globalStats.seriesCount > 0 ? ((totalGames / globalStats.seriesCount) * 100).toFixed(1) : "0.0";
+            const winRate = (player.winRate * 100).toFixed(1);
+            const attendance = (player.attendance * 100).toFixed(1);
+            const playerMatches = player.playerMatches;
 
-            const playerMatches = globalStats.rawMatches.filter(m =>
-              m.team_a_players.includes(player.name) || m.team_b_players.includes(player.name)
-            ).sort((a, b) => new Date(b.match_date) - new Date(a.match_date));
+            const formatForm = (val) => val !== null ? `${(val * 100).toFixed(1)}%` : "-";
 
-            const calculateRecentWR = (matches, limit) => {
-              let gamesCount = 0;
-              let winsCount = 0;
-              for (const m of matches) {
-                if (gamesCount >= limit) break;
-                const isTeamA = m.team_a_players.includes(player.name);
-                const pWin = isTeamA ? parseInt(m.score_a) : parseInt(m.score_b);
-                const pLoss = isTeamA ? parseInt(m.score_b) : parseInt(m.score_a);
-
-                const remaining = limit - gamesCount;
-                const totalHere = pWin + pLoss;
-
-                if (totalHere <= remaining) {
-                  winsCount += pWin;
-                  gamesCount += totalHere;
-                } else {
-                  const winRatio = totalHere > 0 ? (pWin / totalHere) : 0;
-                  winsCount += winRatio * remaining;
-                  gamesCount += remaining;
-                }
-              }
-              return gamesCount > 0 ? ((winsCount / gamesCount) * 100).toFixed(1) : "-";
-            };
-
-            const wr20 = calculateRecentWR(playerMatches, 20);
-            const wr50 = calculateRecentWR(playerMatches, 50);
-            const wr100 = calculateRecentWR(playerMatches, 100);
+            const wr20 = formatForm(player.form20);
+            const wr50 = formatForm(player.form50);
+            const wr100 = formatForm(player.form100);
 
             return (
               <div key={player.name} className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[24px] p-4 md:p-5 shadow-xl hover:shadow-[#f1812e]/5 transition-all group overflow-hidden relative mb-3">
@@ -669,7 +780,7 @@ const AnalyticsView = () => {
                       <div className="min-w-0">
                         <h3 className="text-lg font-black tracking-tight leading-tight truncate">{player.name}</h3>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          <span className="text-[9px] font-black text-blue-500 uppercase tracking-wider bg-blue-500/10 px-2 py-0.5 rounded-full">{totalGames} Trận</span>
+                          <span className="text-[9px] font-black text-blue-500 uppercase tracking-wider bg-blue-500/10 px-2 py-0.5 rounded-full">{player.wins + player.losses} Trận</span>
                         </div>
                       </div>
                     </div>
