@@ -371,13 +371,15 @@ def do_youtube_sync(specific_date=None):
     if specific_date:
         eligible_dates = [specific_date]
     else:
-        eligible_dates = get_nights_older_than(7)
+        all_eligible = get_nights_older_than(7)
+        # Sort and take only the oldest one (1 day at a time to manage quota)
+        eligible_dates = sorted(all_eligible)[:1]
         
     if not eligible_dates:
-        print("✓ Không có bản ghi nào cần xử lý (không có ngày nào > 7 ngày).", flush=True)
+        print("✓ Không có phần ghi nào cần xử lý (không có ngày nào > 7 ngày).", flush=True)
         return
 
-    print(f"-> Tìm thấy {len(eligible_dates)} ngày cần chuyển đổi: {eligible_dates}")
+    print(f"-> Ngày được chọn để xử lý: {eligible_dates}", flush=True)
 
     meta_file = os.path.join(DATA_DIR, 'metadata.json')
     meta = {}
@@ -392,22 +394,39 @@ def do_youtube_sync(specific_date=None):
     try:
         for date_str in sorted(eligible_dates):
             print(f"\n--- Xử lý ngày: {date_str} ---", flush=True)
-            streams = meta.get(date_str, {}).get('streams', {})
+            day_meta = meta.get(date_str, {})
+            streams = day_meta.get('streams', {})
             
             if not streams:
                 print(f"  ! Ngày {date_str} không có dữ liệu stream trong metadata.", flush=True)
                 continue
 
+            # 7. Use/Create Playlist for the day
+            playlist_id = day_meta.get('youtube_playlist_id')
+            if not playlist_id:
+                p_title = f"AOE Replay | Ngày {date_str}"
+                p_desc = f"Toàn bộ bản ghi các trận đấu AOE ngày {date_str}."
+                print(f"  + Đang tạo Playlist mới: {p_title}...", flush=True)
+                try:
+                    playlist_id = yt.create_playlist(p_title, p_desc, privacy_status="public")
+                    day_meta['youtube_playlist_id'] = playlist_id
+                    day_meta['youtube_playlist_url'] = f"https://www.youtube.com/playlist?list={playlist_id}"
+                except Exception as pe:
+                    print(f"  ✗ Lỗi tạo Playlist: {pe}", flush=True)
+
             for s_id, s_info in streams.items():
                 if s_info.get('youtube_url'):
                     print(f"  - Stream {s_id} đã có link YouTube, bỏ qua.", flush=True)
                     continue
-                if not s_info.get('hls'):
+                
+                # Check for HLS file
+                hls_rel = s_info.get('hls')
+                if not hls_rel:
                     print(f"  - Stream {s_id} không có file HLS local, bỏ qua.", flush=True)
                     continue
 
                 print(f"  > Đang xử lý stream: {s_id} ({s_info.get('display_name', 'Unknown')})", flush=True)
-                hls_abs_path = os.path.join(DATA_DIR, s_info['hls'])
+                hls_abs_path = os.path.join(DATA_DIR, hls_rel)
                 output_mp4 = os.path.join(DATA_DIR, 'replays', date_str, s_id, 'full_match.mp4')
                 
                 print(f"    - Đang ghép nối HLS sang MP4...", flush=True)
@@ -416,33 +435,44 @@ def do_youtube_sync(specific_date=None):
                     print(f"    ✗ Lỗi ghép file: {err}", flush=True)
                     continue
                 
-                title = f"AOE Replay | {s_info.get('display_name', s_id)} | {date_str}"
+                # PRECISE TITLE: Using player name effectively
+                player_name = s_info.get('display_name', s_id)
+                title = f"AOE Replay | {player_name} | Ngày {date_str}"
+                
                 description = (
                     f"Bản ghi trận đấu AOE\n"
+                    f"Người chơi/Máy: {player_name}\n"
                     f"Ngày thi đấu: {date_str}\n"
-                    f"Người chơi: {s_info.get('display_name', s_id)}\n"
                     f"Thời lượng: {s_info.get('duration_minutes')} phút\n\n"
                     f"Tự động upload bởi AOE Livestream System."
                 )
                 
-                print(f"    - Đang upload lên YouTube (Unlisted)...", flush=True)
+                print(f"    - Đang upload lên YouTube (Public)...", flush=True)
                 try:
                     video_id = yt.upload_video(
                         file_path=output_mp4,
                         title=title,
                         description=description,
-                        privacy_status="unlisted"
+                        privacy_status="public"
                     )
                     
                     if video_id:
                         s_info['youtube_url'] = f"https://www.youtube.com/watch?v={video_id}"
                         s_info['youtube_id'] = video_id
-                        # s_info['hls'] = None 
+                        s_info['hls'] = None 
                         
-                        print(f"    - Upload thành công: {video_id}. (Tạm thời không xoá file local để test)", flush=True)
-                        # if os.path.exists(output_mp4):
-                        #     os.remove(output_mp4)
-                        # cleanup_replay_files(date_str, s_id)
+                        # Add to playlist
+                        if playlist_id:
+                            print(f"    - Đang thêm vào Playlist {playlist_id}...", flush=True)
+                            try:
+                                yt.add_video_to_playlist(playlist_id, video_id)
+                            except Exception as pae:
+                                print(f"    ! Không thể thêm vào playlist: {pae}", flush=True)
+
+                        print(f"    - Upload thành công: {video_id}. Đang xoá file local...", flush=True)
+                        if os.path.exists(output_mp4):
+                            os.remove(output_mp4)
+                        cleanup_replay_files(date_str, s_id)
                     
                 except Exception as e:
                     print(f"    ✗ Lỗi upload YouTube: {e}", flush=True)

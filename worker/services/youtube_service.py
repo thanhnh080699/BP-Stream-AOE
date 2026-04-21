@@ -6,8 +6,11 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-# Scopes required for YouTube upload
-SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
+# Scopes required for YouTube upload and playlist management
+SCOPES = [
+    'https://www.googleapis.com/auth/youtube.upload',
+    'https://www.googleapis.com/auth/youtube'
+]
 
 class YouTubeService:
     def __init__(self, credentials_path, token_path):
@@ -33,7 +36,7 @@ class YouTubeService:
 
         return build('youtube', 'v3', credentials=creds)
 
-    def upload_video(self, file_path, title, description, category_id="20", privacy_status="unlisted"):
+    def upload_video(self, file_path, title, description, category_id="20", privacy_status="public"):
         """
         Uploads a video to YouTube.
         category_id "20" is Gaming.
@@ -69,3 +72,38 @@ class YouTubeService:
 
         print(f"Video uploaded successfully! Video ID: {response['id']}")
         return response['id']
+
+    def create_playlist(self, title, description="", privacy_status="public"):
+        """Creates a new playlist and returns the playlist ID."""
+        body = {
+            'snippet': {
+                'title': title,
+                'description': description
+            },
+            'status': {
+                'privacyStatus': privacy_status
+            }
+        }
+        request = self.service.playlists().insert(
+            part='snippet,status',
+            body=body
+        )
+        response = request.execute()
+        return response['id']
+
+    def add_video_to_playlist(self, playlist_id, video_id):
+        """Adds a video to an existing playlist."""
+        body = {
+            'snippet': {
+                'playlistId': playlist_id,
+                'resourceId': {
+                    'kind': 'youtube#video',
+                    'videoId': video_id
+                }
+            }
+        }
+        request = self.service.playlistItems().insert(
+            part='snippet',
+            body=body
+        )
+        return request.execute()
