@@ -13,9 +13,9 @@ LOG_FILE = os.path.join(DATA_DIR, 'recordings.json')
 WORKER_PORT = int(os.environ.get('WORKER_PORT', 5001))
 
 # Tuning cho HDD + 40 vCPU + 4GB RAM
-MAX_STREAM_WORKERS = int(os.environ.get('MAX_STREAM_WORKERS', 3))
+MAX_STREAM_WORKERS = int(os.environ.get('MAX_STREAM_WORKERS', 2))
 MAX_SEG_WORKERS    = int(os.environ.get('MAX_SEG_WORKERS', 4))
-FFMPEG_THREADS     = int(os.environ.get('FFMPEG_THREADS', 6))
+FFMPEG_THREADS     = int(os.environ.get('FFMPEG_THREADS', 2))
 
 # DB Configuration
 DB_CONFIG = {

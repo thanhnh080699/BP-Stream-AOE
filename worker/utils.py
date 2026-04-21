@@ -118,7 +118,6 @@ def get_duration(file_path):
         return 0.0
 
 def convert_flv_to_ts(flv_path, ts_path):
-    from config import FFMPEG_THREADS
     return run_ffmpeg([
         'ffmpeg', '-y',
         '-fflags', '+genpts+igndts+discardcorrupt',
@@ -128,12 +127,8 @@ def convert_flv_to_ts(flv_path, ts_path):
         '-i', flv_path,
         '-map', '0:v:0',
         '-map', '0:a:0',
-        '-c:v', 'libx265',
-        '-crf', '28',
-        '-preset', 'superfast',
-        '-threads', str(FFMPEG_THREADS),
-        '-c:a', 'aac',
-        '-b:a', '96k',
+        '-c:v', 'copy',
+        '-c:a', 'copy',
         '-f', 'mpegts',
         ts_path
     ])

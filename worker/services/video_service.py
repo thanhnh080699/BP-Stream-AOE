@@ -243,13 +243,13 @@ def do_merge(date_str):
         progress_text="Đã hoàn thành tổng hợp toàn bộ."
     )
 
-    # 1. Dọn dẹp FLV cũ (giữ 3 ngày theo yêu cầu)
-    cleanup_old_recordings(keep_days=3)
+    # 1. Dọn dẹp FLV cũ (giữ 4 ngày - Trạng thái ổn định)
+    cleanup_old_recordings(keep_days=4)
     
     # 2. Kiểm tra và dọn dẹp Replays nếu đầy ổ đĩa (Smart Protection)
     check_disk_usage_and_cleanup(threshold_percent=90)
 
-def cleanup_old_recordings(keep_days=3):
+def cleanup_old_recordings(keep_days=4):
     """
     Xoá các bản ghi live (FLV) và metadata trong recordings.json 
     nếu cũ hơn keep_days ngày (bao gồm cả hôm nay).
