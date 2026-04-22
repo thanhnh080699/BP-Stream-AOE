@@ -19,7 +19,7 @@ import {
   Clock
 } from 'lucide-react';
 
-const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
+const MatchHistoryModal = ({ isOpen, onClose, player, category, matches, title, subtitle }) => {
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') onClose();
@@ -49,9 +49,11 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
           <div>
             <div className="flex items-center gap-3 mb-1">
               <History size={20} className="text-[#f1812e]" />
-              <h3 className="text-2xl font-black uppercase tracking-tight">Lịch sử {category}</h3>
+              <h3 className="text-2xl font-black uppercase tracking-tight">{title || `Lịch sử ${category}`}</h3>
             </div>
-            <div className="text-[10px] font-black opacity-40 uppercase tracking-widest">Người chơi: <span className="text-[#f1812e]">{player}</span></div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <div className="text-[10px] font-black opacity-40 uppercase tracking-widest">{subtitle || `Người chơi: ${player}`}</div>
+            </div>
           </div>
           <button onClick={onClose} className="w-12 h-12 rounded-2xl bg-[var(--bg-main)] flex items-center justify-center hover:bg-red-500 hover:text-white transition-all group">
             <X size={24} className="group-hover:rotate-90 transition-transform" />
@@ -62,21 +64,22 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
           {matches.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center opacity-30 italic py-20">
               <History size={48} className="mb-4" />
-              <div className="font-bold">Chưa có dữ liệu thi đấu cho kèo này</div>
+              <div className="font-bold">Chưa có dữ liệu thi đấu</div>
             </div>
           ) : (
             matches.map((match, i) => {
-              const date = new Date(match.date);
-              const isTeamA = match.team_a_players.includes(player);
-              const pScore = isTeamA ? match.score_a : match.score_b;
-              const oScore = isTeamA ? match.score_b : match.score_a;
+              const date = new Date(match.date || match.match_date);
+              const isPlayerSearch = !!player;
+              const isTeamA = isPlayerSearch ? match.team_a_players.includes(player) : true;
+              const pScore = isPlayerSearch ? (isTeamA ? match.score_a : match.score_b) : match.score_a;
+              const oScore = isPlayerSearch ? (isTeamA ? match.score_b : match.score_a) : match.score_b;
               const isWin = parseInt(pScore) > parseInt(oScore);
 
               const renderPlayers = (playersStr, currentPlayer) => {
                 const parts = playersStr.split(',');
                 return parts.map((p, idx) => {
                   const trimmed = p.trim();
-                  const isCurrent = trimmed.toLowerCase() === currentPlayer.toLowerCase();
+                  const isCurrent = currentPlayer && trimmed.toLowerCase() === currentPlayer.toLowerCase();
                   return (
                     <React.Fragment key={idx}>
                       <span className={isCurrent ? "text-[#f1812e] font-black" : ""}>
@@ -89,7 +92,7 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
               };
 
               return (
-                <div key={i} className={`flex items-center justify-between p-6 rounded-3xl border transition-all ${isWin ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'} hover:scale-[1.02]`}>
+                <div key={i} className={`flex items-center justify-between p-6 rounded-3xl border transition-all ${isPlayerSearch ? (isWin ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20') : 'bg-[var(--bg-main)]/40 border-[var(--border-color)]'} hover:scale-[1.02]`}>
                   <div className="flex items-center gap-6 flex-1 min-w-0">
                     <div className="text-center min-w-[60px]">
                       <div className="text-[10px] font-black opacity-30 uppercase">{date.toLocaleDateString('vi-VN', { month: 'numeric', day: 'numeric' })}</div>
@@ -98,26 +101,28 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
                     <div className="w-px h-10 bg-[var(--border-color)] opacity-20" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${isWin ? 'bg-green-500 text-white shadow-sm' : 'bg-red-500 text-white shadow-sm'}`}>
-                          {isWin ? 'Thắng' : 'Thua'}
-                        </span>
+                        {isPlayerSearch && (
+                          <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${isWin ? 'bg-green-500 text-white shadow-sm' : 'bg-red-500 text-white shadow-sm'}`}>
+                            {isWin ? 'Thắng' : 'Thua'}
+                          </span>
+                        )}
                         {match.match_type && match.match_type !== "Kèo đấu" && (
                           <span className="text-sm font-black opacity-60 italic">{match.match_type}</span>
                         )}
                       </div>
                       <div className="text-sm font-medium text-[var(--text-secondary)] opacity-90 tracking-wide leading-relaxed break-words">
-                        <span className={isTeamA ? "bg-green-500/10 px-1 rounded" : ""}>
+                        <span className={(isPlayerSearch && isTeamA) ? "bg-green-500/10 px-1 rounded" : ""}>
                           {renderPlayers(match.team_a_players, player)}
                         </span>
                         <span className="mx-2 opacity-20 font-black">VS</span>
-                        <span className={!isTeamA ? "bg-green-500/10 px-1 rounded" : ""}>
+                        <span className={(isPlayerSearch && !isTeamA) ? "bg-green-500/10 px-1 rounded" : ""}>
                           {renderPlayers(match.team_b_players, player)}
                         </span>
                       </div>
                     </div>
                   </div>
                   <div className="text-3xl font-black font-outfit tracking-tighter tabular-nums italic shrink-0 ml-4">
-                    <span className={isWin ? 'text-green-500' : 'text-red-500'}>{pScore}</span>
+                    <span className={isPlayerSearch ? (isWin ? 'text-green-500' : 'text-red-500') : 'text-[var(--accent-secondary)]'}>{pScore}</span>
                     <span className="opacity-20 mx-1">-</span>
                     <span className="opacity-40">{oScore}</span>
                   </div>
@@ -134,6 +139,150 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches }) => {
     </div>
   );
 };
+
+const DailyActivityChart = ({ dailyMatches, onDayClick }) => {
+  const activityData = useMemo(() => {
+    const days = [];
+    const today = new Date();
+    // Start from exactly 364 days ago (52 weeks)
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 364);
+    
+    // Adjust to start of that week (Sunday)
+    const startDay = startDate.getDay();
+    startDate.setDate(startDate.getDate() - startDay);
+
+    // Total days to show (up to the end of the current week)
+    const totalDays = 365 + startDay + (6 - today.getDay());
+
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+      const dStr = d.toISOString().split('T')[0];
+      const matches = dailyMatches[dStr] || [];
+      days.push({
+        date: d,
+        dateStr: dStr,
+        count: matches.length,
+        matches: matches
+      });
+    }
+    return days;
+  }, [dailyMatches]);
+
+  const getLevel = (count) => {
+    if (count === 0) return 0;
+    if (count > 8) return 4;
+    if (count > 5) return 3;
+    if (count > 3) return 2;
+    if (count > 1) return 1;
+    return 1;
+  };
+
+  const colors = [
+    'bg-[var(--border-color)]', // 0 (Solid border color for clear visibility)
+    'bg-green-500/40', // 1-3
+    'bg-green-500/60', // 4-5
+    'bg-green-500/80', // 6-8
+    'bg-green-500'     // 9+
+  ];
+
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const totalCols = Math.ceil(activityData.length / 7);
+
+  // Calculate month label positions
+  const monthLabels = [];
+  for (let i = 0; i < activityData.length; i += 7) {
+    const week = activityData.slice(i, i + 7);
+    const firstDayOfMonth = week.find(d => d.date.getDate() <= 7 && d.date.getDay() === 0);
+    if (firstDayOfMonth) {
+      monthLabels.push({
+        colIndex: i / 7,
+        label: months[firstDayOfMonth.date.getMonth()]
+      });
+    }
+  }
+
+  return (
+    <div className="flex flex-col w-full">
+      {/* Scrollable Container for Mobile */}
+      <div className="w-full overflow-x-auto pb-2 -mt-8 pt-8 scrollbar-hide">
+        <div className="flex flex-col min-w-[700px] w-full">
+          {/* Month Labels */}
+          <div className="flex w-full pl-[32px] sm:pl-[40px] mb-2">
+            <div className="flex-1 relative h-4">
+                {monthLabels.map((m, idx) => (
+                  <div key={idx} className="absolute text-[10px] font-black opacity-50 uppercase -translate-x-1/2" style={{ left: `${(m.colIndex / totalCols) * 100}%` }}>
+                    {m.label}
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          <div className="flex w-full gap-2 sm:gap-3">
+            {/* Day Labels - Uses grid to match the chart's row height perfectly */}
+            <div className="grid grid-rows-7 gap-[3px] sm:gap-[4px] text-[9px] font-black opacity-40 uppercase tracking-tighter items-center justify-end w-[24px] sm:w-[28px] pb-1">
+              <span>CN</span>
+              <span>T2</span>
+              <span>T3</span>
+              <span>T4</span>
+              <span>T5</span>
+              <span>T6</span>
+              <span>T7</span>
+            </div>
+
+            {/* Chart Grid - grid-flow-col ensures it fills column by column automatically */}
+            <div 
+              className="flex-1 grid grid-rows-7 grid-flow-col gap-[3px] sm:gap-[4px]"
+              style={{ gridTemplateColumns: `repeat(${totalCols}, minmax(0, 1fr))` }}
+            >
+              {activityData.map((day, idx) => {
+                const colIndex = Math.floor(idx / 7);
+                const rowIndex = idx % 7;
+                
+                // Smart positioning for tooltips to prevent cut-off
+                const isTop = rowIndex < 3;
+                const isRight = colIndex > totalCols - 5;
+                const isLeft = colIndex < 5;
+
+                let horizontalPos = 'left-1/2 -translate-x-1/2';
+                if (isRight) horizontalPos = 'right-0 translate-x-0';
+                if (isLeft) horizontalPos = 'left-0 translate-x-0';
+
+                return (
+                    <div
+                      key={day.dateStr}
+                      onClick={() => day.count > 0 && onDayClick(day)}
+                      className={`aspect-square w-full rounded-[2px] cursor-pointer transition-all hover:ring-1 hover:ring-[#f1812e] hover:z-30 group/day relative ${colors[getLevel(day.count)]}`}
+                    >
+                      {/* Tooltip */}
+                      <div className={`absolute ${isTop ? 'top-full mt-2' : 'bottom-full mb-2'} ${horizontalPos} px-3 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl text-[10px] font-black whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-all shadow-2xl z-[100] pointer-events-none text-center transform ${isTop ? '-translate-y-2 group-hover/day:translate-y-0' : 'translate-y-2 group-hover/day:translate-y-0'}`}>
+                        <div className="opacity-40 mb-0.5">{day.date.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                        <div className="text-[#f1812e] text-xs">{day.count} Trận đấu</div>
+                        {day.count > 0 && <div className="text-[8px] opacity-30 italic mt-1 font-medium">Click để xem chi tiết</div>}
+                      </div>
+                    </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-end w-full gap-2 text-[9px] font-black opacity-40 uppercase tracking-widest mt-4">
+
+        <span>Ít hơn</span>
+        <div className="flex gap-1.5">
+          {colors.map((c, i) => (
+            <div key={i} className={`w-3 h-3 rounded-[2px] ${c}`} />
+          ))}
+        </div>
+        <span>Nhiều hơn</span>
+      </div>
+    </div>
+  );
+};
+
 
 const AnalyticsView = () => {
   const [scores, setScores] = useState({});
@@ -228,6 +377,7 @@ const AnalyticsView = () => {
       totalPlayers: 0,
       earliestDate: null,
       dailyActivity: {},
+      dailyMatches: {},
       categories: {},
       rawMatches: [] // Store for history popups
     };
@@ -255,8 +405,10 @@ const AnalyticsView = () => {
       const dateStr = match.match_date;
       if (!globalStats.dailyActivity[dateStr]) {
         globalStats.dailyActivity[dateStr] = {};
+        globalStats.dailyMatches[dateStr] = [];
       }
-      globalStats.dailyActivity[dateStr][cat] = (globalStats.dailyActivity[dateStr][cat] || 0) + gameTotal;
+      globalStats.dailyActivity[dateStr][cat] = (globalStats.dailyActivity[dateStr][cat] || 0) + 1;
+      globalStats.dailyMatches[dateStr].push(match);
 
       const processPlayer = (playerName, pWins, pLosses) => {
         if (!players[playerName]) {
@@ -434,8 +586,8 @@ const AnalyticsView = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-6 shadow-xl flex flex-col justify-center gap-4 group hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div className="md:col-span-3 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-6 shadow-xl flex flex-col justify-center gap-4 group hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
           <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors" />
 
           <p className="text-[10px] font-black opacity-60 text-[#f1812e] uppercase tracking-[0.2em] mb-1 px-1">Tổng quan hệ thống</p>
@@ -448,28 +600,6 @@ const AnalyticsView = () => {
               <div className="min-w-0">
                 <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Tổng số trận</div>
                 <div className="text-xl font-black font-outfit leading-none">{globalStats.seriesCount}</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
-                <Users size={18} />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Thành viên</div>
-                <div className="text-xl font-black font-outfit leading-none">{globalStats.totalPlayers}</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-green-600 shadow-green-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
-                <Calendar size={18} />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Ngày bắt đầu</div>
-                <div className="text-xs font-black font-outfit leading-none mt-1">
-                  {globalStats.earliestDate ? globalStats.earliestDate.toLocaleDateString('vi-VN') : 'N/A'}
-                </div>
               </div>
             </div>
 
@@ -507,82 +637,24 @@ const AnalyticsView = () => {
           </div>
         </div>
 
-        <div className="md:col-span-3 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-6 shadow-xl relative overflow-hidden group">
+        <div className="md:col-span-9 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-6 shadow-xl relative overflow-visible flex flex-col min-h-[300px]">
           <div className="flex justify-between items-center mb-6 px-2">
             <div className="flex items-center gap-3">
-              <BarChart3 size={18} className="text-[#f1812e]" />
-              <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">Tần suất trận đấu theo ngày</span>
+              <BarChart3 size={20} className="text-[#f1812e]" />
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-60">Tần suất trận đấu theo ngày</span>
             </div>
           </div>
-          <div className="relative h-[400px] px-2 mt-4 overflow-x-auto scrollbar-hide group/chart">
-            {/* Y Axis Grid & Labels */}
-            <div className="absolute inset-x-2 top-16 bottom-10 flex flex-col justify-between pointer-events-none z-0">
-              {[...Array(5)].map((_, i) => {
-                const maxVal = Math.max(...Object.values(globalStats.dailyActivity).map(a => Object.values(a).reduce((sum, v) => sum + v, 0)), 1);
-                const val = Math.round((maxVal / 4) * (4 - i));
-                return (
-                  <div key={i} className="flex items-center gap-3 w-full">
-                    <span className="text-[9px] font-black opacity-40 w-4 text-right tabular-nums">{val}</span>
-                    <div className="flex-1 h-px bg-[var(--border-color)] opacity-20" />
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="absolute inset-x-10 top-16 bottom-10 flex items-end justify-between gap-px pb-2 z-10">
-              {[...Array(15)].map((_, i) => {
-                const date = new Date();
-                date.setDate(date.getDate() - (14 - i));
-                const dStr = date.toISOString().split('T')[0];
-                const shortDate = dStr.split('-').slice(1).reverse().join('/');
-                const activity = globalStats.dailyActivity[dStr] || {};
-                const dayTotal = Object.values(activity).reduce((a, b) => a + b, 0);
-
-                const maxPossibleDayTotal = Math.max(...Object.values(globalStats.dailyActivity).map(a => Object.values(a).reduce((sum, v) => sum + v, 0)), 1);
-                const pxPerMatch = Math.min(200 / maxPossibleDayTotal, 50);
-
-                return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-3 group/bar min-w-[32px] h-full justify-end">
-                    <div
-                      className="w-full relative flex flex-col-reverse items-stretch justify-start min-h-[4px]"
-                    >
-                      {/* Tooltip moved inside the relative bar container */}
-                      <div className="absolute left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-2 rounded-xl text-[10px] font-black whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-all shadow-2xl z-50 pointer-events-none text-center transform -translate-y-2 group-hover/bar:translate-y-0"
-                        style={{ bottom: `calc(${dayTotal * pxPerMatch}px + 10px)` }}>
-                        <div className="text-[9px] opacity-40 mb-0.5 font-bold uppercase tracking-widest">{dStr}</div>
-                        <div className="text-[#f1812e] text-xs mb-1">{dayTotal} Trận</div>
-                        <div className="space-y-0.5">
-                          {Object.entries(activity).map(([cat, count]) => {
-                            const colorTexts = { '1-1': 'text-[#f1812e]', '2-2': 'text-blue-500', '3-3': 'text-green-500', '4-4': 'text-purple-500', '3-4': 'text-pink-500' };
-                            return <div key={cat} className={`${colorTexts[cat] || 'text-slate-500'} text-[8px] uppercase tracking-tighter`}>{cat}: {count}</div>
-                          })}
-                        </div>
-                      </div>
-
-                      {Object.keys(activity).map((cat) => {
-                        const count = activity[cat];
-                        const colorBgs = { '1-1': 'bg-[#f1812e]', '2-2': 'bg-blue-500', '3-3': 'bg-green-500', '4-4': 'bg-purple-500', '3-4': 'bg-pink-500' };
-                        return (
-                          <div
-                            key={cat}
-                            className={`w-full ${colorBgs[cat] || 'bg-slate-500'} transition-all duration-700 hover:brightness-125 first:rounded-b-md last:rounded-t-md`}
-                            style={{ height: `${count * pxPerMatch}px` }}
-                          />
-                        );
-                      })}
-                    </div>
-                    <div className="h-px w-full bg-[var(--border-color)] opacity-50" />
-                    <span className="text-[9px] font-black opacity-60 uppercase tracking-tighter whitespace-nowrap">{dayTotal > 0 ? shortDate : '-'}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className="flex justify-center flex-wrap items-center gap-4 pt-4 border-t border-[var(--border-color)]/50">
-            {['1-1', '2-2', '3-3', '4-4', '3-4'].map(cat => {
-              const bg = { '1-1': 'bg-[#f1812e]', '2-2': 'bg-blue-500', '3-3': 'bg-green-500', '4-4': 'bg-purple-500', '3-4': 'bg-pink-500' }[cat] || 'bg-slate-500';
-              return <div key={cat} className="flex items-center gap-1.5"><div className={`w-2 h-2 rounded-full ${bg}`} /><span className="text-[10px] font-black opacity-60 uppercase">{cat}</span></div>
-            })}
+          <div className="flex-1 flex flex-col justify-center">
+            <DailyActivityChart
+              dailyMatches={globalStats.dailyMatches}
+              onDayClick={(day) => {
+                setSelectedMatchHistory({
+                  title: `Các trận đấu ngày ${day.date.toLocaleDateString('vi-VN')}`,
+                  subtitle: `Tổng cộng ${day.count} trận đấu`,
+                  matches: day.matches
+                });
+              }}
+            />
           </div>
         </div>
       </div>
@@ -889,6 +961,8 @@ const AnalyticsView = () => {
         player={selectedMatchHistory?.player}
         category={selectedMatchHistory?.category}
         matches={selectedMatchHistory?.matches || []}
+        title={selectedMatchHistory?.title}
+        subtitle={selectedMatchHistory?.subtitle}
       />
     </div>
   );
