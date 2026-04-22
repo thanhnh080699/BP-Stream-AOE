@@ -367,7 +367,8 @@ def cleanup_replay_files(date_str, s_id=None):
 
 def get_nights_older_than(days=7):
     """
-    Returns a list of date strings in metadata.json that are older than `days`.
+    Trả về danh sách các ngày trong metadata.json cũ hơn `days` ngày
+    và thực sự có dữ liệu stream cần sync lên YouTube.
     """
     meta_file = os.path.join(DATA_DIR, 'metadata.json')
     if not os.path.exists(meta_file):
@@ -383,12 +384,33 @@ def get_nights_older_than(days=7):
     eligible_dates = []
     cutoff_date = datetime.now() - timedelta(days=days)
 
-    for date_str in meta.keys():
+    for date_str, day_data in meta.items():
         try:
+            # Kiểm tra định dạng ngày YYYY-MM-DD
+            if not (len(date_str) == 10 and date_str.count('-') == 2):
+                continue
+                
             date_obj = datetime.strptime(date_str, '%Y-%m-%d')
             if date_obj < cutoff_date:
-                eligible_dates.append(date_str)
-        except ValueError:
+                streams = day_data.get('streams', {})
+                if not streams:
+                    continue
+                
+                # Chỉ tính là eligible nếu có ít nhất 1 stream chưa có youtube_url
+                # và có file HLS để upload (hoặc ít nhất là có thông tin stream)
+                has_work = False
+                for s_id, s_info in streams.items():
+                    if not s_info.get('youtube_url'):
+                        # Nếu có hls path thì chắc chắn làm được
+                        if s_info.get('hls'):
+                            has_work = True
+                            break
+                        # Nếu không có hls nhưng status là completed thì có thể do lỗi metadata, 
+                        # nhưng ở đây ta ưu tiên những gì có file.
+                
+                if has_work:
+                    eligible_dates.append(date_str)
+        except (ValueError, AttributeError):
             continue
     
     return eligible_dates
@@ -440,15 +462,19 @@ def do_youtube_sync(specific_date=None, specific_stream=None, force=False, is_te
     if specific_date:
         eligible_dates = [specific_date]
     else:
+        # Lấy tất cả các ngày đủ điều kiện
         all_eligible = get_nights_older_than(7)
-        # Sort and take only the oldest one (1 day at a time to manage quota)
+        # Sắp xếp và lấy ngày cũ nhất (mỗi lần chạy 1 ngày để tránh quá quota YouTube)
         eligible_dates = sorted(all_eligible)[:1]
         
     if not eligible_dates:
-        print("✓ Không có phần ghi nào cần xử lý (không có ngày nào > 7 ngày).", flush=True)
+        if not specific_date:
+            print("✓ Không có phần ghi nào cần xử lý (không có ngày nào > 7 ngày hoặc đã sync hết).", flush=True)
+        else:
+            print(f"✗ Không tìm thấy dữ liệu cho ngày {specific_date} để sync.", flush=True)
         return
 
-    print(f"-> Ngày được chọn để xử lý: {eligible_dates}", flush=True)
+    print(f"-> Danh sách ngày sẽ xử lý: {eligible_dates}", flush=True)
 
     meta_file = os.path.join(DATA_DIR, 'metadata.json')
     meta = {}
