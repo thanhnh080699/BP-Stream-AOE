@@ -16,6 +16,7 @@ import {
   ArrowRight,
   HardDrive,
   Archive,
+  Target,
   Clock
 } from 'lucide-react';
 
@@ -160,10 +161,11 @@ const DailyActivityChart = ({ dailyMatches, onDayClick }) => {
       d.setDate(startDate.getDate() + i);
       const dStr = d.toISOString().split('T')[0];
       const matches = dailyMatches[dStr] || [];
+      const gameCount = matches.reduce((sum, m) => sum + (parseInt(m.score_a) || 0) + (parseInt(m.score_b) || 0), 0);
       days.push({
         date: d,
         dateStr: dStr,
-        count: matches.length,
+        count: gameCount,
         matches: matches
       });
     }
@@ -172,10 +174,9 @@ const DailyActivityChart = ({ dailyMatches, onDayClick }) => {
 
   const getLevel = (count) => {
     if (count === 0) return 0;
-    if (count > 8) return 4;
-    if (count > 5) return 3;
-    if (count > 3) return 2;
-    if (count > 1) return 1;
+    if (count >= 9) return 4;
+    if (count >= 6) return 3;
+    if (count >= 4) return 2;
     return 1;
   };
 
@@ -595,11 +596,21 @@ const AnalyticsView = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f1812e] to-orange-500 shadow-orange-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
-                <Activity size={18} />
+                <Target size={18} />
               </div>
               <div className="min-w-0">
                 <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Tổng số trận</div>
                 <div className="text-xl font-black font-outfit leading-none">{globalStats.seriesCount}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/20 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
+                <Activity size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-0.5">Tổng số kèo</div>
+                <div className="text-xl font-black font-outfit leading-none">{globalStats.seriesTotal}</div>
               </div>
             </div>
 
@@ -697,10 +708,10 @@ const AnalyticsView = () => {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center transition-all duration-300 pointer-events-none">
                 <span className={`font-black font-outfit leading-none ${hoveredCategory ? 'text-4xl text-[#f1812e]' : 'text-3xl opacity-100'}`}>
-                  {hoveredCategory ? globalStats.categories[hoveredCategory].count : globalStats.seriesCount}
+                  {hoveredCategory ? globalStats.categories[hoveredCategory].seriesCount : globalStats.seriesTotal}
                 </span>
                 <span className="text-[8px] font-black opacity-40 uppercase tracking-tighter mt-1">
-                  {hoveredCategory ? `${hoveredCategory}` : 'TỔNG TRẬN'}
+                  {hoveredCategory ? `${hoveredCategory}` : 'TỔNG KÈO'}
                 </span>
               </div>
             </div>
@@ -716,7 +727,7 @@ const AnalyticsView = () => {
                       <div className={`w-2.5 h-2.5 rounded-full ${bg}`} />
                       <span className="text-[10px] font-black opacity-60 uppercase">{cat}</span>
                     </div>
-                    <span className="text-xs font-black">{globalStats.categories[cat].count} Trận</span>
+                    <span className="text-xs font-black">{globalStats.categories[cat].seriesCount} Kèo ({globalStats.categories[cat].count} Trận)</span>
                   </div>
                 );
               })}
@@ -727,7 +738,7 @@ const AnalyticsView = () => {
         <div className="lg:col-span-8 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[40px] p-6 shadow-2xl relative overflow-hidden flex flex-col">
           <h3 className="text-lg font-black uppercase tracking-widest mb-8 flex items-center gap-3">
             <TrendingUp size={20} className="text-green-500" />
-            Tổng số trận theo thể thức
+            Phân bổ trận đấu theo thể thức
           </h3>
           <div className="flex-1 relative mt-4 min-h-[260px]">
             {/* Y Axis Grid */}
@@ -771,7 +782,7 @@ const AnalyticsView = () => {
                         className={`w-full max-w-[48px] bg-gradient-to-t ${gradient} rounded-t-xl transition-all duration-1000 ease-out cursor-pointer hover:brightness-110 shadow-lg relative group flex flex-col justify-end pb-2`}
                         style={{ height: `${height}px`, minHeight: '28px' }}
                       >
-                        <span className="text-[12px] font-black text-white/90 drop-shadow-md text-center leading-none">{data.count}</span>
+                        <span className="text-[12px] font-black text-white/90 drop-shadow-md text-center leading-none">{data.seriesCount}</span>
                       </div>
                     </div>
                     <div className="h-px w-full bg-[var(--border-color)] opacity-20" />
