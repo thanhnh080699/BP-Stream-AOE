@@ -19,3 +19,4 @@ Icon
 mysql_data
 worker/youtube_secrets.json
 worker/youtube_token.pickle
+web/public/downloads/

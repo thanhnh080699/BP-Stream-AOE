@@ -5,7 +5,8 @@ import AboutUs from './components/AboutUs';
 import ScoreboardView from './components/ScoreboardView';
 import PlayerManagementView from './components/PlayerManagementView';
 import AnalyticsView from './components/AnalyticsView';
-import { Video, History, Trophy, Sun, Moon, Menu, X, Monitor, Info, LayoutTemplate, Users, BarChart3, AlertCircle } from 'lucide-react';
+import SoftwareView from './components/SoftwareView';
+import { Video, History, Trophy, Sun, Moon, Menu, X, Monitor, Info, LayoutTemplate, Users, BarChart3, AlertCircle, Download, ChevronDown } from 'lucide-react';
 import { Routes, Route, NavLink, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import NotFound from './components/NotFound';
 
@@ -19,6 +20,7 @@ function App() {
     if (path.startsWith('/players')) return 'players';
     if (path.startsWith('/scores')) return 'scores';
     if (path.startsWith('/analytics')) return 'analytics';
+    if (path.startsWith('/software')) return 'software';
     if (path.startsWith('/about')) return 'about';
     return 'live';
   };
@@ -68,6 +70,7 @@ function App() {
     if (tab === 'players') title = 'Cài Đặt Người Chơi - BP AOE Streaming';
     if (tab === 'scores') title = 'Bảng Tỷ Số - BP AOE Streaming';
     if (tab === 'analytics') title = 'Thống Kê - BP AOE Streaming';
+    if (tab === 'software') title = 'Tải Phần Mềm - BP AOE Streaming';
 
     document.title = `${title} | BPGROUP Tournament Dashboard`;
   }, [darkMode, tab]);
@@ -222,6 +225,26 @@ function App() {
             </div>
             {tab === 'scores' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
           </NavLink>
+
+          <div className="pt-4 pb-2 px-4">
+            <div className="h-px bg-[var(--border-color)] opacity-50 mb-4" />
+            <p className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em] opacity-40">Phần mềm</p>
+          </div>
+
+          <NavLink
+            to="/software"
+            className={({ isActive }) => `w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${isActive
+                ? 'bg-[var(--bg-main)] text-[#f1812e] shadow-md border border-[var(--border-color)]'
+                : 'text-[var(--text-secondary)] hover:text-[#f1812e] hover:bg-[var(--bg-main)]'
+              }`
+            }
+          >
+            <div className="flex items-center gap-3">
+              <LayoutTemplate size={18} />
+              <span>Download Phần Mềm</span>
+            </div>
+            {tab === 'software' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
+          </NavLink>
         </nav>
 
         <div className={`p-4 space-y-4 mb-4 md:mb-0 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
@@ -259,6 +282,7 @@ function App() {
             <Route path="/players" element={<PlayerManagementView />} />
             <Route path="/scores" element={<ScoreboardView />} />
             <Route path="/analytics" element={<AnalyticsView />} />
+            <Route path="/software" element={<SoftwareView />} />
             <Route path="/about" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
