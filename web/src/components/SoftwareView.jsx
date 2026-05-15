@@ -14,7 +14,7 @@ const SoftwareView = () => {
         'Tối ưu hóa tài nguyên hệ thống',
         'Dễ dàng tùy chỉnh overlay'
       ],
-      downloadUrl: '/downloads/OBS-Studio-32.1.2-Windows-x64.zip',
+      downloadUrl: '/downloads/OBS_Studio.zip',
       icon: <img src="/images/obs_logo.svg" alt="OBS Logo" className="h-full w-auto object-contain" />,
       color: 'blue'
     },
@@ -29,7 +29,7 @@ const SoftwareView = () => {
         'Tích hợp sẵn các bản đồ thi đấu',
         'Dễ dàng cài đặt và chạy ngay'
       ],
-      downloadUrl: '/downloads/AOE-HD2.zip',
+      downloadUrl: '/downloads/AOE_R0.zip',
       icon: <img src="/images/aoe_logo.png" alt="AOE Logo" className="h-full w-auto object-contain" />,
       color: 'amber'
     }
