@@ -413,13 +413,13 @@ const ScoreboardView = () => {
               
               <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[600px] overflow-y-auto scrollbar-thin">
                 {[...scores[date]].sort((a, b) => b.id - a.id).map((match, idx) => (
-                  <div key={match.id} className="relative bg-[var(--bg-main)]/40 rounded-2xl md:rounded-[24px] p-4 sm:p-5 border border-[var(--border-color)]/30 group hover:border-[#f1812e]/40 transition-all flex items-center min-h-[90px] sm:min-h-[100px]">
+                  <div key={match.id} className="relative bg-[var(--bg-main)]/40 rounded-2xl md:rounded-[24px] p-3 sm:p-4 md:p-5 border border-[var(--border-color)]/30 group hover:border-[#f1812e]/40 transition-all flex items-center min-h-[80px] sm:min-h-[100px]">
                     <div className="w-full flex flex-col md:flex-row items-center justify-between gap-3 md:gap-16">
                       {/* Team A Players */}
                       <div className="flex-1 w-full md:text-right">
-                        <div className="flex flex-wrap justify-center md:justify-end gap-1.5 mb-1.5 md:mb-3">
+                        <div className="flex flex-wrap justify-center md:justify-end gap-1 sm:gap-1.5 mb-1.5 md:mb-3">
                           {match.team_a_players.split(',').map((p, i) => (
-                            <span key={i} className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-xs md:text-sm font-bold shadow-lg shadow-orange-500/10 whitespace-nowrap">{p.trim()}</span>
+                            <span key={i} className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-orange-500 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs md:text-sm font-bold shadow-lg shadow-orange-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
                         </div>
                       </div>
@@ -435,9 +435,9 @@ const ScoreboardView = () => {
 
                       {/* Team B Players */}
                       <div className="flex-1 w-full text-left">
-                        <div className="flex flex-wrap justify-center md:justify-start gap-1.5 mt-1.5 md:mt-3">
+                        <div className="flex flex-wrap justify-center md:justify-start gap-1 sm:gap-1.5 mt-1.5 md:mt-3">
                           {match.team_b_players.split(',').map((p, i) => (
-                            <span key={i} className="px-2.5 py-1 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-bold shadow-lg shadow-blue-500/10 whitespace-nowrap">{p.trim()}</span>
+                            <span key={i} className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-blue-500 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs md:text-sm font-bold shadow-lg shadow-blue-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
                         </div>
                       </div>

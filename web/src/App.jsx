@@ -274,7 +274,7 @@ function App() {
             <Menu size={20} className="group-hover:scale-110 transition-transform" />
           </button>
         )}
-        <div className="min-h-full p-6 md:p-12 pb-24 md:pb-12">
+        <div className="min-h-full p-4 sm:p-6 md:p-12 pb-24 md:pb-12">
           <Routes>
             <Route path="/" element={<AboutUs />} />
             <Route path="/live" element={<LiveView />} />
