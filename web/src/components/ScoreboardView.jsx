@@ -171,7 +171,7 @@ const ScoreboardView = () => {
         <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest block mb-1 opacity-60">
           Chọn thành viên thi đấu
         </label>
-        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1 scrollbar-hide">
+        <div className="grid grid-cols-2 min-[400px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 gap-1.5 max-h-48 overflow-y-auto p-1 scrollbar-hide">
           {playersList.length === 0 ? (
             <p className="col-span-full text-[10px] italic opacity-40 py-2">Chưa có người chơi nào trong DB</p>
           ) : (
@@ -226,11 +226,11 @@ const ScoreboardView = () => {
   const canSave = formData.team_a_players && formData.team_b_players;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-32">
+    <div className="max-w-6xl mx-auto space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-32">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h2 className="text-3xl font-black font-outfit text-[var(--accent-secondary)] tracking-tight uppercase leading-none mb-3">
+          <h2 className="text-2xl sm:text-3xl font-black font-outfit text-[var(--accent-secondary)] tracking-tight uppercase leading-none mb-3">
             Bảng tỷ số
           </h2>
           <div className="text-[var(--text-secondary)] text-sm font-medium opacity-70">
@@ -238,18 +238,18 @@ const ScoreboardView = () => {
           </div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl flex items-center gap-3 sm:gap-4 shadow-xl hover:border-[#f1812e]/30 transition-all group">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-[#f1812e] group-hover:scale-110 transition-transform">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full md:w-auto">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl flex items-center justify-between sm:justify-start gap-3 sm:gap-4 shadow-xl hover:border-[#f1812e]/30 transition-all group w-full sm:w-auto">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-[#f1812e] shrink-0 group-hover:scale-110 transition-transform">
               <Trophy size={16} className="sm:w-[20px] sm:h-[20px]" />
             </div>
-            <div>
+            <div className="text-right sm:text-left flex-1 sm:flex-initial">
                <div className="text-[9px] sm:text-[10px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-1 sm:mb-1.5">Tổng</div>
-               <div className="text-xl sm:text-2xl font-black font-outfit leading-none flex items-baseline gap-1">
+               <div className="text-lg sm:text-2xl font-black font-outfit leading-none flex flex-wrap items-baseline justify-end sm:justify-start gap-x-1 gap-y-0.5">
                  {Object.values(scores).flat().length}
-                 <span className="text-[10px] opacity-40 mr-2">KÈO</span>
+                 <span className="text-[9px] sm:text-[10px] opacity-40 mr-1.5 sm:mr-2">KÈO</span>
                  {Object.values(scores).flat().reduce((sum, match) => sum + parseInt(match.score_a || 0) + parseInt(match.score_b || 0), 0)}
-                 <span className="text-[10px] opacity-40">TRẬN ĐẤU</span>
+                 <span className="text-[9px] sm:text-[10px] opacity-40">TRẬN ĐẤU</span>
                </div>
             </div>
           </div>
@@ -274,7 +274,7 @@ const ScoreboardView = () => {
                 }
               });
             }}
-            className={`flex items-center gap-2 py-3 sm:py-4 px-4 sm:px-6 rounded-2xl font-bold transition-all shadow-xl group flex-1 sm:flex-initial justify-center ${isAdding ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}
+            className={`flex items-center gap-2 py-3 sm:py-4 px-4 sm:px-6 rounded-2xl font-bold transition-all shadow-xl group justify-center w-full sm:w-auto ${isAdding ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}
           >
             {isAdding ? <X size={18} /> : <Plus size={18} className="group-hover:rotate-90 transition-transform" />}
             <span className="uppercase tracking-tight text-xs sm:text-sm">
@@ -285,8 +285,8 @@ const ScoreboardView = () => {
       </div>
 
       {isAdding && (
-        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-8 md:p-12 shadow-2xl animate-in zoom-in-95 duration-300">
-          <form onSubmit={handleSubmit} className="space-y-10 text-center">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl sm:rounded-[32px] p-5 sm:p-8 md:p-12 shadow-2xl animate-in zoom-in-95 duration-300">
+          <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-10 text-center">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest block mb-2 opacity-60">Ngày thi đấu</label>
@@ -306,7 +306,7 @@ const ScoreboardView = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
               {/* Team A */}
-              <div className="bg-[var(--bg-main)]/50 p-6 rounded-2xl border border-[var(--border-color)] space-y-6">
+              <div className="bg-[var(--bg-main)]/50 p-4 sm:p-6 rounded-2xl border border-[var(--border-color)] space-y-6">
                 <div className="flex items-center gap-3 text-orange-500">
                   <Users size={20} />
                 </div>
@@ -318,13 +318,13 @@ const ScoreboardView = () => {
                     name="score_a"
                     value={formData.score_a}
                     onChange={handleInputChange}
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl py-4 text-2xl font-black text-center focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl py-4 text-2xl sm:text-3xl font-black text-center focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                   />
                 </div>
               </div>
 
               {/* Team B */}
-              <div className="bg-[var(--bg-main)]/50 p-6 rounded-2xl border border-[var(--border-color)] space-y-6">
+              <div className="bg-[var(--bg-main)]/50 p-4 sm:p-6 rounded-2xl border border-[var(--border-color)] space-y-6">
                 <div className="flex items-center gap-3 text-blue-500">
                   <Users size={20} />
                 </div>
@@ -336,7 +336,7 @@ const ScoreboardView = () => {
                     name="score_b"
                     value={formData.score_b}
                     onChange={handleInputChange}
-                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl py-4 text-3xl font-black text-center focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl py-4 text-2xl sm:text-3xl font-black text-center focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                   />
                 </div>
               </div>
@@ -345,7 +345,7 @@ const ScoreboardView = () => {
             <button
               type="submit"
               disabled={!canSave}
-              className={`inline-flex items-center gap-3 px-12 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl ${
+              className={`inline-flex items-center gap-3 px-8 sm:px-12 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest transition-all shadow-xl ${
                 canSave 
                 ? 'bg-[#f1812e] text-white hover:bg-[#d96d1c] hover:scale-105 active:scale-95 shadow-orange-900/20' 
                 : 'bg-gray-500/20 text-gray-500 cursor-not-allowed opacity-50 grayscale'
@@ -367,8 +367,8 @@ const ScoreboardView = () => {
           </div>
         ) : (
           Object.keys(scores).sort((a, b) => new Date(b) - new Date(a)).map(date => (
-            <div key={date} className="flex flex-col bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] overflow-hidden shadow-xl hover:shadow-2xl transition-all h-fit animate-in fade-in slide-in-from-bottom-2">
-              <div className="p-6 bg-[var(--bg-main)]/50 border-b border-[var(--border-color)] flex items-center justify-between">
+            <div key={date} className="flex flex-col bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl sm:rounded-[32px] overflow-hidden shadow-xl hover:shadow-2xl transition-all h-fit animate-in fade-in slide-in-from-bottom-2">
+              <div className="p-4 sm:p-6 bg-[var(--bg-main)]/50 border-b border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div 
                     className="p-2 bg-[#f1812e]/10 rounded-lg cursor-pointer hover:bg-[#f1812e]/20 transition-colors"
@@ -394,30 +394,30 @@ const ScoreboardView = () => {
                       </button>
                     </div>
                   ) : (
-                    <span className="font-black text-sm uppercase tracking-tight">
+                    <span className="font-black text-xs sm:text-sm uppercase tracking-tight">
                       {new Date(date).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 px-4 py-1.5 bg-orange-500/10 text-orange-500 rounded-xl border border-orange-500/20">
-                    <span className="text-[10px] font-black opacity-60 uppercase tracking-widest">TỔNG</span>
-                    <span className="text-sm font-black font-outfit">{scores[date].length}</span>
-                    <span className="text-[10px] font-black opacity-60 uppercase tracking-widest">KÈO</span>
+                  <div className="flex flex-wrap items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 text-orange-500 rounded-xl border border-orange-500/20">
+                    <span className="text-[9px] font-black opacity-60 uppercase tracking-widest">TỔNG</span>
+                    <span className="text-xs sm:text-sm font-black font-outfit">{scores[date].length}</span>
+                    <span className="text-[9px] font-black opacity-60 uppercase tracking-widest">KÈO</span>
                     <div className="w-[1px] h-3 bg-orange-500/30 mx-0.5" />
-                    <span className="text-sm font-black font-outfit">{scores[date].reduce((sum, m) => sum + (parseInt(m.score_a) || 0) + (parseInt(m.score_b) || 0), 0)}</span>
-                    <span className="text-[10px] font-black opacity-60 uppercase tracking-widest">TRẬN ĐẤU</span>
+                    <span className="text-xs sm:text-sm font-black font-outfit">{scores[date].reduce((sum, m) => sum + (parseInt(m.score_a) || 0) + (parseInt(m.score_b) || 0), 0)}</span>
+                    <span className="text-[9px] font-black opacity-60 uppercase tracking-widest">TRẬN ĐẤU</span>
                   </div>
                 </div>
               </div>
               
-              <div className="p-6 space-y-6 max-h-[600px] overflow-y-auto scrollbar-thin">
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[600px] overflow-y-auto scrollbar-thin">
                 {[...scores[date]].sort((a, b) => b.id - a.id).map((match, idx) => (
-                  <div key={match.id} className="relative bg-[var(--bg-main)]/40 rounded-[28px] md:rounded-[24px] p-5 md:p-5 border border-[var(--border-color)]/30 group hover:border-[#f1812e]/40 transition-all flex items-center min-h-[100px]">
-                    <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4 md:gap-16">
+                  <div key={match.id} className="relative bg-[var(--bg-main)]/40 rounded-2xl md:rounded-[24px] p-4 sm:p-5 border border-[var(--border-color)]/30 group hover:border-[#f1812e]/40 transition-all flex items-center min-h-[90px] sm:min-h-[100px]">
+                    <div className="w-full flex flex-col md:flex-row items-center justify-between gap-3 md:gap-16">
                       {/* Team A Players */}
                       <div className="flex-1 w-full md:text-right">
-                        <div className="flex flex-wrap justify-center md:justify-end gap-1.5 mb-0 md:mb-3">
+                        <div className="flex flex-wrap justify-center md:justify-end gap-1.5 mb-1.5 md:mb-3">
                           {match.team_a_players.split(',').map((p, i) => (
                             <span key={i} className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-xs md:text-sm font-bold shadow-lg shadow-orange-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
@@ -435,7 +435,7 @@ const ScoreboardView = () => {
 
                       {/* Team B Players */}
                       <div className="flex-1 w-full text-left">
-                        <div className="flex flex-wrap justify-center md:justify-start gap-1.5 mb-0 md:mb-3">
+                        <div className="flex flex-wrap justify-center md:justify-start gap-1.5 mt-1.5 md:mt-3">
                           {match.team_b_players.split(',').map((p, i) => (
                             <span key={i} className="px-2.5 py-1 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-bold shadow-lg shadow-blue-500/10 whitespace-nowrap">{p.trim()}</span>
                           ))}
@@ -444,7 +444,7 @@ const ScoreboardView = () => {
                     </div>
                     
                     {isAdding && (
-                      <div className="absolute -top-2 -right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                      <div className="absolute -top-2 -right-2 flex gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all z-20">
                         <button
                           onClick={() => handleEdit(match)}
                           className="p-2 bg-blue-500 text-white rounded-xl shadow-xl hover:scale-110 active:scale-90"
@@ -470,22 +470,22 @@ const ScoreboardView = () => {
       {/* Stats Summary Footer */}
       {Object.keys(scores).length > 0 && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-20 md:left-auto md:right-10 md:translate-x-0">
-          <div className="bg-[var(--bg-sidebar)] border border-[var(--border-color)] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-8 animate-in slide-in-from-right-4">
+          <div className="bg-[var(--bg-sidebar)] border border-[var(--border-color)] px-4 sm:px-6 py-3 sm:py-4 rounded-2xl shadow-2xl flex items-center gap-4 sm:gap-8 animate-in slide-in-from-right-4">
             <div className="flex items-center gap-3">
-              <Trophy className="text-yellow-500" size={20} />
+              <Trophy className="text-yellow-500 shrink-0 sm:w-5 sm:h-5" size={16} />
               <div>
-                <div className="text-[10px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">Tổng số trận</div>
-                <div className="text-sm font-black font-outfit leading-none">
+                <div className="text-[9px] sm:text-[10px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">Tổng số trận</div>
+                <div className="text-xs sm:text-sm font-black font-outfit leading-none">
                   {Object.values(scores).flat().reduce((sum, match) => sum + parseInt(match.score_a || 0) + parseInt(match.score_b || 0), 0)}
                 </div>
               </div>
             </div>
-            <div className="w-px h-8 bg-[var(--border-color)] opacity-50" />
+            <div className="w-px h-6 sm:h-8 bg-[var(--border-color)] opacity-50" />
             <div className="flex items-center gap-3 text-[#f1812e]">
-              <Users size={20} />
+              <Users className="shrink-0 sm:w-5 sm:h-5" size={16} />
               <div>
-                <div className="text-[10px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">Cập nhật lúc</div>
-                <div className="text-sm font-black font-outfit leading-none">
+                <div className="text-[9px] sm:text-[10px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">Cập nhật lúc</div>
+                <div className="text-xs sm:text-sm font-black font-outfit leading-none">
                   {new Date().toLocaleTimeString('vi-VN')}
                 </div>
               </div>
