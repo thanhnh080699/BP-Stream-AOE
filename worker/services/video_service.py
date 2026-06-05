@@ -462,10 +462,8 @@ def do_youtube_sync(specific_date=None, specific_stream=None, force=False, is_te
     if specific_date:
         eligible_dates = [specific_date]
     else:
-        # Lấy tất cả các ngày đủ điều kiện
-        all_eligible = get_nights_older_than(7)
-        # Sắp xếp và lấy ngày cũ nhất (mỗi lần chạy 1 ngày để tránh quá quota YouTube)
-        eligible_dates = sorted(all_eligible)[:1]
+        # Lấy tất cả các ngày đủ điều kiện từ cũ nhất đến mới nhất
+        eligible_dates = sorted(get_nights_older_than(7))
         
     if not eligible_dates:
         if not specific_date:
@@ -486,8 +484,11 @@ def do_youtube_sync(specific_date=None, specific_stream=None, force=False, is_te
             except Exception:
                 pass
 
+    uploaded_count = 0
+    MAX_UPLOADS_PER_RUN = 5  # Giới hạn số video upload thành công mỗi lượt chạy cronjob
+
     try:
-        for date_str in sorted(eligible_dates):
+        for date_str in eligible_dates:
             print(f"\n--- Xử lý ngày: {date_str} ---", flush=True)
             day_meta = meta.get(date_str, {})
             streams = day_meta.get('streams', {})
@@ -536,7 +537,10 @@ def do_youtube_sync(specific_date=None, specific_stream=None, force=False, is_te
                 print(f"    - Đang ghép nối HLS sang MP4...", flush=True)
                 success, err = merge_hls_to_mp4(hls_abs_path, output_mp4)
                 if not success:
-                    print(f"    ✗ Lỗi ghép file: {err}", flush=True)
+                    print(f"    ✗ Lỗi ghép file: {err}. Đánh dấu bỏ qua vĩnh viễn và dọn dẹp local.", flush=True)
+                    s_info['hls'] = None
+                    s_info['youtube_error'] = f"Merge error: {err}"
+                    cleanup_replay_files(date_str, s_id)
                     continue
                 
                 # PRECISE TITLE: Using player name effectively
@@ -587,10 +591,16 @@ def do_youtube_sync(specific_date=None, specific_stream=None, force=False, is_te
                     )
                     
                     if video_id:
+                        uploaded_count += 1
                         if not is_test:
                             s_info['youtube_url'] = f"https://www.youtube.com/watch?v={video_id}"
                             s_info['youtube_id'] = video_id
                             s_info['hls'] = None 
+                            # Reset retry attempts if succeeded
+                            if 'youtube_attempts' in s_info:
+                                del s_info['youtube_attempts']
+                            if 'youtube_error' in s_info:
+                                del s_info['youtube_error']
                         else:
                             print(f"    - [TEST MODE] Video uploaded: https://www.youtube.com/watch?v={video_id}", flush=True)
                         
@@ -606,17 +616,63 @@ def do_youtube_sync(specific_date=None, specific_stream=None, force=False, is_te
                         if os.path.exists(output_mp4):
                             os.remove(output_mp4)
                         cleanup_replay_files(date_str, s_id)
+
+                        # Stop if limit reached
+                        if uploaded_count >= MAX_UPLOADS_PER_RUN:
+                            print(f"\n[INFO] Đã đạt giới hạn upload tối đa ({MAX_UPLOADS_PER_RUN} video) cho lượt chạy này. Dừng tiến trình sync.", flush=True)
+                            with meta_lock:
+                                meta[date_str] = day_meta
+                                save_meta(meta_file, meta)
+                            return
                     
                 except Exception as e:
                     print(f"    ✗ Lỗi upload YouTube: {e}", flush=True)
                     if os.path.exists(output_mp4):
                         os.remove(output_mp4)
+
+                    # Check for YouTube Quota Error
+                    is_quota_error = False
+                    err_msg = str(e).lower()
+                    if "quotaexceeded" in err_msg or "exceeded your quota" in err_msg:
+                        is_quota_error = True
+                    else:
+                        if hasattr(e, 'content'):
+                            try:
+                                err_data = json.loads(e.content)
+                                for err_item in err_data.get('error', {}).get('errors', []):
+                                    if err_item.get('reason') == 'quotaExceeded':
+                                        is_quota_error = True
+                                        break
+                            except Exception:
+                                pass
+
+                    if is_quota_error:
+                        print("    ✗ Lỗi: Hết quota API YouTube. Dừng tiến trình sync để tránh lặp lỗi.", flush=True)
+                        with meta_lock:
+                            meta[date_str] = day_meta
+                            save_meta(meta_file, meta)
+                        return
+
+                    # Increment attempts for transient failures
+                    attempts = s_info.get('youtube_attempts', 0) + 1
+                    s_info['youtube_attempts'] = attempts
+                    s_info['youtube_error'] = str(e)
+
+                    if attempts >= 3:
+                        print(f"    ✗ Đã thử upload {attempts} lần thất bại. Đánh dấu bỏ qua vĩnh viễn và dọn dẹp local.", flush=True)
+                        s_info['hls'] = None
+                        cleanup_replay_files(date_str, s_id)
+                    else:
+                        print(f"    ! Thử lại ở lần chạy sau (Số lần đã thử: {attempts}/3).", flush=True)
+
             with meta_lock:
                 # Sync meta data (including playlist_id and youtube_info)
                 meta[date_str] = day_meta
                 save_meta(meta_file, meta)
-        
-        print(f"\n--- Hoàn tất tiến trình YouTube Sync cho ngày {date_str} ---", flush=True)
+            
+            print(f"--- Hoàn tất tiến trình YouTube Sync cho ngày {date_str} ---", flush=True)
+
+        print(f"\n--- Hoàn tất toàn bộ tiến trình YouTube Sync ---", flush=True)
     except Exception as e:
         print(f"✗ CRITICAL ERROR trong quá trình Sync: {e}", flush=True)
         import traceback
