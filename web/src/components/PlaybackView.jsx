@@ -139,6 +139,10 @@ const PlaybackView = () => {
             .then(res => res.json())
             .then(data => setScores(data || {}))
             .catch(err => console.error('Error fetching scores:', err));
+
+        return () => {
+            sessionStorage.removeItem('admin_password');
+        };
     }, []);
 
     // Memoized current player stats

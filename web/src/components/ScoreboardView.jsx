@@ -8,6 +8,7 @@ const ScoreboardView = () => {
   const [scores, setScores] = useState({});
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => !!sessionStorage.getItem('admin_password'));
   const [playersList, setPlayersList] = useState([]);
   const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -59,6 +60,10 @@ const ScoreboardView = () => {
   useEffect(() => {
     fetchScores();
     fetchPlayers();
+
+    return () => {
+      sessionStorage.removeItem('admin_password');
+    };
   }, []);
 
   const handleInputChange = (e) => {
@@ -100,6 +105,9 @@ const ScoreboardView = () => {
       
       if (response.status === 401) {
         sessionStorage.removeItem('admin_password');
+        setIsAdmin(false);
+        setIsAdding(false);
+        setEditingId(null);
         showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
         return;
       }
@@ -154,6 +162,9 @@ const ScoreboardView = () => {
       
       if (response.status === 401) {
         sessionStorage.removeItem('admin_password');
+        setIsAdmin(false);
+        setIsAdding(false);
+        setEditingId(null);
         showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
         return;
       }
@@ -196,6 +207,9 @@ const ScoreboardView = () => {
       });
       if (response.status === 401) {
         sessionStorage.removeItem('admin_password');
+        setIsAdmin(false);
+        setIsAdding(false);
+        setEditingId(null);
         showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
         return;
       }
@@ -302,14 +316,8 @@ const ScoreboardView = () => {
 
           <button
             onClick={() => {
-              if (isAdding) {
-                setIsAdding(false);
-                return;
-              }
-              
-              const savedPassword = sessionStorage.getItem('admin_password');
-              if (savedPassword) {
-                setIsAdding(true);
+              if (isAdmin) {
+                setIsAdding(prev => !prev);
                 return;
               }
 
@@ -326,8 +334,9 @@ const ScoreboardView = () => {
                     });
                     if (response.ok) {
                       sessionStorage.setItem('admin_password', password);
-                      setAuthModal(prev => ({ ...prev, isOpen: false }));
+                      setIsAdmin(true);
                       setIsAdding(true);
+                      setAuthModal(prev => ({ ...prev, isOpen: false }));
                     } else {
                       showToast('Mật khẩu không đúng!', 'error');
                     }
@@ -506,7 +515,7 @@ const ScoreboardView = () => {
                       </div>
                     </div>
                     
-                    {isAdding && (
+                    {isAdmin && (
                       <div className="absolute -top-2 -right-2 flex gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all z-20">
                         <button
                           onClick={() => handleEdit(match)}

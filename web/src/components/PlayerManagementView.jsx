@@ -37,6 +37,10 @@ const PlayerManagementView = () => {
 
   useEffect(() => {
     fetchPlayers();
+
+    return () => {
+      sessionStorage.removeItem('admin_password');
+    };
   }, []);
 
   const handleAddPlayer = async (e) => {
