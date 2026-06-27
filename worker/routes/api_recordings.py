@@ -5,7 +5,7 @@ import threading
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 from config import DATA_DIR
-from utils import get_recordings, save_recordings, meta_lock, save_meta, safe_save_json
+from utils import get_recordings, save_recordings, meta_lock, save_meta, safe_save_json, admin_required
 from services.video_service import do_merge, do_youtube_sync
 
 bp = Blueprint('recordings', __name__)
@@ -63,19 +63,18 @@ def debug_hook():
     return "0", 200
 
 @bp.route('/api/v1/merge/<date_str>', methods=['POST'])
+@admin_required
 def merge_date(date_str):
     threading.Thread(target=do_merge, args=(date_str,), daemon=True).start()
     return jsonify({"status": "Merging started", "date": date_str})
 
 @bp.route('/api/v1/delete', methods=['POST'])
+@admin_required
 def delete_recordings():
     data = request.get_json(silent=True) or {}
-    password  = data.get('password')
     date_str  = data.get('date')
     stream_id = data.get('stream')
 
-    if password != "1234567890":
-        return jsonify({"error": "Wrong password"}), 403
     if not date_str:
         return jsonify({"error": "Date is required"}), 400
 

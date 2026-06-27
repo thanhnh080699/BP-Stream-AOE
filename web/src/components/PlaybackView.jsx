@@ -3,8 +3,10 @@ import VideoPlayer from './VideoPlayer';
 import { Calendar, Play, Clock, Monitor, Archive, Filter, ChevronRight, HardDrive, AlertCircle, Trash2, Edit2, Check, X, Trophy } from 'lucide-react';
 import PasswordModal from './PasswordModal';
 import PlaybackCalendar from './PlaybackCalendar';
+import { useToast } from './Toast';
 
 const PlaybackView = () => {
+    const { showToast } = useToast();
     const [replays, setReplays] = useState({});
     const [playerNames, setPlayerNames] = useState({});
     const [selectedDate, setSelectedDate] = useState(null);
@@ -59,32 +61,65 @@ const PlaybackView = () => {
     const handleDelete = (date, streamId = null) => {
         const type = streamId ? `máy ${playerNames[streamId] || streamId}` : `toàn bộ dữ liệu ngày ${date}`;
         
-        setAuthModal({
-            isOpen: true,
-            title: 'Xác nhận xóa dữ liệu',
-            description: `Bạn đang yêu cầu xóa ${type}. Hành động này không thể hoàn tác. Vui lòng nhập mật khẩu để xác thực quyền quản trị.`,
-            onConfirm: (password) => {
-                fetch('/api/v1/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password, date, stream: streamId })
+        const executeDelete = (password) => {
+            fetch('/api/v1/delete', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Admin-Password': password
+                },
+                body: JSON.stringify({ date, stream: streamId })
+            })
+                .then(async res => {
+                    if (res.status === 401) {
+                        sessionStorage.removeItem('admin_password');
+                        showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
+                        return;
+                    }
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast('Xoá thành công!', 'success');
+                        setAuthModal(prev => ({ ...prev, isOpen: false }));
+                        fetchMetadata();
+                    } else {
+                        showToast(`Lỗi: ${data.error || 'Không thể xoá'}`, 'error');
+                    }
                 })
-                    .then(async res => {
-                        const data = await res.json();
-                        if (res.ok) {
-                            alert('Xoá thành công!');
-                            setAuthModal(prev => ({ ...prev, isOpen: false }));
-                            fetchMetadata();
-                        } else {
-                            alert(`Lỗi: ${data.error || 'Không thể xoá'}`);
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Delete error:', err);
-                        alert('Lỗi kết nối server');
-                    });
+                .catch(err => {
+                    console.error('Delete error:', err);
+                    showToast('Lỗi kết nối server', 'error');
+                });
+        };
+
+        const savedPassword = sessionStorage.getItem('admin_password');
+        if (savedPassword) {
+            if (window.confirm(`Bạn có chắc chắn muốn xóa ${type}?`)) {
+                executeDelete(savedPassword);
             }
-        });
+        } else {
+            setAuthModal({
+                isOpen: true,
+                title: 'Xác nhận xóa dữ liệu',
+                description: `Bạn đang yêu cầu xóa ${type}. Hành động này không thể hoàn tác. Vui lòng nhập mật khẩu để xác thực quyền quản trị.`,
+                onConfirm: async (password) => {
+                    try {
+                        const res = await fetch('/api/v1/auth/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password })
+                        });
+                        if (res.ok) {
+                            sessionStorage.setItem('admin_password', password);
+                            executeDelete(password);
+                        } else {
+                            showToast('Mật khẩu không đúng!', 'error');
+                        }
+                    } catch (err) {
+                        showToast('Lỗi kết nối server', 'error');
+                    }
+                }
+            });
+        }
     };
 
     useEffect(() => {
@@ -162,11 +197,15 @@ const PlaybackView = () => {
             if (res.ok) {
                 setEditingStreamId(null);
                 fetchMetadata(); // Refresh to get updated display_name
+                showToast('Đổi tên máy stream thành công!', 'success');
             } else {
-                alert('Lỗi khi lưu tên người chơi');
+                showToast('Lỗi khi lưu tên người chơi', 'error');
             }
         })
-        .catch(err => console.error('Error saving player name:', err));
+        .catch(err => {
+            console.error('Error saving player name:', err);
+            showToast('Lỗi kết nối server', 'error');
+        });
     };
 
     // New: Polling effect for processing status
@@ -393,24 +432,57 @@ const PlaybackView = () => {
                                 {replays[selectedDate].status !== 'completed' && (
                                     <button
                                         onClick={() => {
-                                            setAuthModal({
-                                                isOpen: true,
-                                                title: 'Tổng hợp dữ liệu video',
-                                                description: 'Để tránh spam nhiều lần và tối ưu tài nguyên máy chủ, vui lòng nhập mật khẩu để bắt đầu quá trình tổng hợp file MP4/HLS.',
-                                                onConfirm: (password) => {
-                                                    if (password !== '1234567890') {
-                                                        alert('Mật khẩu không đúng!');
+                                            const executeMerge = async (password) => {
+                                                try {
+                                                    const res = await fetch(`/api/v1/merge/${selectedDate}`, { 
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'X-Admin-Password': password
+                                                        }
+                                                    });
+                                                    if (res.status === 401) {
+                                                        sessionStorage.removeItem('admin_password');
+                                                        showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
                                                         return;
                                                     }
-                                                    fetch(`/api/v1/merge/${selectedDate}`, { method: 'POST' });
-                                                    alert('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...');
+                                                    showToast('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...', 'success');
                                                     setReplays(prev => ({
                                                         ...prev,
                                                         [selectedDate]: { ...prev[selectedDate], status: 'processing', progress_percent: 5, progress_text: 'Đang bắt đầu...' }
                                                     }));
                                                     setAuthModal(prev => ({ ...prev, isOpen: false }));
+                                                } catch (err) {
+                                                    showToast('Lỗi kết nối server', 'error');
                                                 }
-                                            });
+                                            };
+
+                                            const savedPassword = sessionStorage.getItem('admin_password');
+                                            if (savedPassword) {
+                                                executeMerge(savedPassword);
+                                            } else {
+                                                setAuthModal({
+                                                    isOpen: true,
+                                                    title: 'Tổng hợp dữ liệu video',
+                                                    description: 'Để tránh spam nhiều lần và tối ưu tài nguyên máy chủ, vui lòng nhập mật khẩu để bắt đầu quá trình tổng hợp file MP4/HLS.',
+                                                    onConfirm: async (password) => {
+                                                        try {
+                                                            const res = await fetch('/api/v1/auth/verify', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ password })
+                                                            });
+                                                            if (res.ok) {
+                                                                sessionStorage.setItem('admin_password', password);
+                                                                await executeMerge(password);
+                                                            } else {
+                                                                showToast('Mật khẩu không đúng!', 'error');
+                                                            }
+                                                        } catch (err) {
+                                                            showToast('Lỗi kết nối server', 'error');
+                                                        }
+                                                    }
+                                                });
+                                            }
                                         }}
                                         disabled={replays[selectedDate].status === 'processing'}
                                         className={`w-full py-3 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn cursor-pointer ${replays[selectedDate].status === 'processing'

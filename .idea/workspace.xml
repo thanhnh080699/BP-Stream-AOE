@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="62333dc5-eb94-4e0c-a839-573036af1314" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/LICENSE.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/SKILL.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/agents/analyzer.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/agents/comparator.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/agents/grader.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/assets/eval_review.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/eval-viewer/generate_review.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/eval-viewer/viewer.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/references/schemas.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/scripts/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/scripts/aggregate_benchmark.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/scripts/generate_report.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/scripts/improve_description.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/scripts/package_skill.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/scripts/quick_validate.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/scripts/run_eval.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/scripts/run_loop.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/skill-creator/scripts/utils.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/skills/srs-livestream-manager/SKILL.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.agent/workflows/fix-worker-error.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env.dev" beforeDir="false" afterPath="$PROJECT_DIR$/.env.dev" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/App.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/components/AnalyticsView.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/components/AnalyticsView.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/components/PlaybackView.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/components/PlaybackView.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/components/PlayerManagementView.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/components/PlayerManagementView.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/components/ScoreboardView.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/components/ScoreboardView.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/worker/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/routes/api_players.py" beforeDir="false" afterPath="$PROJECT_DIR$/worker/routes/api_players.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/routes/api_recordings.py" beforeDir="false" afterPath="$PROJECT_DIR$/worker/routes/api_recordings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/routes/api_scores.py" beforeDir="false" afterPath="$PROJECT_DIR$/worker/routes/api_scores.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/worker/utils.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitLabMergeRequestFiltersHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPENED",
+    "assignee": {
+      "type": "org.jetbrains.plugins.gitlab.mergerequest.ui.filters.GitLabMergeRequestsFiltersValue.MergeRequestsMemberFilterValue.MergeRequestsAssigneeFilterValue",
+      "username": "thanhnh",
+      "fullname": "Nguyen Huy Thanh"
+    }
+  }
+}]]></component>
+  <component name="GitLabMergeRequestsSettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "first": "https://gitlab.bpg.vn/thanhnh/bp-stream-aoe.git",
+    "second": "8095125d-3b6d-4418-96fe-2ac52b01feab"
+  }
+}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="3E1ZoGqlhn93sYrz93vmTPxYcuT" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Volumes/EXT_DATA/Working/bestprice/bp-stream-aoe&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-9c94529fcfe0-JavaScript-WS-252.26199.162" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="62333dc5-eb94-4e0c-a839-573036af1314" name="Changes" comment="" />
+      <created>1779348208499</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1779348208499</updated>
+      <workItem from="1779348209684" duration="2725000" />
+      <workItem from="1782533854504" duration="1175000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Users, X, Calendar, Trophy, Save, Loader2, LayoutTemplate, Edit3, Check } from 'lucide-react';
 import PasswordModal from './PasswordModal';
+import { useToast } from './Toast';
 
 const ScoreboardView = () => {
+  const { showToast } = useToast();
   const [scores, setScores] = useState({});
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -85,28 +87,51 @@ const ScoreboardView = () => {
       const isEditing = editingId !== null;
       const url = isEditing ? `/api/v1/scores/${editingId}` : '/api/v1/scores';
       const method = isEditing ? 'PUT' : 'POST';
+      const adminPassword = sessionStorage.getItem('admin_password') || '';
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Admin-Password': adminPassword
+        },
         body: JSON.stringify(formData)
       });
       
+      if (response.status === 401) {
+        sessionStorage.removeItem('admin_password');
+        showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
+        return;
+      }
+      
       if (!response.ok) throw new Error('Lỗi khi lưu tỷ số');
       
-      setIsAdding(false);
-      setEditingId(null);
-      setFormData({
-        match_date: new Date().toISOString().split('T')[0],
-        match_type: 'Kèo đấu',
-        team_a_players: '',
-        team_b_players: '',
-        score_a: 0,
-        score_b: 0
-      });
+      showToast(isEditing ? 'Cập nhật thành công!' : 'Thêm kết quả thành công!', 'success');
+      
+      if (isEditing) {
+        setIsAdding(false);
+        setEditingId(null);
+        setFormData({
+          match_date: new Date().toISOString().split('T')[0],
+          match_type: 'Kèo đấu',
+          team_a_players: '',
+          team_b_players: '',
+          score_a: 0,
+          score_b: 0
+        });
+      } else {
+        // Create tiếp: giữ lại match_date, match_type
+        setFormData(prev => ({
+          ...prev,
+          team_a_players: '',
+          team_b_players: '',
+          score_a: 0,
+          score_b: 0
+        }));
+      }
       fetchScores();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -114,21 +139,31 @@ const ScoreboardView = () => {
     if (!editingDateGroup || !editingDateGroup.new_date) return;
     
     try {
+      const adminPassword = sessionStorage.getItem('admin_password') || '';
       const response = await fetch('/api/v1/scores/bulk-update-date', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Admin-Password': adminPassword
+        },
         body: JSON.stringify({
           old_date: editingDateGroup.old_date,
           new_date: editingDateGroup.new_date
         })
       });
       
+      if (response.status === 401) {
+        sessionStorage.removeItem('admin_password');
+        showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
+        return;
+      }
+      
       if (!response.ok) throw new Error('Lỗi khi cập nhật ngày');
       
       setEditingDateGroup(null);
       fetchScores();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -152,11 +187,22 @@ const ScoreboardView = () => {
     }
 
     try {
-      const response = await fetch(`/api/v1/scores/${id}`, { method: 'DELETE' });
+      const adminPassword = sessionStorage.getItem('admin_password') || '';
+      const response = await fetch(`/api/v1/scores/${id}`, { 
+        method: 'DELETE',
+        headers: {
+          'X-Admin-Password': adminPassword
+        }
+      });
+      if (response.status === 401) {
+        sessionStorage.removeItem('admin_password');
+        showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
+        return;
+      }
       if (!response.ok) throw new Error('Lỗi khi xóa');
       fetchScores();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -260,16 +306,33 @@ const ScoreboardView = () => {
                 setIsAdding(false);
                 return;
               }
+              
+              const savedPassword = sessionStorage.getItem('admin_password');
+              if (savedPassword) {
+                setIsAdding(true);
+                return;
+              }
+
               setAuthModal({
                 isOpen: true,
                 title: 'Thêm kết quả thi đấu',
                 description: 'Để đảm bảo dữ liệu giải đấu được chính xác và công bằng, vui lòng nhập mật khẩu quản trị để mở form nhập kết quả.',
-                onConfirm: (password) => {
-                  if (password === '1234567890') {
-                    setAuthModal(prev => ({ ...prev, isOpen: false }));
-                    setIsAdding(true);
-                  } else {
-                    alert('Mật khẩu không đúng!');
+                onConfirm: async (password) => {
+                  try {
+                    const response = await fetch('/api/v1/auth/verify', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ password })
+                    });
+                    if (response.ok) {
+                      sessionStorage.setItem('admin_password', password);
+                      setAuthModal(prev => ({ ...prev, isOpen: false }));
+                      setIsAdding(true);
+                    } else {
+                      showToast('Mật khẩu không đúng!', 'error');
+                    }
+                  } catch (err) {
+                    showToast('Lỗi kết nối tới máy chủ!', 'error');
                   }
                 }
               });

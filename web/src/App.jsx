@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ToastProvider } from './components/Toast';
 import LiveView from './components/LiveView';
 import PlaybackView from './components/PlaybackView';
 import AboutUs from './components/AboutUs';
@@ -87,7 +88,8 @@ function App() {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen md:h-screen bg-[var(--bg-main)] text-[var(--text-primary)] font-sans selection:bg-blue-500/30 md:overflow-hidden transition-colors duration-300">
+    <ToastProvider>
+      <div className="flex min-h-screen md:h-screen bg-[var(--bg-main)] text-[var(--text-primary)] font-sans selection:bg-blue-500/30 md:overflow-hidden transition-colors duration-300">
 
       {/* Mobile Top Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[var(--bg-sidebar)] border-b border-[var(--border-color)] flex items-center justify-between px-6 z-30 shadow-sm transition-colors duration-300">
@@ -294,7 +296,8 @@ function App() {
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/5 blur-[120px]" />
         <div className="absolute bottom-[-10%] left-[20%] w-[40%] h-[40%] rounded-full bg-purple-500/5 blur-[120px]" />
       </div>
-    </div>
+      </div>
+    </ToastProvider>
   );
 }
 

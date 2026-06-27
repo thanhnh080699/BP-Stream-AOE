@@ -2,7 +2,9 @@ import json
 import os
 import threading
 import subprocess
-from config import LOG_FILE
+from config import LOG_FILE, ADMIN_PASSWORD
+from functools import wraps
+from flask import request, jsonify
 
 meta_lock = threading.RLock()
 recordings_lock = threading.RLock()
@@ -132,3 +134,25 @@ def convert_flv_to_ts(flv_path, ts_path):
         '-f', 'mpegts',
         ts_path
     ])
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        client_password = request.headers.get('X-Admin-Password')
+        
+        # Check Authorization header if X-Admin-Password is not present
+        if not client_password:
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                client_password = auth_header.split(' ')[1]
+                
+        # Check JSON body for backward compatibility (e.g. /api/v1/delete)
+        if not client_password and request.is_json:
+            client_password = request.json.get('password')
+            
+        if not client_password or client_password != ADMIN_PASSWORD:
+            return jsonify({"error": "Mật khẩu quản trị không chính xác!"}), 401
+            
+        return f(*args, **kwargs)
+    return decorated
+

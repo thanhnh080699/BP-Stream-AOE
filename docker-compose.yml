@@ -45,6 +45,7 @@ services:
       - DB_NAME=${DB_NAME:-aoe_scoreboard}
       - ENV=${ENV:-local}
       - WORKER_PORT=${WORKER_PORT:-5001}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-1234567890}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

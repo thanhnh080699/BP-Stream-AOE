@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
 from mysql.connector import Error
+from utils import admin_required
 import json
 import os
 from config import DATA_DIR
@@ -40,6 +41,7 @@ def get_players_db():
         conn.close()
 
 @bp.route('/api/v1/players-db', methods=['POST'])
+@admin_required
 def add_player_db():
     data = request.json
     name = data.get('name')
@@ -59,6 +61,7 @@ def add_player_db():
         conn.close()
 
 @bp.route('/api/v1/players-db/<int:player_id>', methods=['DELETE'])
+@admin_required
 def delete_player_db(player_id):
     conn = get_db_connection()
     if not conn:
@@ -74,6 +77,7 @@ def delete_player_db(player_id):
         conn.close()
 
 @bp.route('/api/v1/players-db/<int:player_id>', methods=['PUT'])
+@admin_required
 def update_player_db(player_id):
     data = request.json
     name = data.get('name')

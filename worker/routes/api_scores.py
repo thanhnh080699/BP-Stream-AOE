@@ -1,8 +1,19 @@
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
 from mysql.connector import Error
+from utils import admin_required
+from config import ADMIN_PASSWORD
 
 bp = Blueprint('scores', __name__)
+
+@bp.route('/api/v1/auth/verify', methods=['POST'])
+def verify_auth():
+    data = request.json or {}
+    password = data.get('password')
+    if password == ADMIN_PASSWORD:
+        return jsonify({"valid": True}), 200
+    return jsonify({"valid": False, "error": "Mật khẩu không đúng"}), 401
+
 
 @bp.route('/api/v1/scores', methods=['GET'])
 def get_scores():
@@ -46,6 +57,7 @@ def get_scores():
         conn.close()
 
 @bp.route('/api/v1/scores', methods=['POST'])
+@admin_required
 def add_score():
     data = request.json
     match_date = data.get('match_date')
@@ -96,6 +108,7 @@ def add_score():
         conn.close()
 
 @bp.route('/api/v1/scores/<int:match_id>', methods=['DELETE'])
+@admin_required
 def delete_score(match_id):
     conn = get_db_connection()
     if not conn:
@@ -112,6 +125,7 @@ def delete_score(match_id):
         conn.close()
 
 @bp.route('/api/v1/scores/<int:match_id>', methods=['PUT'])
+@admin_required
 def update_score(match_id):
     data = request.json
     match_date = data.get('match_date')
@@ -165,6 +179,7 @@ def update_score(match_id):
         conn.close()
 
 @bp.route('/api/v1/scores/bulk-update-date', methods=['POST'])
+@admin_required
 def bulk_update_date():
     data = request.json
     old_date = data.get('old_date')

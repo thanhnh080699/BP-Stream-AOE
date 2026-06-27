@@ -295,6 +295,7 @@ const AnalyticsView = () => {
   const [systemStatus, setSystemStatus] = useState(null);
   const [hoveredCategory, setHoveredCategory] = useState(null);
   const [playerSort, setPlayerSort] = useState('winrate'); // winrate, lossrate, attendance, form20, form50, form100
+  const [formCategoryFilter, setFormCategoryFilter] = useState('all'); // all, 1-1, 2-2, 3-3, 4-4
 
   const CATEGORY_ORDER = ['1-1', '2-2', '3-3', '4-4', '3-4'];
 
@@ -456,6 +457,15 @@ const AnalyticsView = () => {
         m.team_a_players.includes(player.name) || m.team_b_players.includes(player.name)
       ).sort((a, b) => new Date(b.match_date) - new Date(a.match_date));
 
+      // Filter player matches for form calculation based on selected category format
+      const playerMatchesForForm = playerMatches.filter(m => {
+        if (formCategoryFilter === 'all') return true;
+        const teamA = m.team_a_players.split(',').map(s => s.trim()).filter(s => s);
+        const teamB = m.team_b_players.split(',').map(s => s.trim()).filter(s => s);
+        const cat = teamA.length === teamB.length ? `${teamA.length}-${teamA.length}` : `${teamA.length}-${teamB.length}`;
+        return cat === formCategoryFilter;
+      });
+
       const calculateRecentWR = (matches, limit) => {
         let gamesCount = 0;
         let winsCount = 0;
@@ -485,9 +495,9 @@ const AnalyticsView = () => {
         winRate,
         lossRate,
         attendance,
-        form20: calculateRecentWR(playerMatches, 20),
-        form50: calculateRecentWR(playerMatches, 50),
-        form100: calculateRecentWR(playerMatches, 100),
+        form20: calculateRecentWR(playerMatchesForForm, 20),
+        form50: calculateRecentWR(playerMatchesForForm, 50),
+        form100: calculateRecentWR(playerMatchesForForm, 100),
         playerMatches // Pass for modal
       };
     });
@@ -513,7 +523,7 @@ const AnalyticsView = () => {
       });
 
     return { players: finalPlayers, globalStats };
-  }, [scores, timeFilter, searchQuery, customRange, playerSort]);
+  }, [scores, timeFilter, searchQuery, customRange, playerSort, formCategoryFilter]);
 
   if (loading) {
     return (
@@ -804,6 +814,22 @@ const AnalyticsView = () => {
         />
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 px-2 bg-[var(--bg-card)]/30 p-3 rounded-2xl border border-[var(--border-color)]/50">
+        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] opacity-50 mr-2">Thể thức phong độ:</span>
+        {['all', '1-1', '2-2', '3-3', '4-4'].map(cat => (
+          <button
+            key={cat}
+            onClick={() => setFormCategoryFilter(cat)}
+            className={`px-3.5 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all border ${formCategoryFilter === cat
+              ? 'bg-[#f1812e] text-white border-transparent shadow-md shadow-orange-500/20'
+              : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] opacity-60 hover:opacity-100'
+              }`}
+          >
+            {cat === 'all' ? 'Tất cả' : cat}
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-wrap gap-2 px-2">
         {[
           { id: 'attendance', label: 'Chuyên cần cao nhất' },
@@ -896,7 +922,9 @@ const AnalyticsView = () => {
 
                     {/* COL 3: Phong độ (2 cols) - Bold Titles */}
                     <div className="md:col-span-2 border-r border-[var(--border-color)]/20 flex flex-col justify-center">
-                      <p className="text-[10px] font-black opacity-60 uppercase tracking-[0.15em] mb-2 text-center">Phong độ gần nhất</p>
+                      <p className="text-[10px] font-black opacity-60 uppercase tracking-[0.15em] mb-2 text-center">
+                        Phong độ ({formCategoryFilter === 'all' ? 'Tất cả' : formCategoryFilter})
+                      </p>
                       <div className="space-y-1.5 px-1">
                         <div className="flex items-center justify-between bg-orange-500/5 px-3 py-2 rounded-lg border border-orange-500/10">
                           <span className="text-[9px] font-black opacity-40 uppercase">20 Trận</span>

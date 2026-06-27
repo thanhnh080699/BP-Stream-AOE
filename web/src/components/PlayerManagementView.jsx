@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Trash2, UserPlus, Loader2, AlertCircle, Search, Edit2, Check, X as CloseIcon } from 'lucide-react';
 import PasswordModal from './PasswordModal';
+import { useToast } from './Toast';
 
 const PlayerManagementView = () => {
+  const { showToast } = useToast();
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -41,82 +43,180 @@ const PlayerManagementView = () => {
     e.preventDefault();
     if (!name.trim()) return;
     
-    setIsSubmitting(true);
-    try {
-      const response = await fetch('/api/v1/players-db', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim() })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Lỗi khi thêm người chơi');
+    const executeAdd = async (password) => {
+      setIsSubmitting(true);
+      try {
+        const response = await fetch('/api/v1/players-db', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Admin-Password': password
+          },
+          body: JSON.stringify({ name: name.trim() })
+        });
+        
+        if (response.status === 401) {
+          sessionStorage.removeItem('admin_password');
+          throw new Error('Mật khẩu quản trị không chính xác hoặc đã hết hạn!');
+        }
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Lỗi khi thêm người chơi');
+        }
+        
+        setName('');
+        fetchPlayers();
+        showToast('Thêm người chơi thành công!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        setIsSubmitting(false);
       }
-      
-      setName('');
-      fetchPlayers();
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setIsSubmitting(false);
+    };
+
+    const savedPassword = sessionStorage.getItem('admin_password');
+    if (savedPassword) {
+      await executeAdd(savedPassword);
+    } else {
+      setAuthModal({
+        isOpen: true,
+        title: 'Thêm thành viên mới',
+        description: 'Vui lòng nhập mật khẩu xác thực để thêm thành viên.',
+        onConfirm: async (password) => {
+          try {
+            const res = await fetch('/api/v1/auth/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password })
+            });
+            if (res.ok) {
+              sessionStorage.setItem('admin_password', password);
+              setAuthModal(prev => ({ ...prev, isOpen: false }));
+              await executeAdd(password);
+            } else {
+              showToast('Mật khẩu không đúng!', 'error');
+            }
+          } catch (err) {
+            showToast('Lỗi kết nối tới máy chủ!', 'error');
+          }
+        }
+      });
     }
   };
 
   const handleDeletePlayer = async (id) => {
-    setAuthModal({
-      isOpen: true,
-      title: 'Xóa thành viên thi đấu',
-      description: 'Hành động này sẽ xóa người chơi khỏi cơ sở dữ liệu. Vui lòng nhập mật khẩu xác thực để thực hiện.',
-      onConfirm: async (password) => {
-        if (password !== '1234567890') {
-          alert('Mật khẩu không đúng!');
+    const executeDelete = async (password) => {
+      try {
+        const response = await fetch(`/api/v1/players-db/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'X-Admin-Password': password
+          }
+        });
+        if (response.status === 401) {
+          sessionStorage.removeItem('admin_password');
+          showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
           return;
         }
-
-        try {
-          const response = await fetch(`/api/v1/players-db/${id}`, {
-            method: 'DELETE'
-          });
-          if (!response.ok) throw new Error('Lỗi khi xóa');
-          setAuthModal(prev => ({ ...prev, isOpen: false }));
-          fetchPlayers();
-        } catch (err) {
-          alert(err.message);
-        }
+        if (!response.ok) throw new Error('Lỗi khi xóa');
+        fetchPlayers();
+        showToast('Xóa thành viên thành công!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
       }
-    });
+    };
+
+    if (!window.confirm('Bạn có chắc chắn muốn xóa thành viên thi đấu này?')) {
+      return;
+    }
+
+    const savedPassword = sessionStorage.getItem('admin_password');
+    if (savedPassword) {
+      await executeDelete(savedPassword);
+    } else {
+      setAuthModal({
+        isOpen: true,
+        title: 'Xóa thành viên thi đấu',
+        description: 'Hành động này sẽ xóa người chơi khỏi cơ sở dữ liệu. Vui lòng nhập mật khẩu xác thực để thực hiện.',
+        onConfirm: async (password) => {
+          try {
+            const res = await fetch('/api/v1/auth/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password })
+            });
+            if (res.ok) {
+              sessionStorage.setItem('admin_password', password);
+              setAuthModal(prev => ({ ...prev, isOpen: false }));
+              await executeDelete(password);
+            } else {
+              showToast('Mật khẩu không đúng!', 'error');
+            }
+          } catch (err) {
+            showToast('Lỗi kết nối tới máy chủ!', 'error');
+          }
+        }
+      });
+    }
   };
 
   const handleUpdatePlayer = async (id, newName) => {
     if (!newName.trim()) return;
     
-    setAuthModal({
-      isOpen: true,
-      title: 'Cập nhật tên thành viên',
-      description: `Bạn đang đổi tên thành viên thành "${newName}". Vui lòng nhập mật khẩu xác thực.`,
-      onConfirm: async (password) => {
-        if (password !== '1234567890') {
-          alert('Mật khẩu không đúng!');
+    const executeUpdate = async (password) => {
+      try {
+        const response = await fetch(`/api/v1/players-db/${id}`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Admin-Password': password
+          },
+          body: JSON.stringify({ name: newName.trim() })
+        });
+        
+        if (response.status === 401) {
+          sessionStorage.removeItem('admin_password');
+          showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
           return;
         }
-
-        try {
-          const response = await fetch(`/api/v1/players-db/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: newName.trim() })
-          });
-          
-          if (!response.ok) throw new Error('Lỗi khi cập nhật');
-          setEditingId(null);
-          setAuthModal(prev => ({ ...prev, isOpen: false }));
-          fetchPlayers();
-        } catch (err) {
-          alert(err.message);
-        }
+        if (!response.ok) throw new Error('Lỗi khi cập nhật');
+        setEditingId(null);
+        fetchPlayers();
+        showToast('Cập nhật thông tin thành công!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
       }
-    });
+    };
+
+    const savedPassword = sessionStorage.getItem('admin_password');
+    if (savedPassword) {
+      await executeUpdate(savedPassword);
+    } else {
+      setAuthModal({
+        isOpen: true,
+        title: 'Cập nhật tên thành viên',
+        description: `Bạn đang đổi tên thành viên thành "${newName}". Vui lòng nhập mật khẩu xác thực.`,
+        onConfirm: async (password) => {
+          try {
+            const res = await fetch('/api/v1/auth/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password })
+            });
+            if (res.ok) {
+              sessionStorage.setItem('admin_password', password);
+              setAuthModal(prev => ({ ...prev, isOpen: false }));
+              await executeUpdate(password);
+            } else {
+              showToast('Mật khẩu không đúng!', 'error');
+            }
+          } catch (err) {
+            showToast('Lỗi kết nối tới máy chủ!', 'error');
+          }
+        }
+      });
+    }
   };
 
   const filteredPlayers = players.filter(p => 
