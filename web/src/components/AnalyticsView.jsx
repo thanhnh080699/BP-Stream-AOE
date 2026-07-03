@@ -110,6 +110,11 @@ const MatchHistoryModal = ({ isOpen, onClose, player, category, matches, title, 
                         {match.match_type && match.match_type !== "Kèo đấu" && (
                           <span className="text-sm font-black opacity-60 italic">{match.match_type}</span>
                         )}
+                        {match.formGamesCounted && match.formGamesCounted < match.formGamesTotal && (
+                          <span className="text-[8px] font-black uppercase bg-orange-500/10 text-[#f1812e] px-2 py-0.5 rounded">
+                            Tính {match.formGamesCounted}/{match.formGamesTotal} trận
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm font-medium text-[var(--text-secondary)] opacity-90 tracking-wide leading-relaxed break-words">
                         <span className={(isPlayerSearch && isTeamA) ? "bg-green-500/10 px-1 rounded" : ""}>
@@ -490,6 +495,33 @@ const AnalyticsView = () => {
         return gamesCount >= limit ? (winsCount / gamesCount) : null;
       };
 
+      const getRecentFormMatches = (matches, limit) => {
+        let gamesCount = 0;
+        const formMatches = [];
+
+        for (const m of matches) {
+          if (gamesCount >= limit) break;
+
+          const isTeamA = m.team_a_players.includes(player.name);
+          const pWin = parseInt(isTeamA ? m.score_a : m.score_b);
+          const pLoss = parseInt(isTeamA ? m.score_b : m.score_a);
+          const totalHere = pWin + pLoss;
+
+          if (totalHere <= 0) continue;
+
+          const remaining = limit - gamesCount;
+          const countedHere = Math.min(totalHere, remaining);
+          formMatches.push({
+            ...m,
+            formGamesCounted: countedHere,
+            formGamesTotal: totalHere
+          });
+          gamesCount += countedHere;
+        }
+
+        return gamesCount >= limit ? formMatches : [];
+      };
+
       return {
         ...player,
         winRate,
@@ -498,6 +530,9 @@ const AnalyticsView = () => {
         form20: calculateRecentWR(playerMatchesForForm, 20),
         form50: calculateRecentWR(playerMatchesForForm, 50),
         form100: calculateRecentWR(playerMatchesForForm, 100),
+        formMatches20: getRecentFormMatches(playerMatchesForForm, 20),
+        formMatches50: getRecentFormMatches(playerMatchesForForm, 50),
+        formMatches100: getRecentFormMatches(playerMatchesForForm, 100),
         playerMatches // Pass for modal
       };
     });
@@ -869,6 +904,16 @@ const AnalyticsView = () => {
             const wr20 = formatForm(player.form20);
             const wr50 = formatForm(player.form50);
             const wr100 = formatForm(player.form100);
+            const formFilterLabel = formCategoryFilter === 'all' ? 'Tất cả' : formCategoryFilter;
+            const openFormHistory = (limit, matches) => {
+              setSelectedMatchHistory({
+                player: player.name,
+                category: `Phong độ ${limit} trận`,
+                matches,
+                title: `Phong độ ${limit} trận`,
+                subtitle: `${player.name} • Thể thức: ${formFilterLabel}`
+              });
+            };
 
             return (
               <div key={player.name} className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[24px] p-4 md:p-5 shadow-xl hover:shadow-[#f1812e]/5 transition-all group overflow-hidden relative mb-3">
@@ -926,18 +971,36 @@ const AnalyticsView = () => {
                         Phong độ ({formCategoryFilter === 'all' ? 'Tất cả' : formCategoryFilter})
                       </p>
                       <div className="space-y-1.5 px-1">
-                        <div className="flex items-center justify-between bg-orange-500/5 px-3 py-2 rounded-lg border border-orange-500/10">
+                        <button
+                          type="button"
+                          onClick={() => openFormHistory(20, player.formMatches20)}
+                          disabled={player.formMatches20.length === 0}
+                          className="w-full flex items-center justify-between bg-orange-500/5 px-3 py-2 rounded-lg border border-orange-500/10 transition-all hover:bg-orange-500/10 hover:border-orange-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+                          title="Xem các trận đang được tính vào phong độ 20 trận"
+                        >
                           <span className="text-[9px] font-black opacity-40 uppercase">20 Trận</span>
                           <span className="text-xs font-black text-orange-500">{wr20}%</span>
-                        </div>
-                        <div className="flex items-center justify-between bg-blue-500/5 px-3 py-2 rounded-lg border border-blue-500/10">
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openFormHistory(50, player.formMatches50)}
+                          disabled={player.formMatches50.length === 0}
+                          className="w-full flex items-center justify-between bg-blue-500/5 px-3 py-2 rounded-lg border border-blue-500/10 transition-all hover:bg-blue-500/10 hover:border-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+                          title="Xem các trận đang được tính vào phong độ 50 trận"
+                        >
                           <span className="text-[9px] font-black opacity-40 uppercase">50 Trận</span>
                           <span className="text-xs font-black text-blue-500">{wr50}%</span>
-                        </div>
-                        <div className="flex items-center justify-between bg-green-500/5 px-3 py-2 rounded-lg border border-green-500/10">
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openFormHistory(100, player.formMatches100)}
+                          disabled={player.formMatches100.length === 0}
+                          className="w-full flex items-center justify-between bg-green-500/5 px-3 py-2 rounded-lg border border-green-500/10 transition-all hover:bg-green-500/10 hover:border-green-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+                          title="Xem các trận đang được tính vào phong độ 100 trận"
+                        >
                           <span className="text-[9px] font-black opacity-40 uppercase">100 Trận</span>
                           <span className="text-xs font-black text-green-500">{wr100}%</span>
-                        </div>
+                        </button>
                       </div>
                     </div>
 
