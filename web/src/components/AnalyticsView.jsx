@@ -492,7 +492,7 @@ const AnalyticsView = () => {
             gamesCount += remaining;
           }
         }
-        return gamesCount >= limit ? (winsCount / gamesCount) : null;
+        return gamesCount > 0 ? (winsCount / gamesCount) : null;
       };
 
       const getRecentFormMatches = (matches, limit) => {
@@ -519,7 +519,21 @@ const AnalyticsView = () => {
           gamesCount += countedHere;
         }
 
-        return gamesCount >= limit ? formMatches : [];
+        return formMatches;
+      };
+
+      const countFormGames = (matches, limit) => {
+        return matches.reduce((total, m) => {
+          if (total >= limit) return total;
+
+          const scoreA = parseInt(m.score_a);
+          const scoreB = parseInt(m.score_b);
+          const totalHere = scoreA + scoreB;
+
+          if (totalHere <= 0) return total;
+
+          return total + Math.min(totalHere, limit - total);
+        }, 0);
       };
 
       return {
@@ -533,6 +547,9 @@ const AnalyticsView = () => {
         formMatches20: getRecentFormMatches(playerMatchesForForm, 20),
         formMatches50: getRecentFormMatches(playerMatchesForForm, 50),
         formMatches100: getRecentFormMatches(playerMatchesForForm, 100),
+        formGames20: countFormGames(playerMatchesForForm, 20),
+        formGames50: countFormGames(playerMatchesForForm, 50),
+        formGames100: countFormGames(playerMatchesForForm, 100),
         playerMatches // Pass for modal
       };
     });
@@ -851,7 +868,7 @@ const AnalyticsView = () => {
 
       <div className="flex flex-wrap items-center gap-2 px-2 bg-[var(--bg-card)]/30 p-3 rounded-2xl border border-[var(--border-color)]/50">
         <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] opacity-50 mr-2">Thể thức phong độ:</span>
-        {['all', '1-1', '2-2', '3-3', '4-4'].map(cat => (
+        {['all', ...CATEGORY_ORDER].map(cat => (
           <button
             key={cat}
             onClick={() => setFormCategoryFilter(cat)}
@@ -905,13 +922,16 @@ const AnalyticsView = () => {
             const wr50 = formatForm(player.form50);
             const wr100 = formatForm(player.form100);
             const formFilterLabel = formCategoryFilter === 'all' ? 'Tất cả' : formCategoryFilter;
-            const openFormHistory = (limit, matches) => {
+            const formMeta20 = player.formGames20 > 0 ? `${player.formGames20}/20 trận` : '0 trận';
+            const formMeta50 = player.formGames50 > 0 ? `${player.formGames50}/50 trận` : '0 trận';
+            const formMeta100 = player.formGames100 > 0 ? `${player.formGames100}/100 trận` : '0 trận';
+            const openFormHistory = (limit, matches, gamesCount) => {
               setSelectedMatchHistory({
                 player: player.name,
                 category: `Phong độ ${limit} trận`,
                 matches,
                 title: `Phong độ ${limit} trận`,
-                subtitle: `${player.name} • Thể thức: ${formFilterLabel}`
+                subtitle: `${player.name} • Thể thức: ${formFilterLabel} • Đang tính ${gamesCount} trận`
               });
             };
 
@@ -973,32 +993,35 @@ const AnalyticsView = () => {
                       <div className="space-y-1.5 px-1">
                         <button
                           type="button"
-                          onClick={() => openFormHistory(20, player.formMatches20)}
+                          onClick={() => openFormHistory(20, player.formMatches20, player.formGames20)}
                           disabled={player.formMatches20.length === 0}
                           className="w-full flex items-center justify-between bg-orange-500/5 px-3 py-2 rounded-lg border border-orange-500/10 transition-all hover:bg-orange-500/10 hover:border-orange-500/30 disabled:cursor-not-allowed disabled:opacity-60"
                           title="Xem các trận đang được tính vào phong độ 20 trận"
                         >
                           <span className="text-[9px] font-black opacity-40 uppercase">20 Trận</span>
+                          <span className="text-[8px] font-black opacity-35 uppercase ml-auto mr-2">{formMeta20}</span>
                           <span className="text-xs font-black text-orange-500">{wr20}%</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => openFormHistory(50, player.formMatches50)}
+                          onClick={() => openFormHistory(50, player.formMatches50, player.formGames50)}
                           disabled={player.formMatches50.length === 0}
                           className="w-full flex items-center justify-between bg-blue-500/5 px-3 py-2 rounded-lg border border-blue-500/10 transition-all hover:bg-blue-500/10 hover:border-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60"
                           title="Xem các trận đang được tính vào phong độ 50 trận"
                         >
                           <span className="text-[9px] font-black opacity-40 uppercase">50 Trận</span>
+                          <span className="text-[8px] font-black opacity-35 uppercase ml-auto mr-2">{formMeta50}</span>
                           <span className="text-xs font-black text-blue-500">{wr50}%</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => openFormHistory(100, player.formMatches100)}
+                          onClick={() => openFormHistory(100, player.formMatches100, player.formGames100)}
                           disabled={player.formMatches100.length === 0}
                           className="w-full flex items-center justify-between bg-green-500/5 px-3 py-2 rounded-lg border border-green-500/10 transition-all hover:bg-green-500/10 hover:border-green-500/30 disabled:cursor-not-allowed disabled:opacity-60"
                           title="Xem các trận đang được tính vào phong độ 100 trận"
                         >
                           <span className="text-[9px] font-black opacity-40 uppercase">100 Trận</span>
+                          <span className="text-[8px] font-black opacity-35 uppercase ml-auto mr-2">{formMeta100}</span>
                           <span className="text-xs font-black text-green-500">{wr100}%</span>
                         </button>
                       </div>
