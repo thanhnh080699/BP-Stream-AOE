@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import VideoPlayer from './VideoPlayer';
-import { Calendar, Play, Clock, Monitor, Archive, Filter, ChevronRight, HardDrive, AlertCircle, Trash2, Edit2, Check, X, Trophy } from 'lucide-react';
+import { Calendar, Play, Clock, Monitor, Archive, Filter, ChevronRight, HardDrive, AlertCircle, Trash2, Edit2, Check, X, Trophy, RotateCcw } from 'lucide-react';
 import PasswordModal from './PasswordModal';
 import PlaybackCalendar from './PlaybackCalendar';
 import { useToast } from './Toast';
@@ -111,6 +111,67 @@ const PlaybackView = () => {
                         if (res.ok) {
                             sessionStorage.setItem('admin_password', password);
                             executeDelete(password);
+                        } else {
+                            showToast('Mật khẩu không đúng!', 'error');
+                        }
+                    } catch (err) {
+                        showToast('Lỗi kết nối server', 'error');
+                    }
+                }
+            });
+        }
+    };
+
+    const handleMerge = (date, streamId = null) => {
+        const streamDisplayName = streamId ? (replays[date]?.streams?.[streamId]?.display_name || playerNames[streamId] || streamId) : null;
+        const targetText = streamId ? `máy ${streamDisplayName}` : `tất cả các máy ngày ${date}`;
+        
+        const executeMerge = async (password) => {
+            try {
+                const res = await fetch(`/api/v1/merge/${date}`, { 
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Password': password
+                    },
+                    body: JSON.stringify(streamId ? { stream_id: streamId } : {})
+                });
+                if (res.status === 401) {
+                    sessionStorage.removeItem('admin_password');
+                    showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
+                    return;
+                }
+                showToast(streamId ? `Đã bắt đầu tổng hợp lại video cho máy ${streamDisplayName}...` : 'Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...', 'success');
+                setReplays(prev => ({
+                    ...prev,
+                    [date]: { ...prev[date], status: 'processing', progress_percent: 5, progress_text: 'Đang bắt đầu...' }
+                }));
+                setAuthModal(prev => ({ ...prev, isOpen: false }));
+            } catch (err) {
+                showToast('Lỗi kết nối server', 'error');
+            }
+        };
+
+        const savedPassword = sessionStorage.getItem('admin_password');
+        if (savedPassword) {
+            if (window.confirm(`Bạn có chắc chắn muốn tổng hợp lại video cho ${targetText}?`)) {
+                executeMerge(savedPassword);
+            }
+        } else {
+            setAuthModal({
+                isOpen: true,
+                title: streamId ? `Tổng hợp lại video máy ${streamDisplayName}` : 'Tổng hợp dữ liệu video',
+                description: `Để tránh spam nhiều lần và tối ưu tài nguyên máy chủ, vui lòng nhập mật khẩu để bắt đầu quá trình tổng hợp file MP4/HLS cho ${targetText}.`,
+                onConfirm: async (password) => {
+                    try {
+                        const res = await fetch('/api/v1/auth/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password })
+                        });
+                        if (res.ok) {
+                            sessionStorage.setItem('admin_password', password);
+                            await executeMerge(password);
                         } else {
                             showToast('Mật khẩu không đúng!', 'error');
                         }
@@ -383,9 +444,19 @@ const PlaybackView = () => {
                                         </div>
                                         {selectedStream === s_id && (
                                             <>
-                                                <div className="absolute right-4 bottom-4 p-1 bg-[#0B0E14] rounded-full text-[#fff] shadow-lg">
+                                                <div className="absolute right-4 bottom-4 p-1 bg-[#0B0E14] rounded-full text-[#fff] shadow-lg" title="Đang xem máy này">
                                                     <Play size={10} fill="currentColor" />
                                                 </div>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleMerge(selectedDate, s_id);
+                                                    }}
+                                                    className="absolute right-20 bottom-4 p-1 bg-[#fff] hover:bg-[#f1812e] rounded-full text-[#f1812e] hover:text-white transition-all shadow-lg border border-[#f1812e]/30"
+                                                    title="Tổng hợp lại video máy này"
+                                                >
+                                                    <RotateCcw size={10} />
+                                                </button>
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -433,71 +504,17 @@ const PlaybackView = () => {
                             )}
 
                             <div className="grid grid-cols-2 gap-3">
-                                {replays[selectedDate].status !== 'completed' && (
-                                    <button
-                                        onClick={() => {
-                                            const executeMerge = async (password) => {
-                                                try {
-                                                    const res = await fetch(`/api/v1/merge/${selectedDate}`, { 
-                                                        method: 'POST',
-                                                        headers: {
-                                                            'X-Admin-Password': password
-                                                        }
-                                                    });
-                                                    if (res.status === 401) {
-                                                        sessionStorage.removeItem('admin_password');
-                                                        showToast('Mật khẩu quản trị không chính xác hoặc đã hết hạn!', 'error');
-                                                        return;
-                                                    }
-                                                    showToast('Đã bắt đầu quá trình tổng hợp video (HLS & MP4)...', 'success');
-                                                    setReplays(prev => ({
-                                                        ...prev,
-                                                        [selectedDate]: { ...prev[selectedDate], status: 'processing', progress_percent: 5, progress_text: 'Đang bắt đầu...' }
-                                                    }));
-                                                    setAuthModal(prev => ({ ...prev, isOpen: false }));
-                                                } catch (err) {
-                                                    showToast('Lỗi kết nối server', 'error');
-                                                }
-                                            };
-
-                                            const savedPassword = sessionStorage.getItem('admin_password');
-                                            if (savedPassword) {
-                                                executeMerge(savedPassword);
-                                            } else {
-                                                setAuthModal({
-                                                    isOpen: true,
-                                                    title: 'Tổng hợp dữ liệu video',
-                                                    description: 'Để tránh spam nhiều lần và tối ưu tài nguyên máy chủ, vui lòng nhập mật khẩu để bắt đầu quá trình tổng hợp file MP4/HLS.',
-                                                    onConfirm: async (password) => {
-                                                        try {
-                                                            const res = await fetch('/api/v1/auth/verify', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({ password })
-                                                            });
-                                                            if (res.ok) {
-                                                                sessionStorage.setItem('admin_password', password);
-                                                                await executeMerge(password);
-                                                            } else {
-                                                                showToast('Mật khẩu không đúng!', 'error');
-                                                            }
-                                                        } catch (err) {
-                                                            showToast('Lỗi kết nối server', 'error');
-                                                        }
-                                                    }
-                                                });
-                                            }
-                                        }}
-                                        disabled={replays[selectedDate].status === 'processing'}
-                                        className={`w-full py-3 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn cursor-pointer ${replays[selectedDate].status === 'processing'
-                                            ? 'bg-[#f1812e] text-[#fff] border-[#f1812e] cursor-not-allowed'
-                                            : 'bg-[#f1812e] text-[#fff] border-[#f1812e]'
-                                            }`}
-                                    >
-                                        <HardDrive size={14} className={`${replays[selectedDate].status === 'processing' ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
-                                        {replays[selectedDate].status === 'processing' ? 'Đang Xử Lý...' : 'Tổng Hợp File'}
-                                    </button>
-                                )}
+                                <button
+                                    onClick={() => handleMerge(selectedDate)}
+                                    disabled={replays[selectedDate].status === 'processing'}
+                                    className={`w-full py-3 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest flex items-center justify-center gap-2 group/btn cursor-pointer ${replays[selectedDate].status === 'processing'
+                                        ? 'bg-[#f1812e]/50 text-[#fff] border-[#f1812e]/50 cursor-not-allowed'
+                                        : 'bg-[#f1812e] text-[#fff] border-[#f1812e] hover:bg-[#d97022]'
+                                        }`}
+                                >
+                                    <HardDrive size={14} className={`${replays[selectedDate].status === 'processing' ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
+                                    {replays[selectedDate].status === 'processing' ? 'Đang Xử Lý...' : (replays[selectedDate].status === 'completed' ? 'Tổng Hợp Lại Tất Cả' : 'Tổng Hợp File')}
+                                </button>
 
                                 <button
                                     onClick={() => handleDelete(selectedDate)}

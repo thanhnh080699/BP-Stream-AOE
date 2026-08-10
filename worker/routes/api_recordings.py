@@ -65,8 +65,11 @@ def debug_hook():
 @bp.route('/api/v1/merge/<date_str>', methods=['POST'])
 @admin_required
 def merge_date(date_str):
-    threading.Thread(target=do_merge, args=(date_str,), daemon=True).start()
-    return jsonify({"status": "Merging started", "date": date_str})
+    data = request.get_json(silent=True) or {}
+    stream_id = data.get('stream_id') or data.get('stream') or request.args.get('stream_id') or request.args.get('stream')
+    threading.Thread(target=do_merge, args=(date_str, stream_id), daemon=True).start()
+    msg = f"Merging started for stream {stream_id}" if stream_id else "Merging started for all streams"
+    return jsonify({"status": msg, "date": date_str, "stream_id": stream_id})
 
 @bp.route('/api/v1/delete', methods=['POST'])
 @admin_required

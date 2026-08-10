@@ -212,7 +212,7 @@ def process_one_stream(s_id, files, date_str, meta_file, meta, machine_progress_
         return s_id, False, str(e)
 
 
-def do_merge(date_str):
+def do_merge(date_str, target_stream_id=None):
     recordings = get_recordings()
     if date_str not in recordings:
         print(f"No recordings found for date: {date_str}")
@@ -225,6 +225,12 @@ def do_merge(date_str):
             stream_recordings[s_id] = []
         stream_recordings[s_id].append(r['file'])
 
+    if target_stream_id:
+        if target_stream_id not in stream_recordings:
+            print(f"No recordings found for stream '{target_stream_id}' on date: {date_str}")
+            return
+        stream_recordings = {target_stream_id: stream_recordings[target_stream_id]}
+
     meta_file = os.path.join(DATA_DIR, 'metadata.json')
     meta = {}
     with meta_lock:
@@ -234,13 +240,15 @@ def do_merge(date_str):
                     meta = json.load(f)
             except Exception:
                 pass
-    update_meta_field(meta_file, date_str, meta=meta, status="processing")
+
+    progress_text = f"Đang tổng hợp máy {target_stream_id}..." if target_stream_id else "Đang bắt đầu tổng hợp..."
+    update_meta_field(meta_file, date_str, meta=meta, status="processing", progress_text=progress_text, progress_percent=5)
 
     total_streams = len(stream_recordings)
     stream_list   = list(stream_recordings.items())
 
     print(f"\n{'='*60}")
-    print(f"Merge {total_streams} streams — ngày {date_str}")
+    print(f"Merge {total_streams} streams ({'máy ' + target_stream_id if target_stream_id else 'toàn bộ'}) — ngày {date_str}")
     print(f"Parallel: {MAX_STREAM_WORKERS} stream × {MAX_SEG_WORKERS} seg "
           f"= tối đa {MAX_STREAM_WORKERS * MAX_SEG_WORKERS} FFmpeg processes")
     print(f"{'='*60}\n")
@@ -262,10 +270,11 @@ def do_merge(date_str):
             status = "✓ DONE" if success else f"✗ FAIL: {err}"
             print(f"[{status}] Stream {s_id}")
 
+    completed_text = f"Đã hoàn thành tổng hợp máy {target_stream_id}." if target_stream_id else "Đã hoàn thành tổng hợp toàn bộ."
     update_meta_field(meta_file, date_str, meta=meta,
         status="completed",
         progress_percent=100,
-        progress_text="Đã hoàn thành tổng hợp toàn bộ."
+        progress_text=completed_text
     )
 
     # Thay đổi: Không xoá ngay recordings của ngày vừa gộp.
