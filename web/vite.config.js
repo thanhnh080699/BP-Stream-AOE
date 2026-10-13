@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api/v1': {
           target: env.API_URL || 'http://127.0.0.1:5001',
-          changeOrigin: true
+          changeOrigin: false
         },
         '/srs/api/v1': {
           target: env.SRS_URL || 'http://127.0.0.1:1985',

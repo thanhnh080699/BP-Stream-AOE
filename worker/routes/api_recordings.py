@@ -1,14 +1,31 @@
 import os
 import json
 import shutil
-import threading
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 from config import DATA_DIR
-from utils import get_recordings, save_recordings, meta_lock, save_meta, safe_save_json, admin_required
-from services.video_service import do_merge, do_youtube_sync
+from utils import get_recordings, save_recordings, meta_lock, save_meta, admin_required, recordings_lock
+from services.admin_jobs import submit, Conflict
+from services.admin_storage import validate_target, safe_path
+from services import admin_jobs as jobs, admin_store as store
+from functools import wraps
 
 bp = Blueprint('recordings', __name__)
+
+def exclusive_write(fn):
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        with store.connection() as conn:
+            if not jobs.gate(conn):
+                return jsonify(error='Tác vụ video đang chạy; hãy thử lại sau.'), 409
+            try:
+                if jobs.active():
+                    return jsonify(error='Có tác vụ trong hàng đợi.'), 409
+                return fn(*args, **kwargs)
+            finally:
+                jobs.release(conn)
+    return wrapped
+
 
 @bp.route('/api/v1/metadata', methods=['GET'])
 def get_metadata():
@@ -28,6 +45,18 @@ def get_metadata():
     for date, files in recordings.items():
         if date not in meta or meta[date].get('status') != 'completed':
             meta[date] = meta.get(date, {"streams": {}, "status": "recording"})
+    # MariaDB remains authoritative when a full video disk prevented metadata writes.
+    try:
+        latest_dates = set()
+        for job in store.query("SELECT * FROM admin_jobs WHERE kind='merge' ORDER BY created_at DESC LIMIT 100"):
+            date = json.loads(job['payload']).get('date')
+            if date in latest_dates:
+                continue
+            latest_dates.add(date)
+            if date in meta and meta[date].get('status') == 'processing' and job['status'] in ('failed', 'interrupted'):
+                meta[date].update(status=job['status'], progress_percent=job['progress'], progress_text=job['message'])
+    except Exception as error:
+        print(f'Metadata job status unavailable: {error}', flush=True)
     return jsonify(meta)
 
 @bp.route('/api/v1/dvr', methods=['POST'])
@@ -42,18 +71,26 @@ def on_dvr():
     if 'objs/nginx/html/dvr' in file_path:
         file_path = file_path.split('objs/nginx/html/dvr')[-1].lstrip('/')
         file_path = os.path.join(DATA_DIR, file_path)
-    file_path = os.path.normpath(file_path)
+    try:
+        file_path = safe_path(file_path)
+    except ValueError:
+        return "Invalid file path", 400
     stream_id = data.get('stream')
-    date_str = datetime.now().strftime('%Y-%m-%d')
-    recordings = get_recordings()
-    if date_str not in recordings:
-        recordings[date_str] = []
-    recordings[date_str].append({
-        "stream": stream_id,
-        "file": file_path,
-        "timestamp": datetime.now().isoformat()
-    })
-    save_recordings(recordings)
+    date_str = os.path.basename(file_path)[:10]
+    try:
+        validate_target(date_str, stream_id)
+    except ValueError:
+        return "Invalid recording date or stream", 400
+    with recordings_lock:
+        recordings = get_recordings()
+        if date_str not in recordings:
+            recordings[date_str] = []
+        recordings[date_str].append({
+            "stream": stream_id,
+            "file": file_path,
+            "timestamp": datetime.now().isoformat()
+        })
+        save_recordings(recordings)
     return "0", 200
 
 @bp.route('/api/v1/debug', methods=['POST'])
@@ -67,80 +104,32 @@ def debug_hook():
 def merge_date(date_str):
     data = request.get_json(silent=True) or {}
     stream_id = data.get('stream_id') or data.get('stream') or request.args.get('stream_id') or request.args.get('stream')
-    threading.Thread(target=do_merge, args=(date_str, stream_id), daemon=True).start()
+    try:
+        submit("merge", {"date": date_str, "stream": stream_id})
+    except (ValueError, OSError) as error:
+        return jsonify(error=str(error)), 409 if isinstance(error, Conflict) else 400
     msg = f"Merging started for stream {stream_id}" if stream_id else "Merging started for all streams"
     return jsonify({"status": msg, "date": date_str, "stream_id": stream_id})
 
 @bp.route('/api/v1/delete', methods=['POST'])
 @admin_required
 def delete_recordings():
-    data = request.get_json(silent=True) or {}
-    date_str  = data.get('date')
-    stream_id = data.get('stream')
-
-    if not date_str:
-        return jsonify({"error": "Date is required"}), 400
-
-    recordings = get_recordings()
-    meta_file  = os.path.join(DATA_DIR, 'metadata.json')
-    meta = {}
-    with meta_lock:
-        if os.path.exists(meta_file):
-            try:
-                with open(meta_file, 'r') as f:
-                    meta = json.load(f)
-            except Exception:
-                pass
-
-    if date_str not in recordings and date_str not in meta:
-        return jsonify({"error": "No data for this date"}), 404
-
-    if stream_id:
-        replay_dir = os.path.join(DATA_DIR, 'replays', date_str, stream_id)
-        if os.path.exists(replay_dir):
-            shutil.rmtree(replay_dir)
-        if date_str in recordings:
-            new_recs = []
-            for r in recordings[date_str]:
-                if r['stream'] == stream_id:
-                    if os.path.exists(r['file']):
-                        os.remove(r['file'])
-                else:
-                    new_recs.append(r)
-            if not new_recs:
-                del recordings[date_str]
-            else:
-                recordings[date_str] = new_recs
-            save_recordings(recordings)
-        if date_str in meta and 'streams' in meta[date_str]:
-            if stream_id in meta[date_str]['streams']:
-                del meta[date_str]['streams'][stream_id]
-            if not meta[date_str]['streams']:
-                del meta[date_str]
-        save_meta(meta_file, meta)
-        return jsonify({"status": f"Deleted stream {stream_id} for {date_str}"}), 200
-    else:
-        date_replay_dir = os.path.join(DATA_DIR, 'replays', date_str)
-        if os.path.exists(date_replay_dir):
-            shutil.rmtree(date_replay_dir)
-        if date_str in recordings:
-            for r in recordings[date_str]:
-                if os.path.exists(r['file']):
-                    os.remove(r['file'])
-            del recordings[date_str]
-            save_recordings(recordings)
-        if date_str in meta:
-            del meta[date_str]
-            save_meta(meta_file, meta)
-        return jsonify({"status": f"Deleted all data for {date_str}"}), 200
+    return jsonify(error='Để bảo vệ dữ liệu, hãy xem trước và xác nhận xóa tại /admin/storage.',
+                   code='cleanup_preview_required'), 409
 
 @bp.route('/api/v1/metadata/rename', methods=['POST'])
+@admin_required
+@exclusive_write
 def rename_metadata_stream():
     data = request.get_json(silent=True) or {}
     date_str = data.get('date')
     stream_id = data.get('stream_id')
     new_name = data.get('new_name')
 
+    try:
+        validate_target(date_str, stream_id)
+    except (ValueError, TypeError) as error:
+        return jsonify(error=str(error)), 400
     if not all([date_str, stream_id, new_name]):
         return jsonify({"error": "Missing date, stream_id or new_name"}), 400
 
@@ -202,37 +191,25 @@ def get_system_status():
     })
 
 @bp.route('/api/v1/youtube/sync', methods=['POST'])
+@admin_required
 def trigger_youtube_sync():
     data = request.get_json(silent=True) or {}
-    specific_date = data.get('date') # Optional: YYYY-MM-DD
-    threading.Thread(target=do_youtube_sync, args=(specific_date,), daemon=True).start()
-    return jsonify({
-        "status": "YouTube sync started in background",
-        "mode": "specific_date" if specific_date else "archival"
-    })
+    try:
+        job = submit('youtube', {'date': data.get('date'), 'stream': data.get('stream_id')})
+        return jsonify(id=job, status='queued'), 202
+    except (ValueError, OSError) as error:
+        return jsonify(error=str(error)), 409 if isinstance(error, Conflict) else 400
+
 
 @bp.route('/api/v1/youtube/test-upload', methods=['POST'])
+@admin_required
 def trigger_test_upload():
     data = request.get_json(silent=True) or {}
-    specific_date = data.get('date')
-    stream_id = data.get('stream_id')
-    
-    if not specific_date or not stream_id:
-        return jsonify({"error": "Missing date or stream_id"}), 400
-        
-    threading.Thread(
-        target=do_youtube_sync, 
-        kwargs={
-            "specific_date": specific_date, 
-            "specific_stream": stream_id, 
-            "force": True, 
-            "is_test": True
-        }, 
-        daemon=True
-    ).start()
-    
-    return jsonify({
-        "status": "Test upload started in background",
-        "date": specific_date,
-        "stream": stream_id
-    })
+    try:
+        validate_target(data.get('date'), data.get('stream_id'))
+        if not data.get('stream_id'):
+            raise ValueError('Chọn máy cần upload thử.')
+        job = submit('youtube', dict(date=data['date'], stream=data['stream_id'], force=True, is_test=True))
+        return jsonify(id=job, status='queued'), 202
+    except (ValueError, OSError) as error:
+        return jsonify(error=str(error)), 409 if isinstance(error, Conflict) else 400

@@ -1,0 +1,11 @@
+__pycache__
+*.pyc
+tests
+.pytest_cache
+data
+youtube_secrets.json
+youtube_token.*
+.env*
+
+venv
+.venv

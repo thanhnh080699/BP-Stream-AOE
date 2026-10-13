@@ -2,6 +2,7 @@ import json
 import os
 import threading
 import subprocess
+import tempfile
 from config import LOG_FILE, ADMIN_PASSWORD
 from functools import wraps
 from flask import request, jsonify
@@ -21,18 +22,17 @@ def get_recordings():
 
 def safe_save_json(file_path, data):
     """Save JSON atomically using a temporary file and rename."""
-    temp_path = file_path + ".tmp"
+    descriptor, temp_path = tempfile.mkstemp(prefix='.metadata-', dir=os.path.dirname(file_path))
     try:
-        with open(temp_path, 'w') as f:
-            json.dump(data, f, indent=4)
+        with os.fdopen(descriptor, 'w') as target:
+            json.dump(data, target, indent=4)
+            target.flush()
+            os.fsync(target.fileno())
         os.replace(temp_path, file_path)
-    except Exception as e:
-        print(f"Error saving JSON to {file_path}: {e}")
+    finally:
         if os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except:
-                pass
+            os.remove(temp_path)
+
 
 def save_recordings(data):
     with recordings_lock:
@@ -69,6 +69,9 @@ def update_meta_field(meta_file, date_str, meta=None, **kwargs):
         if date_str not in meta:
             meta[date_str] = {"streams": {}, "status": "processing"}
             
+        from services.admin_jobs import progress
+        if "progress_text" in kwargs:
+            progress(kwargs.get("progress_percent"), kwargs["progress_text"])
         for k, v in kwargs.items():
             meta[date_str][k] = v
             
@@ -91,7 +94,7 @@ def update_stream_meta(meta_file, date_str, s_id, stream_data, meta=None):
         if "streams" not in meta[date_str]:
             meta[date_str]["streams"] = {}
             
-        meta[date_str]["streams"][s_id] = stream_data
+        meta[date_str]["streams"].setdefault(s_id, {}).update(stream_data)
         
         safe_save_json(meta_file, meta)
 
@@ -114,7 +117,7 @@ def get_duration(file_path):
             '-show_entries', 'format=duration',
             '-of', 'default=noprint_wrappers=1:nokey=1',
             file_path
-        ], stderr=subprocess.DEVNULL).decode().strip()
+        ], stderr=subprocess.DEVNULL, timeout=30).decode().strip()
         return float(out)
     except Exception:
         return 0.0

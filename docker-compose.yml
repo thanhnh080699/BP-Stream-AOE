@@ -36,6 +36,7 @@ services:
     restart: always
     volumes:
       - srs_data:/data
+      - admin_private:/private
     environment:
       - DATA_DIR=${DATA_DIR:-/data}
       - DB_HOST=${DB_HOST:-db}
@@ -46,6 +47,10 @@ services:
       - ENV=${ENV:-local}
       - WORKER_PORT=${WORKER_PORT:-5001}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-1234567890}
+      - ADMIN_PUBLIC_URL=${ADMIN_PUBLIC_URL:-}
+      - ADMIN_COOKIE_SECURE=${ADMIN_COOKIE_SECURE:-true}
+      - ADMIN_PRIVATE_DIR=/private
+      - TZ=Asia/Ho_Chi_Minh
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -77,6 +82,12 @@ networks:
     driver: bridge
 
 volumes:
+  admin_private:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/stream/admin-private'
   srs_data:
     driver: local
     # For PRODUCTION, uncomment driver_opts below and set to actual path

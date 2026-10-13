@@ -1,5 +1,5 @@
 import os
-import pickle
+import tempfile
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Scopes required for YouTube upload and playlist management
@@ -28,8 +28,11 @@ def run_flow(credentials_path, token_path):
     creds = flow.run_local_server(port=0)
 
     # Save the credentials for the next run
-    with open(token_path, 'wb') as token:
-        pickle.dump(creds, token)
+    descriptor, temporary = tempfile.mkstemp(dir=os.path.dirname(token_path))
+    with os.fdopen(descriptor, 'w') as token:
+        token.write(creds.to_json())
+    os.chmod(temporary, 0o600)
+    os.replace(temporary, token_path)
     
     print(f"Authentication successful! Token saved to {token_path}")
 
@@ -37,7 +40,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='YouTube Auth Helper')
     parser.add_argument('--secrets', default='youtube_secrets.json', help='Path to client_secrets.json')
-    parser.add_argument('--token', default='youtube_token.pickle', help='Path to save youtube_token.pickle')
+    parser.add_argument('--token', default='youtube_token.json', help='Path to save youtube_token.pickle')
     
     args = parser.parse_args()
     

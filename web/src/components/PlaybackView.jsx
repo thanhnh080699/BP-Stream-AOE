@@ -114,7 +114,7 @@ const PlaybackView = () => {
                         } else {
                             showToast('Mật khẩu không đúng!', 'error');
                         }
-                    } catch (err) {
+                    } catch {
                         showToast('Lỗi kết nối server', 'error');
                     }
                 }
@@ -147,7 +147,7 @@ const PlaybackView = () => {
                     [date]: { ...prev[date], status: 'processing', progress_percent: 5, progress_text: 'Đang bắt đầu...' }
                 }));
                 setAuthModal(prev => ({ ...prev, isOpen: false }));
-            } catch (err) {
+            } catch {
                 showToast('Lỗi kết nối server', 'error');
             }
         };
@@ -175,7 +175,7 @@ const PlaybackView = () => {
                         } else {
                             showToast('Mật khẩu không đúng!', 'error');
                         }
-                    } catch (err) {
+                    } catch {
                         showToast('Lỗi kết nối server', 'error');
                     }
                 }
@@ -255,7 +255,7 @@ const PlaybackView = () => {
 
         fetch('/api/v1/metadata/rename', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Password': sessionStorage.getItem('admin_password') || '' },
             body: JSON.stringify({ date, stream_id: streamId, new_name: newName })
         })
         .then(res => {
@@ -264,7 +264,7 @@ const PlaybackView = () => {
                 fetchMetadata(); // Refresh to get updated display_name
                 showToast('Đổi tên máy stream thành công!', 'success');
             } else {
-                showToast('Lỗi khi lưu tên người chơi', 'error');
+                showToast(res.status === 401 ? 'Vui lòng đăng nhập quản trị trước khi đổi tên.' : 'Lỗi khi lưu tên người chơi', 'error');
             }
         })
         .catch(err => {

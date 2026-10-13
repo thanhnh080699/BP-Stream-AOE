@@ -6,7 +6,8 @@
 ._*
 
 # Custom folder icons
-Icon
+Icon
+
 
 # Volume root files
 .DocumentRevisions-V100
@@ -26,3 +27,8 @@ web/public/downloads/
 .env.dev
 .env.local
 .env.*
+
+worker/youtube_token.json
+worker/data/
+__pycache__/
+.pytest_cache/

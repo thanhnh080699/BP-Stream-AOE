@@ -8,14 +8,15 @@ import PlayerManagementView from './components/PlayerManagementView';
 import AnalyticsView from './components/AnalyticsView';
 import SoftwareView from './components/SoftwareView';
 import { Video, History, Trophy, Sun, Moon, Menu, X, Monitor, Info, LayoutTemplate, Users, BarChart3, AlertCircle, Download, ChevronDown } from 'lucide-react';
-import { Routes, Route, NavLink, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, NavLink, Link, Navigate, useLocation } from 'react-router-dom';
 import NotFound from './components/NotFound';
+const AdminView = React.lazy(() => import('./components/AdminView'));
 
 function App() {
   const location = useLocation();
-  const navigate = useNavigate();
   
   const getTabFromPath = (path) => {
+    if (path.startsWith('/admin')) return 'admin';
     if (path === '/') return 'about';
     if (path.startsWith('/playback')) return 'playback';
     if (path.startsWith('/players')) return 'players';
@@ -72,6 +73,7 @@ function App() {
     if (tab === 'scores') title = 'Bảng Tỷ Số - BP AOE Streaming';
     if (tab === 'analytics') title = 'Thống Kê - BP AOE Streaming';
     if (tab === 'software') title = 'Tải Phần Mềm - BP AOE Streaming';
+    if (tab === 'admin') title = 'Quản trị vận hành - BP AOE';
 
     document.title = `${title} | BPGROUP Tournament Dashboard`;
   }, [darkMode, tab]);
@@ -81,11 +83,15 @@ function App() {
   // Close sidebar on navigation if on mobile
   useEffect(() => {
     if (window.innerWidth <= 1024) {
-      setIsSidebarOpen(false);
+      const frame = requestAnimationFrame(() => setIsSidebarOpen(false));
+      window.scrollTo(0, 0);
+      return () => cancelAnimationFrame(frame);
     }
     // Scroll to top on route change
     window.scrollTo(0, 0);
   }, [location.pathname]);
+
+  if (tab === 'admin') return <React.Suspense fallback={<div className="p-12" role="status">Đang tải quản trị…</div>}><AdminView darkMode={darkMode} toggleTheme={() => setDarkMode(!darkMode)} /></React.Suspense>;
 
   return (
     <ToastProvider>
@@ -246,6 +252,9 @@ function App() {
               <span>Download Phần Mềm</span>
             </div>
             {tab === 'software' && <div className="w-1.5 h-1.5 rounded-full bg-[#f1812e] shadow-[0_0_8px_#f1812e]" />}
+          </NavLink>
+          <NavLink to="/admin" className="flex items-center gap-3 px-4 py-3 text-sm text-[var(--text-secondary)]">
+            <Monitor size={18} /> Quản trị vận hành
           </NavLink>
         </nav>
 

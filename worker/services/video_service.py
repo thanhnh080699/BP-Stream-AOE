@@ -1,13 +1,11 @@
 import os
 import json
-import time
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from config import DATA_DIR, MAX_STREAM_WORKERS, MAX_SEG_WORKERS
 from utils import (
     convert_flv_to_ts, get_duration, run_ffmpeg, 
-    update_meta_field, update_stream_meta, save_meta, meta_lock, get_recordings,
-    save_recordings, recordings_lock
+    update_meta_field, update_stream_meta, meta_lock, get_recordings
 )
 
 def format_duration_vietnamese(minutes_float):
@@ -94,11 +92,10 @@ def process_one_segment(args):
 def process_one_stream(s_id, files, date_str, meta_file, meta, machine_progress_start, machine_progress_step):
     replay_dir = os.path.join(DATA_DIR, 'replays', date_str, s_id)
     ts_dir     = os.path.join(replay_dir, 'ts_tmp')
-    os.makedirs(ts_dir, exist_ok=True)
-
     hls_output = os.path.join(replay_dir, 'index.m3u8')
 
     try:
+        os.makedirs(ts_dir, exist_ok=True)
         valid_files = sorted([f for f in files if os.path.exists(f)])
         skipped = len(files) - len(valid_files)
         if skipped:
@@ -139,6 +136,8 @@ def process_one_stream(s_id, files, date_str, meta_file, meta, machine_progress_
                     )
                 )
 
+        if any(result is None for result in results):
+            raise RuntimeError("Có segment không chuyển đổi được; giữ video gốc để kiểm tra và thử lại.")
         ts_files = [r[1] for r in results if r is not None]
         total_duration = sum(r[2] for r in results if r is not None)
 
@@ -195,6 +194,7 @@ def process_one_stream(s_id, files, date_str, meta_file, meta, machine_progress_
             pass
 
         update_stream_meta(meta_file, date_str, s_id, {
+            "error": None,
             "hls":              f"replays/{date_str}/{s_id}/index.m3u8",
             "duration_minutes": round(total_duration / 60, 2),
             "file":             f"replays/{date_str}/{s_id}/index.m3u8"
@@ -215,8 +215,7 @@ def process_one_stream(s_id, files, date_str, meta_file, meta, machine_progress_
 def do_merge(date_str, target_stream_id=None):
     recordings = get_recordings()
     if date_str not in recordings:
-        print(f"No recordings found for date: {date_str}")
-        return
+        raise ValueError(f"Không có bản ghi ngày {date_str}")
 
     stream_recordings = {}
     for r in recordings[date_str]:
@@ -227,8 +226,7 @@ def do_merge(date_str, target_stream_id=None):
 
     if target_stream_id:
         if target_stream_id not in stream_recordings:
-            print(f"No recordings found for stream '{target_stream_id}' on date: {date_str}")
-            return
+            raise ValueError("Không có bản ghi cho máy được chọn.")
         stream_recordings = {target_stream_id: stream_recordings[target_stream_id]}
 
     meta_file = os.path.join(DATA_DIR, 'metadata.json')
@@ -253,7 +251,8 @@ def do_merge(date_str, target_stream_id=None):
           f"= tối đa {MAX_STREAM_WORKERS * MAX_SEG_WORKERS} FFmpeg processes")
     print(f"{'='*60}\n")
 
-    with ThreadPoolExecutor(max_workers=MAX_STREAM_WORKERS) as stream_pool:
+    failures = []
+    with ThreadPoolExecutor(max_workers=1) as stream_pool:
         future_map = {}
         for i, (s_id, files) in enumerate(stream_list):
             machine_progress_start = int((i / total_streams) * 100)
@@ -266,9 +265,19 @@ def do_merge(date_str, target_stream_id=None):
             future_map[future] = s_id
 
         for future in as_completed(future_map):
-            s_id, success, err = future.result()
+            try:
+                s_id, success, err = future.result()
+            except Exception as error:
+                failures.append(str(error))
+                continue
+            if not success:
+                failures.append(f"{s_id}: {err}")
             status = "✓ DONE" if success else f"✗ FAIL: {err}"
             print(f"[{status}] Stream {s_id}")
+
+    if failures:
+        update_meta_field(meta_file, date_str, status="failed", progress_text="; ".join(failures)[:2000])
+        raise RuntimeError("; ".join(failures))
 
     completed_text = f"Đã hoàn thành tổng hợp máy {target_stream_id}." if target_stream_id else "Đã hoàn thành tổng hợp toàn bộ."
     update_meta_field(meta_file, date_str, meta=meta,
@@ -276,61 +285,6 @@ def do_merge(date_str, target_stream_id=None):
         progress_percent=100,
         progress_text=completed_text
     )
-
-    # Thay đổi: Không xoá ngay recordings của ngày vừa gộp.
-    # Thay vào đó, chạy cleanup để xoá các ngày cũ hơn 4 ngày (bao gồm cả file vật lý)
-    cleanup_old_recordings(keep_days=4)
-
-def cleanup_old_recordings(keep_days=4):
-    """
-    Xoá các bản ghi live (FLV) và metadata trong recordings.json 
-    nếu cũ hơn keep_days ngày (bao gồm cả hôm nay).
-    Ví dụ keep_days=4 thì giữ lại: Hôm nay, Hôm qua, Hôm kia, Hôm kìa.
-    """
-    from datetime import datetime, timedelta
-    from utils import get_recordings, save_recordings, recordings_lock
-    
-    print(f"\n--- Bắt đầu dọn dẹp recordings cũ (giữ lại {keep_days} ngày gần nhất) ---")
-    
-    recordings = get_recordings()
-    if not recordings:
-        return
-
-    # Lấy danh sách các ngày, format YYYY-MM-DD
-    dates = sorted(recordings.keys(), reverse=True)
-    if len(dates) <= keep_days:
-        print(f"Số lượng ngày ghi ({len(dates)}) <= {keep_days}, không cần xoá.")
-        return
-
-    # Các ngày cần xoá là các ngày từ index keep_days trở đi
-    dates_to_delete = dates[keep_days:]
-    
-    with recordings_lock:
-        # Load lại để đảm bảo an toàn luồng
-        current_recs = get_recordings()
-        deleted_count = 0
-        
-        for d_str in dates_to_delete:
-            if d_str in current_recs:
-                print(f"  -> Đang xoá dữ liệu live ngày: {d_str}")
-                # Xoá file vật lý
-                for item in current_recs[d_str]:
-                    f_path = item.get('file')
-                    if f_path and os.path.exists(f_path):
-                        try:
-                            os.remove(f_path)
-                        except Exception as e:
-                            print(f"     ! Lỗi xoá file {f_path}: {e}")
-                
-                # Xoá khỏi dict
-                del current_recs[d_str]
-                deleted_count += 1
-        
-        if deleted_count > 0:
-            save_recordings(current_recs)
-            print(f"--- Hoàn tất dọn dẹp: Đã xoá {deleted_count} ngày cũ. ---")
-        else:
-            print("--- Không có gì để xoá. ---")
 
 def merge_hls_to_mp4(hls_file, output_mp4):
     """
@@ -353,26 +307,6 @@ def merge_hls_to_mp4(hls_file, output_mp4):
         return False, f"Lỗi merge HLS to MP4: {stderr[-500:]}"
     
     return True, None
-
-def cleanup_replay_files(date_str, s_id=None):
-    """
-    Xoá các file HLS/TS trong thư mục replay sau khi đã upload YouTube thành công.
-    """
-    import shutil
-    base_dir = os.path.join(DATA_DIR, 'replays', date_str)
-    
-    if s_id:
-        target_dir = os.path.join(base_dir, s_id)
-        if os.path.exists(target_dir):
-            print(f"  -> Đang dọn dẹp thư mục replay local: {target_dir}")
-            shutil.rmtree(target_dir)
-            return True
-    else:
-        if os.path.exists(base_dir):
-            print(f"  -> Đang dọn dẹp toàn bộ replay local ngày: {date_str}")
-            shutil.rmtree(base_dir)
-            return True
-    return False
 
 def get_nights_older_than(days=7):
     """
@@ -425,264 +359,85 @@ def get_nights_older_than(days=7):
     return eligible_dates
 
 def do_youtube_sync(specific_date=None, specific_stream=None, force=False, is_test=False):
-    """
-    Orchestrates the migration of old recordings to YouTube.
-    If specific_date is provided (YYYY-MM-DD), it syncs that date regardless of age.
-    If specific_stream is provided, it only syncs that specific stream.
-    If force is True, it syncs even if already uploaded.
-    If is_test is True, it prefixes the title with [TEST] and doesn't update metadata.
-    """
     from services.youtube_service import YouTubeService
-    
-    SECRETS_PATH = os.path.join(DATA_DIR, 'youtube_secrets.json')
-    TOKEN_PATH = os.path.join(DATA_DIR, 'youtube_token.pickle')
-
-    print(f"\n[{datetime.now()}] --- Bắt đầu tiến trình YouTube Sync ---", flush=True)
-    if specific_date:
-        print(f"-> Chế độ: Chạy ngày cụ thể ({specific_date})", flush=True)
-    
-    # Check multiple locations for token if DATA_DIR doesn't have it
-    token_locations = [
-        TOKEN_PATH,
-        os.path.join(os.path.dirname(DATA_DIR), 'app', 'youtube_token.pickle'), # /app/youtube_token.pickle
-        'youtube_token.pickle'
-    ]
-    
-    actual_token_path = None
-    for loc in token_locations:
-        if os.path.exists(loc):
-            actual_token_path = loc
-            break
-            
-    if not actual_token_path:
-        print(f"✗ ERROR: YouTube token không tìm thấy tại bất kỳ vị trí nào: {token_locations}", flush=True)
-        return
+    from services import admin_youtube, admin_storage, admin_store
+    from services.admin_jobs import progress
 
     try:
-        # Use SECRETS_PATH fallback too if needed
-        actual_secrets_path = SECRETS_PATH if os.path.exists(SECRETS_PATH) else 'youtube_secrets.json'
-        yt = YouTubeService(actual_secrets_path, actual_token_path)
-    except Exception as e:
-        print(f"✗ ERROR: Không thể khởi tạo YouTube Service: {e}", flush=True)
-        import traceback
-        traceback.print_exc()
-        return
+        yt = YouTubeService(None, None)
+        channel = admin_youtube.channel(yt.service)
+        admin_store.set_setting('youtube_status', dict(connected=True, channel=channel,
+            checked_at=datetime.utcnow().isoformat() + 'Z'))
+    except Exception as error:
+        admin_store.set_setting('youtube_status', dict(connected=False,
+            code=admin_youtube.error_code(error), error=str(error)))
+        raise
 
-    if specific_date:
-        eligible_dates = [specific_date]
-    else:
-        # Lấy tất cả các ngày đủ điều kiện từ cũ nhất đến mới nhất
-        eligible_dates = sorted(get_nights_older_than(7))
-        
-    if not eligible_dates:
-        if not specific_date:
-            print("✓ Không có phần ghi nào cần xử lý (không có ngày nào > 7 ngày hoặc đã sync hết).", flush=True)
-        else:
-            print(f"✗ Không tìm thấy dữ liệu cho ngày {specific_date} để sync.", flush=True)
-        return
-
-    print(f"-> Danh sách ngày sẽ xử lý: {eligible_dates}", flush=True)
-
-    meta_file = os.path.join(DATA_DIR, 'metadata.json')
-    meta = {}
-    with meta_lock:
-        if os.path.exists(meta_file):
+    dates = [specific_date] if specific_date else sorted(get_nights_older_than(7))
+    uploaded = 0
+    failures = []
+    for date_str in dates:
+        meta = admin_storage.metadata()
+        day = meta.get(date_str, {})
+        streams = day.get('streams', {})
+        selected = [(s_id, info) for s_id, info in streams.items()
+                    if (not specific_stream or s_id == specific_stream)
+                    and (force or not info.get('youtube_url')) and info.get('hls')]
+        if not selected:
+            if specific_date:
+                raise ValueError('Không có HLS local cần đồng bộ cho lựa chọn này.')
+            continue
+        playlist_id = day.get('youtube_playlist_id')
+        if not playlist_id and not is_test:
+            playlist_id = admin_youtube.retry(lambda: yt.create_playlist(
+                f'AOE Replay | Ngày {date_str}', f'Bản ghi các trận AOE ngày {date_str}.'))
+            update_meta_field(os.path.join(DATA_DIR, 'metadata.json'), date_str,
+                              youtube_playlist_id=playlist_id,
+                              youtube_playlist_url=f'https://www.youtube.com/playlist?list={playlist_id}')
+        for index, (s_id, info) in enumerate(selected):
+            admin_storage.check_space('youtube', dict(date=date_str, stream=s_id, force=force))
+            hls = admin_storage.safe_path(info['hls'])
+            output = admin_storage.safe_path(f'replays/{date_str}/{s_id}/full_match.mp4')
+            progress(int(index / len(selected) * 100), f'[{s_id}] Đang tạo MP4 để upload...')
             try:
-                with open(meta_file, 'r') as f:
-                    meta = json.load(f)
-            except Exception:
-                pass
-
-    uploaded_count = 0
-    MAX_UPLOADS_PER_RUN = 5  # Giới hạn số video upload thành công mỗi lượt chạy cronjob
-
-    try:
-        for date_str in eligible_dates:
-            print(f"\n--- Xử lý ngày: {date_str} ---", flush=True)
-            day_meta = meta.get(date_str, {})
-            streams = day_meta.get('streams', {})
-            
-            if not streams:
-                print(f"  ! Ngày {date_str} không có dữ liệu stream trong metadata.", flush=True)
-                continue
-
-            # 7. Use/Create Playlist for the day
-            playlist_id = day_meta.get('youtube_playlist_id')
-            print(f"  ? Playlist hiện tại cho ngày {date_str}: {playlist_id}", flush=True)
-            
-            if not playlist_id:
-                p_title = f"AOE Replay | Ngày {date_str}"
-                p_desc = f"Toàn bộ bản ghi các trận đấu AOE ngày {date_str}."
-                print(f"  + ĐANG TẠO PLAYLIST MỚI: {p_title}...", flush=True)
-                try:
-                    playlist_id = yt.create_playlist(p_title, p_desc, privacy_status="public")
-                    day_meta['youtube_playlist_id'] = playlist_id
-                    day_meta['youtube_playlist_url'] = f"https://www.youtube.com/playlist?list={playlist_id}"
-                    print(f"  ✓ Đã tạo Playlist: {playlist_id}", flush=True)
-                except Exception as pe:
-                    print(f"  ✗ LỖI TẠO PLAYLIST: {pe}", flush=True)
-                    # Don't return, continue with video uploads even if playlist fails
-
-            # 8. Loop through all streams for this date
-            for s_id, s_info in streams.items():
-                # Filter by specific stream if requested
-                if specific_stream and s_id != specific_stream:
-                    continue
-                
-                if s_info.get('youtube_url') and not force:
-                    print(f"  - Stream {s_id} đã có link YouTube, bỏ qua.", flush=True)
-                    continue
-                
-                # Check for HLS file
-                hls_rel = s_info.get('hls')
-                if not hls_rel:
-                    print(f"  - Stream {s_id} không có file HLS local, bỏ qua.", flush=True)
-                    continue
-
-                print(f"  > Đang xử lý stream: {s_id} ({s_info.get('display_name', 'Unknown')})", flush=True)
-                hls_abs_path = os.path.join(DATA_DIR, hls_rel)
-                output_mp4 = os.path.join(DATA_DIR, 'replays', date_str, s_id, 'full_match.mp4')
-                
-                print(f"    - Đang ghép nối HLS sang MP4...", flush=True)
-                success, err = merge_hls_to_mp4(hls_abs_path, output_mp4)
+                success, error = merge_hls_to_mp4(hls, output)
                 if not success:
-                    print(f"    ✗ Lỗi ghép file: {err}. Đánh dấu bỏ qua vĩnh viễn và dọn dẹp local.", flush=True)
-                    s_info['hls'] = None
-                    s_info['youtube_error'] = f"Merge error: {err}"
-                    cleanup_replay_files(date_str, s_id)
-                    continue
-                
-                # PRECISE TITLE: Using player name effectively
-                # Force look for display_name, fallback to DB, fallback to s_id
-                player_name = s_info.get('display_name')
-                
-                # Check DB if name is generic or missing
-                if not player_name or player_name.startswith('team'):
-                    db_name = get_player_name_from_db(date_str, s_id)
-                    if db_name:
-                        print(f"    - Tìm thấy tên người chơi từ DB: {db_name}", flush=True)
-                        player_name = db_name
-                        s_info['display_name'] = db_name # Persist to metadata
-
-                if not player_name:
-                    player_name = s_id
-                
-                # BRANDING UPDATES: Title and Description
-                title_prefix = "[TEST] " if is_test else ""
-                title = f"{title_prefix}BPGROUP AOE Replay - {player_name} - {date_str}"
-                
-                duration_str = format_duration_vietnamese(s_info.get('duration_minutes', 0))
-                
-                description = (
-                    f"😂 Khi coder, sale, marketing cùng đánh AOE...\n\n"
-                    f"Trận đấu này hội tụ đủ mọi cấp độ:\n"
-                    f"- Người mới: đang học xây BE 🏠\n"
-                    f"- Người trung bình: lên đời quên xin dân 🤣\n"
-                    f"- Người pro: cân team, gánh kèo 🔥\n\n"
-                    f"📌 Thông tin trận:\n"
-                    f"- Players: {player_name}\n"
-                    f"- Date: {date_str}\n"
-                    f"- Duration: {duration_str}\n\n"
-                    f"🎯 Đây không chỉ là game – mà là nơi lưu lại những khoảnh khắc vui vẻ của team BestPrice.\n\n"
-                    f"🌐 Website công ty: https://www.bestprice.vn/  \n"
-                    f"🎮 Giải đấu AOE: https://aoe.bpg.vn/\n\n"
-                    f"👉 Xem để giải trí, nhưng cẩn thận… bạn có thể thấy chính mình trong đó 😎\n\n"
-                    f"#AOEFunny #CompanyLife #BestPrice #GamingCulture"
-                )
-                
-                print(f"    - Đang upload lên YouTube (Public)...", flush=True)
-                try:
-                    video_id = yt.upload_video(
-                        file_path=output_mp4,
-                        title=title,
-                        description=description,
-                        privacy_status="public"
-                    )
-                    
-                    if video_id:
-                        uploaded_count += 1
-                        if not is_test:
-                            s_info['youtube_url'] = f"https://www.youtube.com/watch?v={video_id}"
-                            s_info['youtube_id'] = video_id
-                            s_info['hls'] = None 
-                            # Reset retry attempts if succeeded
-                            if 'youtube_attempts' in s_info:
-                                del s_info['youtube_attempts']
-                            if 'youtube_error' in s_info:
-                                del s_info['youtube_error']
-                        else:
-                            print(f"    - [TEST MODE] Video uploaded: https://www.youtube.com/watch?v={video_id}", flush=True)
-                        
-                        # Add to playlist
-                        if playlist_id:
-                            print(f"    - Đang thêm vào Playlist {playlist_id}...", flush=True)
-                            try:
-                                yt.add_video_to_playlist(playlist_id, video_id)
-                            except Exception as pae:
-                                print(f"    ! Không thể thêm vào playlist: {pae}", flush=True)
-
-                        print(f"    - Upload thành công: {video_id}. Đang xoá file local...", flush=True)
-                        if os.path.exists(output_mp4):
-                            os.remove(output_mp4)
-                        cleanup_replay_files(date_str, s_id)
-
-                        # Stop if limit reached
-                        if uploaded_count >= MAX_UPLOADS_PER_RUN:
-                            print(f"\n[INFO] Đã đạt giới hạn upload tối đa ({MAX_UPLOADS_PER_RUN} video) cho lượt chạy này. Dừng tiến trình sync.", flush=True)
-                            with meta_lock:
-                                meta[date_str] = day_meta
-                                save_meta(meta_file, meta)
-                            return
-                    
-                except Exception as e:
-                    print(f"    ✗ Lỗi upload YouTube: {e}", flush=True)
-                    if os.path.exists(output_mp4):
-                        os.remove(output_mp4)
-
-                    # Check for YouTube Quota Error
-                    is_quota_error = False
-                    err_msg = str(e).lower()
-                    if "quotaexceeded" in err_msg or "exceeded your quota" in err_msg:
-                        is_quota_error = True
-                    else:
-                        if hasattr(e, 'content'):
-                            try:
-                                err_data = json.loads(e.content)
-                                for err_item in err_data.get('error', {}).get('errors', []):
-                                    if err_item.get('reason') == 'quotaExceeded':
-                                        is_quota_error = True
-                                        break
-                            except Exception:
-                                pass
-
-                    if is_quota_error:
-                        print("    ✗ Lỗi: Hết quota API YouTube. Dừng tiến trình sync để tránh lặp lỗi.", flush=True)
-                        with meta_lock:
-                            meta[date_str] = day_meta
-                            save_meta(meta_file, meta)
-                        return
-
-                    # Increment attempts for transient failures
-                    attempts = s_info.get('youtube_attempts', 0) + 1
-                    s_info['youtube_attempts'] = attempts
-                    s_info['youtube_error'] = str(e)
-
-                    if attempts >= 3:
-                        print(f"    ✗ Đã thử upload {attempts} lần thất bại. Đánh dấu bỏ qua vĩnh viễn và dọn dẹp local.", flush=True)
-                        s_info['hls'] = None
-                        cleanup_replay_files(date_str, s_id)
-                    else:
-                        print(f"    ! Thử lại ở lần chạy sau (Số lần đã thử: {attempts}/3).", flush=True)
-
-            with meta_lock:
-                # Sync meta data (including playlist_id and youtube_info)
-                meta[date_str] = day_meta
-                save_meta(meta_file, meta)
-            
-            print(f"--- Hoàn tất tiến trình YouTube Sync cho ngày {date_str} ---", flush=True)
-
-        print(f"\n--- Hoàn tất toàn bộ tiến trình YouTube Sync ---", flush=True)
-    except Exception as e:
-        print(f"✗ CRITICAL ERROR trong quá trình Sync: {e}", flush=True)
-        import traceback
-        traceback.print_exc()
+                    if 'No space left on device' in error:
+                        raise OSError(28, error)
+                    raise RuntimeError(error)
+                name = info.get('display_name') or get_player_name_from_db(date_str, s_id) or s_id
+                progress(int(index / len(selected) * 100), f'[{s_id}] Đang upload YouTube...')
+                video_id = yt.upload_video(output,
+                    f'{"[TEST] " if is_test else ""}BPGROUP AOE Replay - {name} - {date_str}',
+                    f'Bản ghi AOE ngày {date_str}, máy {name}. https://aoe.bpg.vn/')
+                if not video_id:
+                    raise RuntimeError('YouTube không trả về mã video.')
+                if not is_test:
+                    update_stream_meta(os.path.join(DATA_DIR, 'metadata.json'), date_str, s_id,
+                        dict(youtube_id=video_id, youtube_url=f'https://www.youtube.com/watch?v={video_id}',
+                             youtube_error=None, youtube_attempts=0))
+                if playlist_id:
+                    try:
+                        admin_youtube.retry(lambda: yt.add_video_to_playlist(playlist_id, video_id))
+                    except Exception as error:
+                        update_stream_meta(os.path.join(DATA_DIR, 'metadata.json'), date_str, s_id,
+                                           dict(youtube_error=f'Đã upload; thêm playlist thất bại: {error}'))
+                        failures.append(str(error))
+                # Keep all local files until an administrator explicitly confirms deletion.
+                uploaded += 1
+                if uploaded >= 5:
+                    if failures:
+                        raise RuntimeError('; '.join(failures))
+                    return
+            except Exception as error:
+                code = admin_youtube.error_code(error)
+                update_stream_meta(os.path.join(DATA_DIR, 'metadata.json'), date_str, s_id,
+                                   dict(youtube_error=str(error), youtube_error_code=code))
+                if code in ('signup_required', 'token_expired', 'permission_denied', 'quota_exceeded', 'not_connected'):
+                    admin_store.set_setting('youtube_status', dict(connected=False, code=code, error=str(error)))
+                    raise
+                if isinstance(error, OSError) and error.errno == 28:
+                    raise
+                failures.append(f'{s_id}: {error}')
+    if failures:
+        raise RuntimeError('; '.join(failures))
