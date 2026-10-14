@@ -185,7 +185,7 @@ def youtube_status():
 @require_admin
 def oauth_start():
     flow = youtube.flow()
-    url, state = flow.authorization_url(access_type='offline', prompt='consent select_account', include_granted_scopes='true')
+    url, state = flow.authorization_url(access_type='offline', prompt='consent select_account', include_granted_scopes='false')
     store.query('UPDATE admin_sessions SET oauth_state=%s,oauth_expires=%s,oauth_verifier=%s WHERE id=%s',
                 (state, datetime.utcnow() + timedelta(minutes=10), flow.code_verifier, g.admin_session['id']), write=True)
     return jsonify(url=url)

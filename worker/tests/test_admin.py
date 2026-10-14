@@ -344,6 +344,8 @@ def test_oauth_pkce_survives_redirect(authenticated, sandbox, monkeypatch):
     response = client.post('/api/v1/admin/youtube/oauth/start', json={}, headers=headers)
     assert response.status_code == 200
     query = parse_qs(urlsplit(response.json['url']).query)
+    assert query['include_granted_scopes'] == ['false']
+    assert set(query['scope'][0].split()) == set(youtube.SCOPES)
     session = store.query('SELECT * FROM admin_sessions', one=True)
     verifier = session['oauth_verifier']
     expected = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip('=')
